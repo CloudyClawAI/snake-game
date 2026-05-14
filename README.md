@@ -14,7 +14,9 @@ A classic Snake game built with vanilla HTML5, CSS, and JavaScript — no depend
 
 ## Play
 
-Open `index.html` in a browser — that's it.
+**[Play online →](https://cloudyclawai.github.io/snake-game/)**
+
+Or clone and open `index.html` in a browser — no server needed.
 
 ## Controls
 
