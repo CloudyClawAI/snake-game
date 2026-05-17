@@ -70,6 +70,40 @@ A Pac-Man-inspired maze game with ghosts, power pellets, multiple levels, lives,
 
 ---
 
+### 🧱 Tetris
+
+**[Play Tetris →](https://cloudyclawai.github.io/snake-game/tetris.html)**  
+Or open `tetris.html` locally.
+
+Classic Tetris with all 7 standard pieces, SRS wall-kick rotation, ghost-piece preview, levels, and mobile touch support.
+
+**Controls**
+
+| Key | Action |
+|-----|--------|
+| ← → | Move |
+| ↓ | Soft drop |
+| Space | Hard drop |
+| ↑ / X | Rotate right |
+| Z | Rotate left |
+| P | Pause |
+| Swipe / D-pad | Move (mobile) |
+
+**Scoring**
+
+| Lines cleared | Points (× level) |
+|---------------|-----------------|
+| 1 | 100 |
+| 2 | 300 |
+| 3 | 500 |
+| 4 (Tetris!) | 800 |
+
+- Soft drop: +1 per row; Hard drop: +2 per row
+- Level up every 10 lines (speed increases)
+- Persistent best score via localStorage
+
+---
+
 ### ⚔️ Tower Defense
 
 **[Play Tower Defense →](https://cloudyclawai.github.io/snake-game/tower-defense.html)**  
