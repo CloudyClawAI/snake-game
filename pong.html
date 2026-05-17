@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pong — CloudyClaw Games</title>
+  <style>
+    :root {
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #e5eefb;
+      background:
+        radial-gradient(circle at top, rgba(56, 189, 248, 0.16), transparent 30%),
+        linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color-scheme: dark;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+    }
+
+    button { font: inherit; }
+
+    #app {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .game-shell {
+      width: min(100%, 1080px);
+      display: grid;
+      gap: 18px;
+    }
+
+    .hud,
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .title-wrap h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.25rem); }
+    .title-wrap p { margin: 6px 0 0; color: #94a3b8; }
+
+    .scoreboard { display: flex; gap: 12px; }
+
+    .score-card {
+      min-width: 112px;
+      padding: 12px 18px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.72);
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .score-card .label { display: block; color: #94a3b8; font-size: 0.9rem; }
+    .score-card strong { display: block; margin-top: 4px; font-size: 2rem; }
+
+    .board-wrap {
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.45);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 10px;
+      text-align: center;
+      background: rgba(2, 6, 23, 0.6);
+      backdrop-filter: blur(6px);
+      padding: 24px;
+    }
+
+    .overlay.hidden { display: none; }
+    .overlay h2 { margin: 0; font-size: clamp(1.8rem, 4vw, 3rem); }
+    .overlay p { margin: 0; max-width: 560px; color: #cbd5e1; }
+
+    .controls button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #e2e8f0;
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
+    }
+
+    .controls button:last-child {
+      background: linear-gradient(135deg, #334155, #1e293b);
+      box-shadow: none;
+    }
+
+    .controls button:hover { filter: brightness(1.05); }
+
+    @media (max-width: 720px) {
+      #app { padding: 14px; }
+      .scoreboard, .hud, .controls { width: 100%; }
+      .controls button { flex: 1; }
+      .score-card { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="game-shell">
+      <header class="hud">
+        <div class="title-wrap">
+          <h1>Pong</h1>
+          <p>First to 7 wins · W/S vs ↑/↓ · Space pauses</p>
+        </div>
+        <div class="scoreboard" aria-label="Scoreboard">
+          <div class="score-card">
+            <span class="label">Player</span>
+            <strong id="leftScore">0</strong>
+          </div>
+          <div class="score-card">
+            <span class="label">CPU</span>
+            <strong id="rightScore">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="board-wrap">
+        <canvas id="game" width="960" height="540" aria-label="Pong game board"></canvas>
+        <div class="overlay" id="overlay">
+          <h2 id="overlayTitle">Press Space to Start</h2>
+          <p id="overlayText">Use W/S for the left paddle and Arrow Up/Down for the right paddle.</p>
+        </div>
+      </main>
+
+      <footer class="controls">
+        <button id="startBtn">Start / Restart</button>
+        <button id="pauseBtn">Pause</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game')
+    const ctx = canvas.getContext('2d')
+
+    const leftScoreEl = document.getElementById('leftScore')
+    const rightScoreEl = document.getElementById('rightScore')
+    const overlay = document.getElementById('overlay')
+    const overlayTitle = document.getElementById('overlayTitle')
+    const overlayText = document.getElementById('overlayText')
+    const startBtn = document.getElementById('startBtn')
+    const pauseBtn = document.getElementById('pauseBtn')
+
+    const state = {
+      running: false,
+      gameOver: false,
+      leftScore: 0,
+      rightScore: 0,
+      winningScore: 7,
+      keys: new Set(),
+    }
+
+    const paddle = { width: 16, height: 110, speed: 520 }
+    const left = { x: 28, y: canvas.height / 2 - paddle.height / 2 }
+    const right = { x: canvas.width - 28 - paddle.width, y: canvas.height / 2 - paddle.height / 2 }
+    const ball = { x: canvas.width / 2, y: canvas.height / 2, radius: 10, speed: 390, vx: 390, vy: 210 }
+
+    function clamp(value, min, max) { return Math.min(max, Math.max(min, value)) }
+
+    function resetBall(direction = Math.random() > 0.5 ? 1 : -1) {
+      ball.x = canvas.width / 2
+      ball.y = canvas.height / 2
+      ball.speed = 390
+      const angle = (Math.random() * Math.PI) / 3 - Math.PI / 6
+      ball.vx = Math.cos(angle) * ball.speed * direction
+      ball.vy = Math.sin(angle) * ball.speed
+    }
+
+    function resetGame() {
+      state.leftScore = 0
+      state.rightScore = 0
+      state.gameOver = false
+      left.y = canvas.height / 2 - paddle.height / 2
+      right.y = canvas.height / 2 - paddle.height / 2
+      resetBall()
+      updateScore()
+      showOverlay('Press Space to Start', 'Use W/S for the left paddle and Arrow Up/Down for the right paddle.')
+      state.running = false
+    }
+
+    function updateScore() {
+      leftScoreEl.textContent = String(state.leftScore)
+      rightScoreEl.textContent = String(state.rightScore)
+    }
+
+    function showOverlay(title, text) {
+      overlayTitle.textContent = title
+      overlayText.textContent = text
+      overlay.classList.remove('hidden')
+    }
+
+    function hideOverlay() { overlay.classList.add('hidden') }
+
+    function startGame() {
+      if (state.gameOver) resetGame()
+      state.running = true
+      hideOverlay()
+    }
+
+    function pauseGame() {
+      if (state.gameOver) return
+      state.running = false
+      showOverlay('Paused', 'Press Space to continue or use Start / Restart.')
+    }
+
+    function scorePoint(side) {
+      if (side === 'left') state.leftScore += 1
+      else state.rightScore += 1
+      updateScore()
+      if (state.leftScore >= state.winningScore || state.rightScore >= state.winningScore) {
+        state.running = false
+        state.gameOver = true
+        const winner = state.leftScore > state.rightScore ? 'Player' : 'CPU'
+        showOverlay(`${winner} wins!`, 'Press Start / Restart or Space to play again.')
+        return
+      }
+      state.running = false
+      showOverlay('Point scored!', 'Press Space to serve the next ball.')
+      resetBall(side === 'left' ? 1 : -1)
+    }
+
+    function movePaddles(dt) {
+      if (state.keys.has('w')) left.y -= paddle.speed * dt
+      if (state.keys.has('s')) left.y += paddle.speed * dt
+      if (state.keys.has('ArrowUp')) right.y -= paddle.speed * dt
+      if (state.keys.has('ArrowDown')) right.y += paddle.speed * dt
+      left.y = clamp(left.y, 0, canvas.height - paddle.height)
+      right.y = clamp(right.y, 0, canvas.height - paddle.height)
+    }
+
+    function ballHitsPaddle(target) {
+      return (
+        ball.x - ball.radius < target.x + paddle.width &&
+        ball.x + ball.radius > target.x &&
+        ball.y + ball.radius > target.y &&
+        ball.y - ball.radius < target.y + paddle.height
+      )
+    }
+
+    function bounceFromPaddle(target, direction) {
+      const relativeIntersectY = target.y + paddle.height / 2 - ball.y
+      const normalized = relativeIntersectY / (paddle.height / 2)
+      const bounceAngle = normalized * (Math.PI / 3)
+      ball.speed += 18
+      ball.vx = Math.cos(bounceAngle) * ball.speed * direction
+      ball.vy = -Math.sin(bounceAngle) * ball.speed
+      if (direction === 1) ball.x = target.x + paddle.width + ball.radius
+      else ball.x = target.x - ball.radius
+    }
+
+    function updateBall(dt) {
+      ball.x += ball.vx * dt
+      ball.y += ball.vy * dt
+      if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= canvas.height) {
+        ball.vy *= -1
+        ball.y = clamp(ball.y, ball.radius, canvas.height - ball.radius)
+      }
+      if (ballHitsPaddle(left) && ball.vx < 0) bounceFromPaddle(left, 1)
+      if (ballHitsPaddle(right) && ball.vx > 0) bounceFromPaddle(right, -1)
+      if (ball.x + ball.radius < 0) scorePoint('right')
+      if (ball.x - ball.radius > canvas.width) scorePoint('left')
+    }
+
+    function drawNet() {
+      ctx.save()
+      ctx.setLineDash([10, 14])
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)'
+      ctx.lineWidth = 4
+      ctx.beginPath()
+      ctx.moveTo(canvas.width / 2, 0)
+      ctx.lineTo(canvas.width / 2, canvas.height)
+      ctx.stroke()
+      ctx.restore()
+    }
+
+    function drawPaddle(target) {
+      ctx.fillStyle = '#f8fafc'
+      ctx.fillRect(target.x, target.y, paddle.width, paddle.height)
+    }
+
+    function drawBall() {
+      ctx.beginPath()
+      ctx.fillStyle = '#38bdf8'
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    function draw() {
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+      gradient.addColorStop(0, '#0f172a')
+      gradient.addColorStop(1, '#111827')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      drawNet()
+      drawPaddle(left)
+      drawPaddle(right)
+      drawBall()
+    }
+
+    let lastTime = 0
+    function loop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000 || 0, 0.016)
+      lastTime = timestamp
+      movePaddles(dt)
+      if (state.running) updateBall(dt)
+      draw()
+      window.requestAnimationFrame(loop)
+    }
+
+    window.addEventListener('keydown', (event) => {
+      if (['w', 's', 'ArrowUp', 'ArrowDown', ' '].includes(event.key)) event.preventDefault()
+      if (event.key === ' ') {
+        if (state.running) pauseGame()
+        else startGame()
+        return
+      }
+      state.keys.add(event.key)
+    })
+
+    window.addEventListener('keyup', (event) => { state.keys.delete(event.key) })
+
+    startBtn.addEventListener('click', () => { resetGame(); startGame() })
+    pauseBtn.addEventListener('click', () => { if (state.running) pauseGame(); else startGame() })
+
+    resetGame()
+    draw()
+    window.requestAnimationFrame(loop)
+  </script>
+</body>
+</html>
