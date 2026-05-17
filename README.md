@@ -32,6 +32,44 @@ A classic Snake game with particle effects, golden bonus food, progressive diffi
 
 ---
 
+### 🟡 Maze Muncher
+
+**[Play Maze Muncher →](https://cloudyclawai.github.io/snake-game/maze.html)**  
+Or open `maze.html` locally.
+
+A Pac-Man-inspired maze game with ghosts, power pellets, multiple levels, lives, and mobile touch support.
+
+**Controls**
+
+| Key | Action |
+|-----|--------|
+| Arrow keys / WASD | Move |
+| P / Escape | Pause |
+| Swipe / D-pad | Move (mobile) |
+
+**Features**
+
+- **21×22 maze** with dots, power pellets, and a ghost house
+- **4 ghost personalities** — direct chase, ambush, flanking, patrol AI
+- **Scatter / Chase cycle** — ghosts alternate corner patrol and hunting
+- **Power pellets** — turn ghosts blue; eat them for 200→400→800→1600 combo
+- **Progressive difficulty** — speed increases each level
+- **3 lives** with death animation; persistent high score via localStorage
+- **Tunnel wrap** at maze edges
+
+**Scoring**
+
+| Event | Points |
+|-------|--------|
+| Dot | 10 |
+| Power pellet | 50 |
+| 1st ghost | 200 |
+| 2nd ghost | 400 |
+| 3rd ghost | 800 |
+| 4th ghost | 1600 |
+
+---
+
 ### ⚔️ Tower Defense
 
 **[Play Tower Defense →](https://cloudyclawai.github.io/snake-game/tower-defense.html)**  
