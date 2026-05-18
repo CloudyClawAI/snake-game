@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect Four Online — CloudyClaw Games</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --surface-2: #1a1a2e;
+      --border: #ffffff14;
+      --text: #e0e0e0;
+      --muted: #888;
+      --accent: #7c6aff;
+      --accent-glow: #7c6aff44;
+      --p1: #ff4b4b;
+      --p1-glow: #ff4b4b55;
+      --p2: #f5c518;
+      --p2-glow: #f5c51855;
+      --empty: #1a1a2e;
+      --green: #4caf7d;
+      --red: #e05252;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.4rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .back-link {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--accent); }
+    nav .title { font-weight: 700; font-size: 1.05rem; color: #fff; letter-spacing: 0.04em; }
+    .mode-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      background: var(--accent-glow);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 0.2rem 0.7rem;
+    }
+    .conn-status {
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .conn-status .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .conn-status.connected { color: var(--green); border-color: var(--green); }
+    .conn-status.connected .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .conn-status.waiting { color: #f5c518; border-color: #f5c51855; }
+    .conn-status.waiting .dot { background: #f5c518; animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+    /* SCREENS */
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      gap: 1.5rem;
+    }
+
+    .lobby-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.4rem 2rem;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      text-align: center;
+    }
+
+    .lobby-icon { font-size: 3rem; line-height: 1; }
+    .lobby-title { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    .lobby-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    .divider {
+      font-size: 0.75rem;
+      color: #333;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .join-row {
+      display: flex;
+      gap: 0.6rem;
+      width: 100%;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.8rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+      letter-spacing: 0.06em;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"]::placeholder { color: #444; }
+    input[type="text"][readonly] {
+      cursor: pointer;
+      font-size: 0.78rem;
+    }
+
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.55rem 1.2rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      width: 100%;
+      padding: 0.7rem;
+      font-size: 0.95rem;
+    }
+    .btn.primary:hover { background: #9b8fff; border-color: #9b8fff; color: #fff; }
+    .btn.danger { border-color: var(--red); color: var(--red); }
+    .btn.danger:hover { background: rgba(224,82,82,0.1); }
+
+    .error-msg {
+      font-size: 0.82rem;
+      color: var(--red);
+      background: rgba(224,82,82,0.08);
+      border: 1px solid rgba(224,82,82,0.25);
+      border-radius: 8px;
+      padding: 0.5rem 0.9rem;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* SPINNER */
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Room code display */
+    .room-code-big {
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      background: var(--surface-2);
+      padding: 0.6rem 1.4rem;
+      border-radius: 10px;
+      border: 1px solid var(--accent-glow);
+      text-shadow: 0 0 20px var(--accent-glow);
+      user-select: all;
+    }
+
+    .invite-section { display: flex; flex-direction: column; gap: 0.8rem; width: 100%; }
+
+    /* GAME SCREEN */
+    #screen-game {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem 3rem;
+      gap: 1.2rem;
+    }
+
+    .scoreboard {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 1.4rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    .score-player { flex: 1; text-align: center; }
+    .score-player .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.15rem;
+    }
+    .score-player .disc-dot {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    .score-player.p1 .disc-dot { background: var(--p1); box-shadow: 0 0 6px var(--p1-glow); }
+    .score-player.p2 .disc-dot { background: var(--p2); box-shadow: 0 0 6px var(--p2-glow); }
+    .score-player.you .label { color: var(--accent); }
+    .score-player .val { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    .score-divider { color: var(--muted); font-size: 1.2rem; font-weight: 300; }
+
+    .turn-bar {
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--muted);
+      min-height: 1.5rem;
+      transition: color 0.2s;
+    }
+    .turn-bar .disc-dot {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 5px;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .turn-bar.p1 { color: var(--p1); }
+    .turn-bar.p1 .disc-dot { background: var(--p1); box-shadow: 0 0 8px var(--p1); }
+    .turn-bar.p2 { color: var(--p2); }
+    .turn-bar.p2 .disc-dot { background: var(--p2); box-shadow: 0 0 8px var(--p2); }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.7; }
+    }
+
+    .board-wrap { position: relative; width: 100%; max-width: 480px; }
+
+    .col-hints {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+      padding: 0 2px;
+    }
+    .col-hint {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 0;
+      border-radius: 6px;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .col-hint::after {
+      content: '▼';
+      font-size: 0.75rem;
+      color: transparent;
+      transition: color 0.15s;
+    }
+    .col-hint:hover::after { color: var(--accent); }
+    .col-hint.active::after { color: var(--accent); }
+    .col-hint:disabled { cursor: not-allowed; }
+    .col-hint:disabled::after { color: transparent !important; }
+
+    .board {
+      background: #1e1b3a;
+      border: 2px solid #2d2860;
+      border-radius: 12px;
+      padding: 6px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      box-shadow: 0 0 40px #1e1b3a88, inset 0 2px 8px #00000066;
+    }
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--empty);
+      box-shadow: inset 0 2px 6px #00000066;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.1s;
+    }
+    .cell.p1 { background: var(--p1); box-shadow: 0 0 12px var(--p1-glow), inset 0 2px 4px #ffffff22; }
+    .cell.p2 { background: var(--p2); box-shadow: 0 0 12px var(--p2-glow), inset 0 2px 4px #ffffff22; }
+    .cell.win { animation: winPulse 0.6s ease-in-out infinite alternate; }
+    .cell.p1.win { box-shadow: 0 0 20px var(--p1), 0 0 6px #fff; }
+    .cell.p2.win { box-shadow: 0 0 20px var(--p2), 0 0 6px #fff; }
+    @keyframes winPulse { from { transform: scale(0.92); } to { transform: scale(1.06); } }
+    .cell.drop { animation: dropIn 0.32s cubic-bezier(0.36, 0, 0.66, -0.2) forwards; }
+    @keyframes dropIn {
+      0% { transform: translateY(-300%); opacity: 0.6; }
+      80% { transform: translateY(8%); }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 480px;
+    }
+    .controls .btn { flex: 1; min-width: 120px; }
+
+    /* OVERLAY */
+    .overlay {
+      position: fixed; inset: 0;
+      background: #0a0a14cc;
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .overlay.show { opacity: 1; pointer-events: all; }
+    .overlay-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2.4rem;
+      text-align: center;
+      max-width: 340px;
+      width: 90%;
+      box-shadow: 0 0 60px var(--accent-glow);
+      transform: scale(0.92);
+      transition: transform 0.3s;
+    }
+    .overlay.show .overlay-card { transform: scale(1); }
+    .overlay-card h2 { font-size: 1.6rem; color: #fff; margin-bottom: 0.5rem; }
+    .overlay-card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.4rem; }
+    .winner-disc {
+      display: inline-block;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      margin-bottom: 0.8rem;
+    }
+    .winner-disc.p1 { background: var(--p1); box-shadow: 0 0 20px var(--p1); }
+    .winner-disc.p2 { background: var(--p2); box-shadow: 0 0 20px var(--p2); }
+    .overlay-btns { display: flex; gap: 0.8rem; justify-content: center; }
+
+    @media (max-width: 400px) {
+      .board { gap: 4px; padding: 5px; }
+      .scoreboard { padding: 0.6rem 0.9rem; }
+      .lobby-card { padding: 1.8rem 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="back-link" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Back to Hub
+  </a>
+  <span class="title">Connect Four Online</span>
+  <span class="conn-status" id="conn-status">
+    <span class="dot"></span>
+    <span id="conn-label">Offline</span>
+  </span>
+</nav>
+
+<!-- ── LOBBY ─────────────────────────────────────────────── -->
+<div class="screen" id="screen-lobby">
+  <div class="lobby-card">
+    <div class="lobby-icon">🔴</div>
+    <div class="lobby-title">Connect Four Online</div>
+    <p class="lobby-desc">Challenge a friend anywhere in the world — no account needed.</p>
+    <button class="btn primary" id="btn-create">Create Game</button>
+    <div class="divider">or join with a code</div>
+    <div class="join-row">
+      <input type="text" id="join-input" placeholder="Room code or invite URL" autocomplete="off" spellcheck="false" />
+      <button class="btn" id="btn-join-code">Join</button>
+    </div>
+    <div class="error-msg" id="lobby-error" hidden></div>
+  </div>
+</div>
+
+<!-- ── WAITING (host) ─────────────────────────────────────── -->
+<div class="screen" id="screen-waiting" hidden>
+  <div class="lobby-card">
+    <div class="lobby-icon">⏳</div>
+    <div class="lobby-title">Waiting for opponent…</div>
+    <div class="spinner"></div>
+    <div class="invite-section">
+      <p class="lobby-desc" style="font-size:0.82rem">Share this link with a friend:</p>
+      <div class="join-row">
+        <input type="text" id="invite-url" readonly />
+        <button class="btn" id="btn-copy">Copy</button>
+      </div>
+      <div class="divider">or share room code</div>
+      <div class="room-code-big" id="room-code-display">——</div>
+    </div>
+    <button class="btn danger" id="btn-cancel-wait">Cancel</button>
+  </div>
+</div>
+
+<!-- ── JOINING (guest) ────────────────────────────────────── -->
+<div class="screen" id="screen-joining" hidden>
+  <div class="lobby-card">
+    <div class="lobby-icon">🔌</div>
+    <div class="lobby-title">Connecting…</div>
+    <div class="spinner" id="joining-spinner"></div>
+    <p class="lobby-desc">Joining the game room, please wait.</p>
+    <div class="error-msg" id="join-error" hidden></div>
+    <button class="btn" id="btn-cancel-join" style="margin-top:0.4rem">Cancel</button>
+  </div>
+</div>
+
+<!-- ── GAME ───────────────────────────────────────────────── -->
+<div id="screen-game" hidden>
+  <div class="scoreboard">
+    <div class="score-player p1" id="sp1">
+      <div class="label"><span class="disc-dot"></span><span id="p1name">Player 1</span></div>
+      <div class="val" id="score1">0</div>
+    </div>
+    <div class="score-divider">—</div>
+    <div class="score-player p2" id="sp2">
+      <div class="label"><span class="disc-dot"></span><span id="p2name">Player 2</span></div>
+      <div class="val" id="score2">0</div>
+    </div>
+  </div>
+
+  <div class="turn-bar p1" id="turn-bar">
+    <span class="disc-dot"></span><span id="turn-text">Starting…</span>
+  </div>
+
+  <div class="board-wrap">
+    <div class="col-hints" id="col-hints"></div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" id="btn-new-game">New Game</button>
+    <button class="btn" id="btn-leave">Leave</button>
+  </div>
+</div>
+
+<!-- ── DISCONNECTED ───────────────────────────────────────── -->
+<div class="screen" id="screen-disconnected" hidden>
+  <div class="lobby-card">
+    <div class="lobby-icon">🔌</div>
+    <div class="lobby-title">Connection Lost</div>
+    <p class="lobby-desc">Your opponent disconnected from the game.</p>
+    <div class="overlay-btns" style="width:100%">
+      <button class="btn primary" id="btn-rejoin" style="flex:1">New Game</button>
+      <a href="index.html" class="btn" style="flex:1;display:flex;align-items:center;justify-content:center">Back to Hub</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── WIN OVERLAY ────────────────────────────────────────── -->
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="winner-disc" id="overlay-disc"></div>
+    <h2 id="overlay-title">You Win!</h2>
+    <p id="overlay-msg">Connected four in a row.</p>
+    <div class="overlay-btns">
+      <button class="btn primary" id="btn-play-again">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function () {
+'use strict';
+
+const ROWS = 6, COLS = 7;
+const EMPTY = 0, P1 = 1, P2 = 2;
+
+let board = [], currentPlayer = P1;
+let myRole = null;   // P1 or P2
+let gameOver = false;
+let peer = null;
+let conn = null;
+let score = [0, 0];
+
+// ── DOM ──────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const screens = ['lobby','waiting','joining','game','disconnected'];
+const boardEl      = $('board');
+const colHintsEl   = $('col-hints');
+const turnBar      = $('turn-bar');
+const turnText     = $('turn-text');
+const score1El     = $('score1');
+const score2El     = $('score2');
+const p1nameEl     = $('p1name');
+const p2nameEl     = $('p2name');
+const inviteUrlEl  = $('invite-url');
+const roomCodeEl   = $('room-code-display');
+const overlay      = $('overlay');
+const overlayTitle = $('overlay-title');
+const overlayMsg   = $('overlay-msg');
+const overlayDisc  = $('overlay-disc');
+const connStatus   = $('conn-status');
+const connLabel    = $('conn-label');
+
+// ── SCREENS ──────────────────────────────────────────────────
+function showScreen(name) {
+  screens.forEach(n => {
+    const el = $('screen-' + n);
+    el.hidden = (n !== name);
+  });
+  // #screen-game is not screen-* pattern
+  if (name === 'game') {
+    $('screen-game').hidden = false;
+  }
+}
+
+function setConnStatus(state, label) {
+  connStatus.className = 'conn-status ' + (state || '');
+  connLabel.textContent = label;
+}
+
+// ── ROOM HELPERS ─────────────────────────────────────────────
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+function parseRoomId(input) {
+  input = input.trim();
+  // Full URL
+  try {
+    const u = new URL(input);
+    const r = u.searchParams.get('room');
+    if (r) return r;
+  } catch (_) {}
+  // Bare code like "AB1234" → prefix it
+  if (/^[A-Z0-9]{6}$/i.test(input)) return 'ccg-' + input.toUpperCase();
+  // Already prefixed or raw peer ID
+  return input;
+}
+
+function buildInviteUrl(peerId) {
+  return window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(peerId);
+}
+
+// ── PEER FACTORY ─────────────────────────────────────────────
+const ICE = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' }
+]};
+
+function makePeer(customId) {
+  return customId ? new Peer(customId, { config: ICE }) : new Peer({ config: ICE });
+}
+
+// ── CREATE GAME ───────────────────────────────────────────────
+function createGame() {
+  const btn = $('btn-create');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  setConnStatus('waiting', 'Creating…');
+
+  const code = genCode();
+  const peerId = 'ccg-' + code;
+  peer = makePeer(peerId);
+
+  peer.on('open', id => {
+    inviteUrlEl.value = buildInviteUrl(id);
+    roomCodeEl.textContent = code;
+    showScreen('waiting');
+    setConnStatus('waiting', 'Waiting…');
+    btn.disabled = false;
+    btn.textContent = 'Create Game';
+  });
+
+  peer.on('connection', incoming => {
+    if (conn) { incoming.close(); return; } // only first guest
+    conn = incoming;
+    myRole = P1;
+    wireConn();
+    conn.on('open', () => {
+      conn.send({ t: 'start', role: P2 });
+      setConnStatus('connected', 'Connected');
+      showScreen('game');
+      updateNames();
+      startGame();
+    });
+  });
+
+  peer.on('error', err => {
+    btn.disabled = false;
+    btn.textContent = 'Create Game';
+    if (err.type === 'unavailable-id') {
+      createGame(); // retry with a new code
+      return;
+    }
+    showLobbyError('Could not create room: ' + (err.type || err.message));
+    setConnStatus('', 'Offline');
+  });
+}
+
+// ── JOIN GAME ─────────────────────────────────────────────────
+function joinGame(rawId) {
+  const roomId = parseRoomId(rawId);
+  if (!roomId) { showLobbyError('Please enter a room code.'); return; }
+
+  showScreen('joining');
+  setConnStatus('waiting', 'Connecting…');
+
+  peer = makePeer();
+
+  peer.on('open', () => {
+    conn = peer.connect(roomId, { reliable: true });
+    wireConn();
+
+    conn.on('error', err => {
+      showJoinError('Could not connect: ' + (err.type || err.message));
+      setConnStatus('', 'Offline');
+    });
+
+    // Timeout if host never responds
+    const timeout = setTimeout(() => {
+      if (myRole === null) showJoinError('Room not found or timed out.');
+    }, 12000);
+    conn.on('open', () => clearTimeout(timeout));
+  });
+
+  peer.on('error', err => {
+    showJoinError('Connection failed: ' + (err.type || err.message));
+    setConnStatus('', 'Offline');
+  });
+}
+
+// ── CONNECTION WIRING ─────────────────────────────────────────
+function wireConn() {
+  conn.on('data', handleData);
+  conn.on('close', () => {
+    setConnStatus('', 'Disconnected');
+    if ($('screen-game') && !$('screen-game').hidden) {
+      showScreen('disconnected');
+    }
+  });
+  conn.on('error', () => {
+    setConnStatus('', 'Error');
+    if ($('screen-game') && !$('screen-game').hidden) showScreen('disconnected');
+  });
+}
+
+// ── MESSAGE HANDLER ───────────────────────────────────────────
+function handleData(data) {
+  if (data.t === 'start') {
+    myRole = data.role;
+    setConnStatus('connected', 'Connected');
+    showScreen('game');
+    updateNames();
+    startGame();
+  } else if (data.t === 'move') {
+    const oppRole = myRole === P1 ? P2 : P1;
+    applyRemoteMove(data.col, oppRole);
+  } else if (data.t === 'reset') {
+    overlay.classList.remove('show');
+    resetBoard();
+  }
+}
+
+// ── NAMES ─────────────────────────────────────────────────────
+function updateNames() {
+  if (myRole === P1) {
+    p1nameEl.textContent = 'You'; p2nameEl.textContent = 'Opponent';
+    document.getElementById('sp1').classList.add('you');
+  } else {
+    p1nameEl.textContent = 'Opponent'; p2nameEl.textContent = 'You';
+    document.getElementById('sp2').classList.add('you');
+  }
+}
+
+// ── GAME INIT ─────────────────────────────────────────────────
+function startGame() {
+  score = [0, 0];
+  updateScores();
+  resetBoard();
+}
+
+function resetBoard() {
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY));
+  currentPlayer = P1;
+  gameOver = false;
+  overlay.classList.remove('show');
+  renderBoard();
+  updateTurnBar();
+}
+
+// ── BOARD RENDER ──────────────────────────────────────────────
+function renderBoard() {
+  boardEl.innerHTML = '';
+  colHintsEl.innerHTML = '';
+
+  for (let c = 0; c < COLS; c++) {
+    const btn = document.createElement('button');
+    btn.className = 'col-hint';
+    btn.dataset.col = c;
+    btn.setAttribute('aria-label', `Column ${c + 1}`);
+    btn.addEventListener('click', () => handlePlayerClick(c));
+    btn.addEventListener('mouseenter', () => highlightCol(c, true));
+    btn.addEventListener('mouseleave', () => highlightCol(c, false));
+    colHintsEl.appendChild(btn);
+  }
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      cell.addEventListener('click', () => handlePlayerClick(c));
+      cell.addEventListener('mouseenter', () => highlightCol(c, true));
+      cell.addEventListener('mouseleave', () => highlightCol(c, false));
+      boardEl.appendChild(cell);
+    }
+  }
+
+  updateCells();
+  updateColHints();
+}
+
+function highlightCol(col, on) {
+  if (gameOver || currentPlayer !== myRole) return;
+  document.querySelectorAll('.col-hint').forEach((b, i) => {
+    b.classList.toggle('active', on && i === col);
+  });
+}
+
+function updateCells(winCells) {
+  const ws = new Set((winCells || []).map(([r, c]) => r * COLS + c));
+  document.querySelectorAll('.cell').forEach(cell => {
+    const r = +cell.dataset.row, c = +cell.dataset.col;
+    cell.className = 'cell';
+    if (board[r][c] === P1) cell.classList.add('p1');
+    if (board[r][c] === P2) cell.classList.add('p2');
+    if (ws.has(r * COLS + c)) cell.classList.add('win');
+  });
+}
+
+function updateColHints() {
+  const canPlay = !gameOver && currentPlayer === myRole;
+  document.querySelectorAll('.col-hint').forEach((btn, c) => {
+    btn.disabled = !canPlay || board[0][c] !== EMPTY;
+  });
+}
+
+function updateTurnBar() {
+  if (gameOver) return;
+  const myTurn = currentPlayer === myRole;
+  turnBar.className = `turn-bar ${currentPlayer === P1 ? 'p1' : 'p2'}`;
+  turnText.textContent = myTurn ? 'Your turn' : "Opponent's turn…";
+}
+
+function updateScores() {
+  score1El.textContent = score[0];
+  score2El.textContent = score[1];
+}
+
+// ── GAME LOGIC ────────────────────────────────────────────────
+function drop(col, player) {
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (board[r][col] === EMPTY) { board[r][col] = player; return r; }
+  }
+  return -1;
+}
+
+function checkWin(player) {
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c] !== player) continue;
+      for (const [dr, dc] of dirs) {
+        const cells = [[r, c]];
+        for (let k = 1; k < 4; k++) {
+          const nr = r + dr*k, nc = c + dc*k;
+          if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[nr][nc] !== player) break;
+          cells.push([nr, nc]);
+        }
+        if (cells.length === 4) return cells;
+      }
+    }
+  }
+  return null;
+}
+
+function isBoardFull() { return board[0].every(v => v !== EMPTY); }
+
+function dropAnimate(row, col, player) {
+  const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+  if (!cell) return;
+  cell.classList.remove('drop');
+  void cell.offsetWidth;
+  cell.classList.add(player === P1 ? 'p1' : 'p2');
+  cell.classList.add('drop');
+}
+
+function handlePlayerClick(col) {
+  if (gameOver || currentPlayer !== myRole) return;
+  const row = drop(col, myRole);
+  if (row === -1) return;
+  dropAnimate(row, col, myRole);
+  if (conn && conn.open) conn.send({ t: 'move', col });
+  setTimeout(resolveMove, 100);
+}
+
+function applyRemoteMove(col, player) {
+  const row = drop(col, player);
+  if (row === -1) return;
+  dropAnimate(row, col, player);
+  setTimeout(resolveMove, 100);
+}
+
+function resolveMove() {
+  const win = checkWin(currentPlayer);
+  if (win) {
+    updateCells(win);
+    score[currentPlayer - 1]++;
+    updateScores();
+    gameOver = true;
+    updateColHints();
+    setTimeout(() => showWinOverlay(currentPlayer), 400);
+    return;
+  }
+  if (isBoardFull()) {
+    updateCells();
+    gameOver = true;
+    updateColHints();
+    setTimeout(() => showWinOverlay(0), 400);
+    return;
+  }
+  currentPlayer = currentPlayer === P1 ? P2 : P1;
+  updateTurnBar();
+  updateColHints();
+}
+
+function showWinOverlay(winner) {
+  if (winner === 0) {
+    overlayTitle.textContent = "It's a Draw!";
+    overlayMsg.textContent = 'The board is full. Try again!';
+    overlayDisc.style.display = 'none';
+  } else {
+    const iWon = winner === myRole;
+    overlayDisc.className = `winner-disc ${winner === P1 ? 'p1' : 'p2'}`;
+    overlayDisc.style.display = 'inline-block';
+    overlayTitle.textContent = iWon ? '🎉 You Win!' : 'You Lose.';
+    overlayMsg.textContent = 'Connected four in a row!';
+  }
+  overlay.classList.add('show');
+}
+
+function requestRestart() {
+  if (conn && conn.open) conn.send({ t: 'reset' });
+  overlay.classList.remove('show');
+  resetBoard();
+}
+
+// ── BUTTONS ───────────────────────────────────────────────────
+$('btn-create').addEventListener('click', createGame);
+
+$('btn-join-code').addEventListener('click', () => {
+  const v = $('join-input').value.trim();
+  if (!v) { showLobbyError('Enter a room code or paste an invite URL.'); return; }
+  joinGame(v);
+});
+$('join-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('btn-join-code').click();
+});
+
+$('btn-copy').addEventListener('click', () => {
+  const url = inviteUrlEl.value;
+  navigator.clipboard.writeText(url).then(() => {
+    $('btn-copy').textContent = '✓ Copied';
+    setTimeout(() => { $('btn-copy').textContent = 'Copy'; }, 2000);
+  }).catch(() => {
+    inviteUrlEl.select();
+    document.execCommand('copy');
+  });
+});
+
+$('btn-cancel-wait').addEventListener('click', () => {
+  if (peer) { peer.destroy(); peer = null; }
+  showScreen('lobby');
+  setConnStatus('', 'Offline');
+});
+
+$('btn-cancel-join').addEventListener('click', () => {
+  if (peer) { peer.destroy(); peer = null; }
+  showScreen('lobby');
+  setConnStatus('', 'Offline');
+});
+
+$('btn-new-game').addEventListener('click', requestRestart);
+$('btn-play-again').addEventListener('click', requestRestart);
+$('btn-leave').addEventListener('click', () => window.location.href = 'index.html');
+$('btn-rejoin').addEventListener('click', () => window.location.href = window.location.pathname);
+
+// ── ERROR HELPERS ─────────────────────────────────────────────
+function showLobbyError(msg) {
+  const el = $('lobby-error');
+  el.textContent = msg;
+  el.hidden = false;
+  setTimeout(() => { el.hidden = true; }, 6000);
+}
+
+function showJoinError(msg) {
+  const el = $('join-error');
+  el.textContent = msg;
+  el.hidden = false;
+  $('joining-spinner').style.display = 'none';
+}
+
+// ── INIT: check URL for room param ────────────────────────────
+(function init() {
+  const roomParam = new URLSearchParams(window.location.search).get('room');
+  if (roomParam) {
+    joinGame(roomParam);
+  } else {
+    showScreen('lobby');
+    setConnStatus('', 'Offline');
+  }
+})();
+
+})();
+</script>
+</body>
+</html>

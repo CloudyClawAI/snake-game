@@ -144,6 +144,52 @@
       transition: background 0.15s;
     }
     #install-btn:hover { background: var(--accent-glow); }
+
+    /* ── Ad slot ─────────────────────────────────────────── */
+    .ad-slot { margin-top: 1.5rem; }
+    .ad-slot-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #444;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    /* Carbon Ads dark-theme overrides (activates when #carbonads has content) */
+    #carbonads {
+      display: block;
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    #carbonads a { color: var(--text-muted); }
+    #carbonads .carbon-wrap {
+      display: flex; gap: 10px; padding: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px 10px 0 0;
+    }
+    #carbonads .carbon-img img { width: 120px; border-radius: 6px; flex-shrink: 0; }
+    #carbonads .carbon-text { font-size: 0.78rem; color: var(--text-muted); }
+    #carbonads .carbon-poweredby {
+      display: block; text-align: right; font-size: 0.6rem; color: #444;
+      padding: 4px 10px; background: var(--surface);
+      border: 1px solid var(--border); border-top: none; border-radius: 0 0 10px 10px;
+    }
+    /* House ad: shown by default, hidden once Carbon Ads loads real content */
+    .house-ad {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 12px; border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 10px; text-decoration: none; transition: border-color 0.2s, background 0.2s;
+      color: var(--text-muted); cursor: pointer;
+    }
+    .house-ad:hover {
+      border-color: rgba(124,106,255,0.4); background: rgba(124,106,255,0.04);
+      text-decoration: none; color: var(--text);
+    }
+    .house-ad-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .house-ad-body { display: flex; flex-direction: column; gap: 1px; }
+    .house-ad-body strong { font-size: 0.8rem; color: var(--text); }
+    .house-ad-body span { font-size: 0.7rem; }
   </style>
 </head>
 <body>
@@ -358,11 +404,42 @@
         <a class="play-btn" href="sudoku.html">▶ Play</a>
       </div>
 
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">Connect Four Online</div>
+        <p class="card-desc">Play Connect Four against a friend anywhere in the world. Create a room, share the link, and battle in real-time over a P2P connection.</p>
+        <div class="card-tags">
+          <span class="tag">Online Multiplayer</span><span class="tag">P2P</span><span class="tag">Strategy</span>
+        </div>
+        <a class="play-btn" href="connect-four-online.html">▶ Play</a>
+      </div>
+
     </main>
 
     <aside class="hub-sidebar">
       <h2>🏆 Top Scores</h2>
       <div id="lb-hub" class="lb-hub-summary"></div>
+
+      <!-- Monetisation: Carbon Ads slot -->
+      <!-- To activate: sign up at carbonads.com, replace YOUR_ZONE_ID below, -->
+      <!-- then remove the script comment markers.                               -->
+      <div class="ad-slot">
+        <div class="ad-slot-label">Sponsor</div>
+        <div id="carbonads"></div>
+        <!--
+        <script async type="text/javascript"
+          src="//cdn.carbonads.com/carbon.js?serve=YOUR_ZONE_ID&placement=cloudyclawgames"
+          id="_carbonads_js"></script>
+        -->
+        <a id="house-ad" class="house-ad" href="mailto:hello@cloudyclawgames.com"
+           onclick="trackAdImpression()">
+          <div class="house-ad-icon">☁</div>
+          <div class="house-ad-body">
+            <strong>Advertise here</strong>
+            <span>Reach game-loving players worldwide</span>
+          </div>
+        </a>
+      </div>
     </aside>
 
   </div>
@@ -395,6 +472,31 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
+
+    // Ad slot: hide house ad if Carbon Ads loads real content
+    const carbonEl = document.getElementById('carbonads');
+    const houseAd = document.getElementById('house-ad');
+    if (carbonEl && houseAd) {
+      new MutationObserver(() => {
+        if (carbonEl.childElementCount > 0) houseAd.style.display = 'none';
+      }).observe(carbonEl, { childList: true });
+    }
+
+    // Lightweight CTR tracker (localStorage — no external dependencies)
+    function trackAdImpression() {
+      try {
+        const d = JSON.parse(localStorage.getItem('ad_stats') || '{}');
+        d.clicks = (d.clicks || 0) + 1;
+        d.lastClick = new Date().toISOString();
+        localStorage.setItem('ad_stats', JSON.stringify(d));
+      } catch (_) {}
+    }
+    // Track page view for impression metric
+    try {
+      const d = JSON.parse(localStorage.getItem('ad_stats') || '{}');
+      d.impressions = (d.impressions || 0) + 1;
+      localStorage.setItem('ad_stats', JSON.stringify(d));
+    } catch (_) {}
   </script>
 </body>
 </html>
