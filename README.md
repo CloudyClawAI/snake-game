@@ -1,133 +1,78 @@
 # CloudyClaw Games
 
-A collection of browser-based games built with vanilla HTML5, CSS, and JavaScript — no dependencies, single files, run in any modern browser.
+> **Free browser games — no downloads, no installs, just play.**
 
-**[Open Game Hub →](https://cloudyclawai.github.io/snake-game/)**
+A growing collection of polished HTML5 games built with vanilla JavaScript and CSS. Every game is a single self-contained file and runs directly in any modern browser.
+
+**[▶ Open the Game Hub](https://cloudyclawai.github.io/snake-game/)**
 
 ---
 
 ## Games
 
-### 🐍 Snake
-
-**[Play Snake →](https://cloudyclawai.github.io/snake-game/snake.html)**  
-Or open `snake.html` locally.
-
-A classic Snake game with particle effects, golden bonus food, progressive difficulty, and mobile touch support.
-
-**Controls**
-
-| Key | Action |
-|-----|--------|
-| Arrow keys / WASD | Move |
-| P / Space | Pause / Resume |
-| R | Restart |
-| Swipe | Move (mobile) |
-
-**Scoring**
-
-- Normal food: 10 × level
-- Special food (★): 50 × level
-- Level up every 100 points (speed increases)
+| Game | Play | Description |
+|------|------|-------------|
+| 🐍 Snake | [Play](https://cloudyclawai.github.io/snake-game/snake.html) | Classic Snake with particle effects, golden bonus food, and progressive difficulty |
+| ✨ Neon Snake Rush | [Play](https://cloudyclawai.github.io/snake-game/neon-snake.html) | Turbocharged Snake with combo multipliers, ghost orb & overdrive powerups, neon glow visuals |
+| ⚔️ Tower Defense | [Play](https://cloudyclawai.github.io/snake-game/tower-defense.html) | 4 tower types, 5 enemy types, 15 waves, upgrade trees, special abilities, combo multiplier |
+| 🟡 Maze Muncher | [Play](https://cloudyclawai.github.io/snake-game/maze.html) | Pac-Man-style maze with 4 ghosts, power pellets, multiple levels, and mobile touch controls |
+| 🧱 Tetris | [Play](https://cloudyclawai.github.io/snake-game/tetris.html) | All 7 tetrominoes, SRS wall kicks, hold piece, ghost preview, level progression |
+| 🏓 Pong | [Play](https://cloudyclawai.github.io/snake-game/pong.html) | Two-player Pong with physics-based bouncing — W/S vs Arrow keys, first to 7 wins |
+| 🐦 Cloudy Bird | [Play](https://cloudyclawai.github.io/snake-game/flappy-bird.html) | Flappy Bird-style side-scroller — tap or press Space to flap, dodge the pipes |
+| ❌ Tic-Tac-Toe | [Play](https://cloudyclawai.github.io/snake-game/tic-tac-toe.html) | Classic 3×3 Tic-Tac-Toe for two players with animated win highlights |
 
 ---
 
-### 🟡 Maze Muncher
+## Tech Stack
 
-**[Play Maze Muncher →](https://cloudyclawai.github.io/snake-game/maze.html)**  
-Or open `maze.html` locally.
-
-A Pac-Man-inspired maze game with ghosts, power pellets, multiple levels, lives, and mobile touch support.
-
-**Controls**
-
-| Key | Action |
-|-----|--------|
-| Arrow keys / WASD | Move |
-| P / Escape | Pause |
-| Swipe / D-pad | Move (mobile) |
-
-**Features**
-
-- **21×22 maze** with dots, power pellets, and a ghost house
-- **4 ghost personalities** — direct chase, ambush, flanking, patrol AI
-- **Scatter / Chase cycle** — ghosts alternate corner patrol and hunting
-- **Power pellets** — turn ghosts blue; eat them for 200→400→800→1600 combo
-- **Progressive difficulty** — speed increases each level
-- **3 lives** with death animation; persistent high score via localStorage
-- **Tunnel wrap** at maze edges
-
-**Scoring**
-
-| Event | Points |
-|-------|--------|
-| Dot | 10 |
-| Power pellet | 50 |
-| 1st ghost | 200 |
-| 2nd ghost | 400 |
-| 3rd ghost | 800 |
-| 4th ghost | 1600 |
+- **Vanilla HTML5 / CSS3 / JavaScript** — zero dependencies, zero build steps
+- **Canvas 2D API** — all game rendering
+- **localStorage** — persistent high scores
+- **Web Share API** — native share-your-score on mobile (clipboard fallback on desktop)
+- **GitHub Pages** — hosting at `cloudyclawai.github.io/snake-game/`
 
 ---
 
-### 🧱 Tetris
+## How to Play Locally
 
-**[Play Tetris →](https://cloudyclawai.github.io/snake-game/tetris.html)**  
-Or open `tetris.html` locally.
+Clone the repo and open any file in a browser:
 
-Classic Tetris with all 7 standard pieces, SRS wall-kick rotation, ghost-piece preview, levels, and mobile touch support.
+```bash
+git clone https://github.com/CloudyClawAI/snake-game.git
+cd snake-game
+open index.html          # macOS
+xdg-open index.html      # Linux
+start index.html         # Windows
+```
 
-**Controls**
-
-| Key | Action |
-|-----|--------|
-| ← → | Move |
-| ↓ | Soft drop |
-| Space | Hard drop |
-| ↑ / X | Rotate right |
-| Z | Rotate left |
-| P | Pause |
-| Swipe / D-pad | Move (mobile) |
-
-**Scoring**
-
-| Lines cleared | Points (× level) |
-|---------------|-----------------|
-| 1 | 100 |
-| 2 | 300 |
-| 3 | 500 |
-| 4 (Tetris!) | 800 |
-
-- Soft drop: +1 per row; Hard drop: +2 per row
-- Level up every 10 lines (speed increases)
-- Persistent best score via localStorage
+No build step, no server required. Every game is a self-contained HTML file.
 
 ---
 
-### ⚔️ Tower Defense
+## How to Contribute
 
-**[Play Tower Defense →](https://cloudyclawai.github.io/snake-game/tower-defense.html)**  
-Or open `tower-defense.html` locally.
+Contributions are welcome! To add a new game or improve an existing one:
 
-A fully-featured tower defense game with 4 tower types, 5 enemy types, 15 waves, upgrade trees, special abilities, particles, and a combo system.
+1. **Fork** the repository and create a feature branch.
+2. **Build your game** as a single self-contained `<game-name>.html` file (no external dependencies).
+3. Check it against the [game quality gate](GAME_QUALITY_GATE.md) — all items must pass.
+4. **Add a card** for it in `index.html` (follow the existing card structure).
+5. **Add an entry** to the Games table in this README.
+6. Open a **pull request** with a short description and a screenshot or GIF.
 
-**Features**
+### Quality bar
 
-- **4 Tower types** — Arrow (fast single-target), Cannon (AoE splash), Magic (poison DoT + chain), Ice (slows enemies)
-- **2 upgrade tiers** per tower with stat boosts and special unlocks (multi-shot, chain lightning, blizzard aura)
-- **5 enemy types** — Grunt, Scout (fast), Knight (armored), Ogre (heavy), Boss
-- **15 waves** of increasing difficulty; boss enemies appear from wave 5
-- **2 special abilities** — 💥 Air Strike (targeted bomb, 120g) and ❄️ Blizzard (freeze all, 80g)
-- Kill **combo multiplier** for bonus score
-- **Persistent high score** via localStorage
-- **2× fast-forward** mode
-- Particle effects, health bars, range preview, screen shake
+Every game should have:
+- Responsive layout that works on mobile
+- Touch/swipe controls (where applicable)
+- A clear game-over screen with a restart button
+- A "Share your score" button after game over
+- SEO meta tags (`<title>`, `<meta name="description">`, OG tags, canonical URL)
 
-**Tower Quick Reference**
+See [`GAME_QUALITY_GATE.md`](GAME_QUALITY_GATE.md) for the full checklist.
 
-| Tower | Cost | Special |
-|-------|------|---------|
-| 🏹 Arrow  | 50g  | Fast fire; tier 3 = 3-shot barrage |
-| 💣 Cannon | 100g | Splash damage; tier 3 = cluster bomb |
-| ✨ Magic  | 75g  | Poison DoT; tier 3 = chain lightning |
-| ❄️ Ice    | 75g  | Slow; tier 3 = blizzard AoE pulse |
+---
+
+## License
+
+MIT — do whatever you like, attribution appreciated.

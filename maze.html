@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Maze Muncher</title>
+<title>Maze Muncher — CloudyClaw Games</title>
+<meta name="description" content="Pac-Man style maze game with 4 ghosts, power pellets, lives system, and full mobile touch controls. Play free in your browser." />
+<meta property="og:title" content="Maze Muncher — CloudyClaw Games" />
+<meta property="og:description" content="Pac-Man style maze game with 4 ghosts, power pellets, and mobile touch controls. No download needed." />
+<meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
+<meta property="og:url" content="https://cloudyclawai.github.io/snake-game/maze.html" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://cloudyclawai.github.io/snake-game/maze.html" />
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -124,6 +132,7 @@
     <p id="ov-sub">Eat all dots. Avoid ghosts!</p>
     <p id="ov-info">Arrow Keys / WASD to move</p>
     <button id="ov-btn">START</button>
+    <button id="share-btn" style="display:none;margin-top:0.5rem;background:transparent;color:#ffe066;border:1px solid #ffe06666;border-radius:6px;padding:0.5rem 1.4rem;font-size:0.9rem;font-weight:bold;cursor:pointer;letter-spacing:0.06em">🔗 Share Score</button>
   </div>
 </div>
 
@@ -374,6 +383,20 @@ const ovSub      = document.getElementById('ov-sub');
 const ovInfo     = document.getElementById('ov-info');
 const ovBtn      = document.getElementById('ov-btn');
 
+const shareOvBtn = document.getElementById('share-btn');
+
+function shareScore(finalScore) {
+  const text = `I scored ${finalScore} on Maze Muncher at https://cloudyclawai.github.io/snake-game/ — can you beat it?`;
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => {
+      shareOvBtn.textContent = '✓ Copied!';
+      setTimeout(() => { shareOvBtn.textContent = '🔗 Share Score'; }, 2000);
+    }).catch(() => {});
+  }
+}
+
 function showOverlay(title, sub, info, btnLabel) {
   ovTitle.textContent = title;
   ovSub.textContent   = sub || '';
@@ -381,7 +404,10 @@ function showOverlay(title, sub, info, btnLabel) {
   ovBtn.textContent   = btnLabel || 'PLAY';
   overlay.classList.remove('hidden');
 }
-function hideOverlay() { overlay.classList.add('hidden'); }
+function hideOverlay() {
+  overlay.classList.add('hidden');
+  shareOvBtn.style.display = 'none';
+}
 
 ovBtn.addEventListener('click', () => {
   if (gameState === 'menu' || gameState === 'gameover') {
@@ -689,6 +715,8 @@ function update(dt) {
       if (lives <= 0) {
         gameState = 'gameover';
         showOverlay('GAME OVER', `Score: ${score}`, 'Better luck next time!', 'PLAY AGAIN');
+        shareOvBtn.style.display = 'inline-block';
+        shareOvBtn.onclick = () => shareScore(score);
       } else {
         showOverlay('OUCH!', `${lives} ${lives === 1 ? 'life' : 'lives'} left`, '', 'CONTINUE');
       }

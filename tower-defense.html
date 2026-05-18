@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tower Defense</title>
+<title>Tower Defense — CloudyClaw Games</title>
+<meta name="description" content="4 tower types, 5 enemy types, 15 waves, upgrade trees, special abilities, and combo multiplier. Play Tower Defense free in your browser." />
+<meta property="og:title" content="Tower Defense — CloudyClaw Games" />
+<meta property="og:description" content="Strategy Tower Defense with 4 tower types, 15 waves, upgrade trees, and special abilities. No download needed." />
+<meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
+<meta property="og:url" content="https://cloudyclawai.github.io/snake-game/tower-defense.html" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://cloudyclawai.github.io/snake-game/tower-defense.html" />
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -120,8 +128,9 @@ canvas {
 </head>
 <body>
 <h1>⚔️ TOWER DEFENSE</h1>
-<div id="wrap">
+<div id="wrap" style="position:relative">
   <canvas id="c"></canvas>
+  <button id="share-btn" style="display:none;position:absolute;bottom:30%;left:50%;transform:translateX(-50%);background:transparent;color:#4afa9a;border:1px solid #4afa9a66;border-radius:6px;padding:0.5rem 1.6rem;font-size:0.95rem;font-weight:bold;cursor:pointer;letter-spacing:0.06em;z-index:10;pointer-events:all">🔗 Share Score</button>
   <div id="sb">
     <div id="wavebadge">Place towers, then start!</div>
     <div class="sb-title">Towers — click to select</div>
@@ -683,6 +692,7 @@ function update(){
       if(lives<=0){
         lives=0; gstate='gameover';
         if(score>hs){ hs=score; localStorage.setItem('td_hs',hs); }
+        showShareBtn(Math.round(score));
         updateSidebar(); return;
       }
     }
@@ -1126,7 +1136,24 @@ function loop(){
   else draw(); // final frame for overlays
 }
 
+function showShareBtn(finalScore) {
+  const btn = document.getElementById('share-btn');
+  btn.style.display = 'block';
+  btn.onclick = () => {
+    const text = `I scored ${finalScore} on Tower Defense at https://cloudyclawai.github.io/snake-game/ — can you beat it?`;
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.textContent = '🔗 Share Score'; }, 2000);
+      }).catch(() => {});
+    }
+  };
+}
+
 function start(){
+  document.getElementById('share-btn').style.display = 'none';
   reset();
   if(rafId) cancelAnimationFrame(rafId);
   rafId=requestAnimationFrame(loop);

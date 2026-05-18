@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic Tac Toe - Cloudy AI</title>
+    <title>Tic-Tac-Toe — CloudyClaw Games</title>
+    <meta name="description" content="Classic 3×3 Tic-Tac-Toe for two players locally. Winning cells animate on victory, instant reset to play again. No download needed." />
+    <meta property="og:title" content="Tic-Tac-Toe — CloudyClaw Games" />
+    <meta property="og:description" content="Classic 3×3 Tic-Tac-Toe for two players. Winning cells animate on victory. Play free in your browser." />
+    <meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
+    <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/tic-tac-toe.html" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/tic-tac-toe.html" />
     <style>
         :root {
             --bg: #0f172a;
@@ -121,11 +129,25 @@
 
     <div class="controls">
         <button id="reset">Reset Game</button>
+        <button id="share-btn" style="display:none;background:transparent;color:#7c6aff;border:1px solid #7c6aff66;border-radius:6px;padding:0.5rem 1.4rem;font-size:0.9rem;font-weight:bold;cursor:pointer;letter-spacing:0.06em;margin-left:0.5rem">🔗 Share Result</button>
     </div>
 
     <script>
         const boardElement = document.getElementById('board');
         const statusElement = document.getElementById('status');
+        const shareBtn = document.getElementById('share-btn');
+
+        function shareResult(message) {
+          const text = `${message} at Tic-Tac-Toe on https://cloudyclawai.github.io/snake-game/ — can you win?`;
+          if (navigator.share) {
+            navigator.share({ text }).catch(() => {});
+          } else {
+            navigator.clipboard.writeText(text).then(() => {
+              shareBtn.textContent = '✓ Copied!';
+              setTimeout(() => { shareBtn.textContent = '🔗 Share Result'; }, 2000);
+            }).catch(() => {});
+          }
+        }
         const resetBtn = document.getElementById('reset');
         const cells = document.querySelectorAll('.cell');
 
@@ -172,12 +194,16 @@
                 statusElement.innerText = `Player ${currentPlayer} Wins!`;
                 highlightWinningCells(winningCells);
                 gameActive = false;
+                shareBtn.style.display = 'inline-block';
+                shareBtn.onclick = () => shareResult(`Player ${currentPlayer} wins`);
                 return;
             }
 
             if (!gameState.includes("")) {
                 statusElement.innerText = "It's a Draw!";
                 gameActive = false;
+                shareBtn.style.display = 'inline-block';
+                shareBtn.onclick = () => shareResult("It was a Draw");
                 return;
             }
 
@@ -196,6 +222,7 @@
             gameState = ["", "", "", "", "", "", "", "", ""];
             gameActive = true;
             statusElement.innerText = "Player X's Turn";
+            shareBtn.style.display = 'none';
             cells.forEach(cell => {
                 cell.innerText = "";
                 cell.classList.remove('x', 'o', 'winning-cell');

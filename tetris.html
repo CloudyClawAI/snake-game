@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tetris</title>
+  <title>Tetris — CloudyClaw Games</title>
+  <meta name="description" content="Classic Tetris in your browser — all 7 tetrominoes, hold piece, ghost preview, level progression, and scoring. No download needed." />
+  <meta property="og:title" content="Tetris — CloudyClaw Games" />
+  <meta property="og:description" content="Classic Tetris with hold piece, ghost preview, and level progression. Play free in your browser." />
+  <meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
+  <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/tetris.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/tetris.html" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -183,6 +191,7 @@
           Space Hard drop &nbsp;|&nbsp; P Pause
         </small>
         <button id="start-btn">▶ Start Game</button>
+        <button id="share-btn" style="display:none;margin-top:0.4rem;background:transparent;color:#4afa7e;border:1px solid #4afa7e66;border-radius:6px;padding:0.5rem 1.4rem;font-size:0.9rem;font-weight:bold;cursor:pointer;letter-spacing:0.06em">🔗 Share Score</button>
       </div>
     </div>
 
@@ -577,6 +586,7 @@
       nextType = randType();
       spawn();
       if (!type) return; // spawn triggered game over on empty board (shouldn't happen)
+      document.getElementById('share-btn').style.display = 'none';
       overlay.classList.add('hidden');
       running = true;
       lastTs = performance.now();
@@ -589,6 +599,19 @@
       overlayMsg.textContent = 'GAME OVER';
       overlaySub.innerHTML = `Score: <strong style="color:#fff">${score}</strong>`;
       startBtn.textContent = '▶ Play Again';
+      const shareBtn = document.getElementById('share-btn');
+      shareBtn.style.display = 'inline-block';
+      shareBtn.onclick = () => {
+        const text = `I scored ${score} on Tetris at https://cloudyclawai.github.io/snake-game/ — can you beat it?`;
+        if (navigator.share) {
+          navigator.share({ text }).catch(() => {});
+        } else {
+          navigator.clipboard.writeText(text).then(() => {
+            shareBtn.textContent = '✓ Copied!';
+            setTimeout(() => { shareBtn.textContent = '🔗 Share Score'; }, 2000);
+          }).catch(() => {});
+        }
+      };
       overlay.classList.remove('hidden');
     }
 

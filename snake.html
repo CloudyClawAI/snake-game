@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Snake Game</title>
+  <title>Snake — CloudyClaw Games</title>
+  <meta name="description" content="Play Snake in your browser — particle effects, golden bonus food, progressive speed, and high score tracking. No download needed." />
+  <meta property="og:title" content="Snake — CloudyClaw Games" />
+  <meta property="og:description" content="Classic Snake with particle effects, golden bonus food, and progressive difficulty. Play free in your browser." />
+  <meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
+  <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/snake.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/snake.html" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -83,6 +91,23 @@
 
     #restart-btn:hover { background: #6fffa0; transform: scale(1.04); }
 
+    #share-btn {
+      pointer-events: all;
+      background: transparent;
+      color: #4afa7e;
+      border: 1px solid #4afa7e66;
+      border-radius: 6px;
+      padding: 0.5rem 1.4rem;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: background 0.15s, transform 0.1s;
+      display: none;
+    }
+
+    #share-btn:hover { background: #4afa7e22; transform: scale(1.04); }
+
     #controls {
       margin-top: 1rem;
       font-size: 0.85rem;
@@ -107,6 +132,7 @@
       <p id="overlay-msg">SNAKE</p>
       <small id="overlay-sub">Use arrow keys or WASD to move</small>
       <button id="restart-btn">▶ Start Game</button>
+      <button id="share-btn">🔗 Share Score</button>
     </div>
   </div>
 
@@ -129,6 +155,7 @@
     const overlayMsg = document.getElementById('overlay-msg');
     const overlaySub = document.getElementById('overlay-sub');
     const restartBtn = document.getElementById('restart-btn');
+    const shareBtn   = document.getElementById('share-btn');
 
     let snake, dir, nextDir, food, specialFood, score, hiScore, level, speed;
     let state = 'idle'; // idle | playing | paused | dead
@@ -281,7 +308,21 @@
       overlayMsg.textContent = 'GAME OVER';
       overlaySub.textContent = `Score: ${score}`;
       restartBtn.textContent = '↺ Play Again';
+      shareBtn.style.display = 'inline-block';
+      shareBtn.onclick = () => shareScore('Snake', score);
       overlay.classList.remove('hidden');
+    }
+
+    function shareScore(gameName, finalScore) {
+      const text = `I scored ${finalScore} on ${gameName} at https://cloudyclawai.github.io/snake-game/ — can you beat it?`;
+      if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => {
+          shareBtn.textContent = '✓ Copied!';
+          setTimeout(() => { shareBtn.textContent = '🔗 Share Score'; }, 2000);
+        }).catch(() => {});
+      }
     }
 
     /* ── Draw ─────────────────────────────────────────── */
@@ -455,6 +496,7 @@
     function startGame() {
       init();
       state = 'playing';
+      shareBtn.style.display = 'none';
       overlay.classList.add('hidden');
     }
 

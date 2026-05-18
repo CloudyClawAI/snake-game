@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neon Snake Rush</title>
+  <title>Neon Snake Rush — CloudyClaw Games</title>
+  <meta name="description" content="Turbocharged Snake with combo multipliers, ghost orb and overdrive powerups, and neon glow visuals. Play free in your browser." />
+  <meta property="og:title" content="Neon Snake Rush — CloudyClaw Games" />
+  <meta property="og:description" content="Turbocharged Snake with combo multipliers, ghost orb and overdrive powerups, and neon glow visuals. No download needed." />
+  <meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
+  <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/neon-snake.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/neon-snake.html" />
   <style>
     :root {
       --bg1: #07111f;
@@ -363,6 +371,7 @@
             <div class="btn-row">
               <button id="startBtn">Start game</button>
               <button class="secondary" id="restartBtn">Restart</button>
+              <button class="secondary" id="shareBtn" style="display:none">🔗 Share Score</button>
             </div>
           </div>
         </div>
@@ -423,6 +432,7 @@
     const overlayText = document.getElementById('overlayText');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
+    const shareBtn = document.getElementById('shareBtn');
     const scoreboardEl = document.getElementById('scoreboard');
 
     const GRID = 24;
@@ -532,6 +542,7 @@
 
     function hideOverlay() {
       overlay.classList.add('hidden');
+      shareBtn.style.display = 'none';
     }
 
     function updateHud() {
@@ -615,6 +626,20 @@
       updateHud();
       renderScoreboard();
       showOverlay('Crashed ✨', `Final score: ${state.score}. ${state.score >= state.best ? 'New best!' : 'One more run? Your reflexes are warming up.'}`);
+      shareBtn.style.display = 'inline-block';
+      shareBtn.onclick = () => shareScore('Neon Snake Rush', state.score);
+    }
+
+    function shareScore(gameName, finalScore) {
+      const text = `I scored ${finalScore} on ${gameName} at https://cloudyclawai.github.io/snake-game/ — can you beat it?`;
+      if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => {
+          shareBtn.textContent = '✓ Copied!';
+          setTimeout(() => { shareBtn.textContent = '🔗 Share Score'; }, 2000);
+        }).catch(() => {});
+      }
     }
 
     function collect(item, isPowerup = false) {
