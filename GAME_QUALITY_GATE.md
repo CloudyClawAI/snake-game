@@ -44,8 +44,20 @@ All games must pass this checklist before a task is marked **done** or the game 
 | Tower Defense | tower-defense.html | ✅ | ✅ | ✅ | ✅ | — | |
 | Flappy Bird | flappy-bird.html | ✅ | ✅ | ✅ | N/A | — | |
 | Pong | pong.html | ✅ | ✅ | ✅ | ✅ | — | |
-| Neon Snake | neon-snake.html | ✅ | ✅ | ✅ | N/A | — | |
+| Neon Snake Rush | neon-snake.html | ✅ | ✅ | ✅ | N/A | — | |
 | Tic-Tac-Toe | tic-tac-toe.html | ✅ | ✅ | ✅ | ✅ | — | |
+| 2048 | 2048.html | ✅ | ✅ | ✅ | ✅ | ✅ | Swipe gestures; keep-going after 2048 |
+| Minesweeper | minesweeper.html | ✅ | ✅ | ✅ | ✅ | ✅ | 3 difficulties; first click safe |
+| Connect Four | connect-four.html | ✅ | ✅ | ✅ | ✅ | ✅ | Minimax AI depth-5; 2P local mode |
+| Memory Match | memory-match.html | ✅ | ✅ | ✅ | ✅ | ✅ | 3 difficulties; 3D flip animation |
+| Space Invaders | space-invaders.html | ✅ | ✅ | ✅ | ✅ | ✅ | Destructible bunkers; UFO; waves |
+| Breakout | breakout.html | ✅ | ✅ | ✅ | ✅ | ✅ | 4 powerups; 6 level patterns |
+| Typing Speed Test | typing-speed.html | ✅ | ✅ | ✅ | N/A | ✅ | 15 difficulty tiers; 30/60/120s modes |
+| Sudoku | sudoku.html | ✅ | ✅ | N/A | ✅ | ✅ | Generated puzzles; pencil notes; hints |
+| Word Search | word-search.html | ✅ | ✅ | N/A | ✅ | ✅ | 6 categories; 8 directions; drag select |
+| Whack-a-Mole | whack-a-mole.html | ✅ | ✅ | ✅ | N/A | ✅ | 60s timer; golden moles; speed ramp |
+| Asteroids | asteroids.html | ✅ | ✅ | ✅ | N/A | ✅ | Hyperspace; particles; mobile buttons |
+| Bubble Shooter | bubble-shooter.html | ✅ | ✅ | ✅ | N/A | ✅ | Hex grid; combos; trajectory preview |
 
 _Touch column "—" means no on-screen controls present; keyboard-only game._
 

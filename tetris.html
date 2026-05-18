@@ -4,14 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tetris — CloudyClaw Games</title>
-  <meta name="description" content="Classic Tetris in your browser — all 7 tetrominoes, hold piece, ghost preview, level progression, and scoring. No download needed." />
-  <meta property="og:title" content="Tetris — CloudyClaw Games" />
-  <meta property="og:description" content="Classic Tetris with hold piece, ghost preview, and level progression. Play free in your browser." />
-  <meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
-  <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/tetris.html" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/tetris.html" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -20,11 +15,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       min-height: 100vh;
       font-family: 'Segoe UI', sans-serif;
       color: #e0e0e0;
-      padding: 1rem;
+      padding: 64px 0.5rem 2rem;
+      overflow-x: hidden;
     }
 
     h1 {
@@ -175,9 +171,23 @@
       .panel-box { padding: 0.5rem 0.7rem; }
       .panel-box .value { font-size: 1.1rem; }
     }
+
+    /* Stack side panel below board on phones narrower than board+panel */
+    @media (max-width: 420px) {
+      #game-wrapper { flex-direction: column; align-items: center; }
+      #side-panel {
+        flex-direction: row;
+        flex-wrap: wrap;
+        min-width: unset;
+        width: 300px;
+        gap: 0.5rem;
+      }
+      .panel-box { flex: 1; min-width: 70px; }
+    }
   </style>
 </head>
 <body>
+  <a class="back-link" href="index.html">← Hub</a>
   <h1>TETRIS</h1>
 
   <div id="game-wrapper">
@@ -191,7 +201,6 @@
           Space Hard drop &nbsp;|&nbsp; P Pause
         </small>
         <button id="start-btn">▶ Start Game</button>
-        <button id="share-btn" style="display:none;margin-top:0.4rem;background:transparent;color:#4afa7e;border:1px solid #4afa7e66;border-radius:6px;padding:0.5rem 1.4rem;font-size:0.9rem;font-weight:bold;cursor:pointer;letter-spacing:0.06em">🔗 Share Score</button>
       </div>
     </div>
 
@@ -223,6 +232,13 @@
     ← → Move &nbsp;|&nbsp; ↓ Soft drop &nbsp;|&nbsp; Space Hard drop<br>
     ↑ / X Rotate right &nbsp;|&nbsp; Z Rotate left &nbsp;|&nbsp; P Pause
   </div>
+
+  <div class="lb-panel" style="margin-top:0.8rem;width:min(300px,90vw)">
+    <h3>Top Scores</h3>
+    <div id="lb-tetris"></div>
+  </div>
+
+  <script src="leaderboard.js"></script>
 
   <div id="touch-controls">
     <div class="touch-row">
@@ -586,7 +602,6 @@
       nextType = randType();
       spawn();
       if (!type) return; // spawn triggered game over on empty board (shouldn't happen)
-      document.getElementById('share-btn').style.display = 'none';
       overlay.classList.add('hidden');
       running = true;
       lastTs = performance.now();
@@ -599,20 +614,11 @@
       overlayMsg.textContent = 'GAME OVER';
       overlaySub.innerHTML = `Score: <strong style="color:#fff">${score}</strong>`;
       startBtn.textContent = '▶ Play Again';
-      const shareBtn = document.getElementById('share-btn');
-      shareBtn.style.display = 'inline-block';
-      shareBtn.onclick = () => {
-        const text = `I scored ${score} on Tetris at https://cloudyclawai.github.io/snake-game/ — can you beat it?`;
-        if (navigator.share) {
-          navigator.share({ text }).catch(() => {});
-        } else {
-          navigator.clipboard.writeText(text).then(() => {
-            shareBtn.textContent = '✓ Copied!';
-            setTimeout(() => { shareBtn.textContent = '🔗 Share Score'; }, 2000);
-          }).catch(() => {});
-        }
-      };
       overlay.classList.remove('hidden');
+      if (typeof Leaderboard !== 'undefined') {
+        Leaderboard.saveScore('tetris', score);
+        Leaderboard.renderWidget('tetris', 'lb-tetris');
+      }
     }
 
     function togglePause() {
@@ -695,6 +701,7 @@
     // ── Initial render ─────────────────────────────────────────────
     drawBoard();
     drawNext();
+    if (typeof Leaderboard !== 'undefined') Leaderboard.renderWidget('tetris', 'lb-tetris');
   }());
   </script>
 </body>

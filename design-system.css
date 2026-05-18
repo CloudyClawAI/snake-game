@@ -1,0 +1,209 @@
+/* CloudyClaw Games — Shared Design System */
+
+/* ── Tokens ─────────────────────────────────────────── */
+:root {
+  --bg:            #0a0a14;
+  --surface:       #12121f;
+  --surface-2:     #1a1a2e;
+  --border:        rgba(255,255,255,0.08);
+  --border-hi:     rgba(255,255,255,0.18);
+  --text:          #e0e0e0;
+  --text-muted:    #888;
+  --accent:        #7c6aff;
+  --accent-2:      #ff6a9b;
+  --accent-glow:   rgba(124,106,255,0.25);
+  --gold:          #f5c542;
+  --radius-card:   14px;
+  --radius-sm:     8px;
+  --font:          'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:     'Courier New', Courier, monospace;
+  --shadow-card:   0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ── Reset ──────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Base ───────────────────────────────────────────── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Back link (top of each game page) ─────────────── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  transition: color 0.18s, border-color 0.18s;
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
+}
+.back-link:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+/* ── Game page header ───────────────────────────────── */
+.game-page-header {
+  text-align: center;
+  padding: 3.5rem 1rem 1.5rem;
+}
+.game-page-header h1 {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+.game-page-header p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin-top: 0.3rem;
+}
+
+/* ── Leaderboard widget ─────────────────────────────── */
+.lb-panel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1rem 1.2rem;
+  min-width: 180px;
+}
+
+.lb-panel h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.lb-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.lb-row.lb-gold { background: rgba(245,197,66,0.1); }
+
+.lb-rank {
+  width: 22px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.lb-score {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.lb-empty {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ── Hub leaderboard summary ────────────────────────── */
+.lb-hub-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.lb-hub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: background 0.15s;
+  text-decoration: none;
+}
+.lb-hub-row:last-child { border-bottom: none; }
+.lb-hub-row:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+.lb-hub-row.lb-hub-played .lb-hub-score { color: var(--accent); font-weight: 700; }
+
+.lb-hub-name { font-size: 0.88rem; }
+.lb-hub-score { font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+
+/* ── Touch D-pad ────────────────────────────────────── */
+.dpad {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 100;
+  pointer-events: none;
+}
+.dpad-grid {
+  display: grid;
+  grid-template-columns: 52px 52px 52px;
+  grid-template-rows: 52px 52px 52px;
+  gap: 4px;
+  pointer-events: auto;
+}
+.dpad-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.dpad-btn:active { background: rgba(124,106,255,0.4); border-color: var(--accent); }
+.dpad-empty { visibility: hidden; pointer-events: none; }
+
+@media (pointer: coarse), (max-width: 600px) {
+  .dpad { display: flex; }
+}
+
+/* ── Mobile-responsive canvas wrapper ──────────────── */
+.canvas-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+}
+.canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── Utility ────────────────────────────────────────── */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}

@@ -4,14 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Snake — CloudyClaw Games</title>
-  <meta name="description" content="Play Snake in your browser — particle effects, golden bonus food, progressive speed, and high score tracking. No download needed." />
-  <meta property="og:title" content="Snake — CloudyClaw Games" />
-  <meta property="og:description" content="Classic Snake with particle effects, golden bonus food, and progressive difficulty. Play free in your browser." />
-  <meta property="og:image" content="https://cloudyclawai.github.io/snake-game/og-preview.png" />
-  <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/snake.html" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/snake.html" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -20,11 +15,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       min-height: 100vh;
       font-family: 'Segoe UI', sans-serif;
       color: #e0e0e0;
+      padding-top: 56px;
+      padding-bottom: 2rem;
     }
+    canvas { max-width: 100vw; }
 
     h1 {
       font-size: 2.4rem;
@@ -91,23 +89,6 @@
 
     #restart-btn:hover { background: #6fffa0; transform: scale(1.04); }
 
-    #share-btn {
-      pointer-events: all;
-      background: transparent;
-      color: #4afa7e;
-      border: 1px solid #4afa7e66;
-      border-radius: 6px;
-      padding: 0.5rem 1.4rem;
-      font-size: 0.9rem;
-      font-weight: bold;
-      cursor: pointer;
-      letter-spacing: 0.06em;
-      transition: background 0.15s, transform 0.1s;
-      display: none;
-    }
-
-    #share-btn:hover { background: #4afa7e22; transform: scale(1.04); }
-
     #controls {
       margin-top: 1rem;
       font-size: 0.85rem;
@@ -118,6 +99,7 @@
   </style>
 </head>
 <body>
+  <a class="back-link" href="index.html">← Hub</a>
   <h1>SNAKE</h1>
 
   <div id="info">
@@ -132,14 +114,21 @@
       <p id="overlay-msg">SNAKE</p>
       <small id="overlay-sub">Use arrow keys or WASD to move</small>
       <button id="restart-btn">▶ Start Game</button>
-      <button id="share-btn">🔗 Share Score</button>
     </div>
   </div>
 
   <div id="controls">
-    Arrow keys / WASD &nbsp;|&nbsp; P to pause &nbsp;|&nbsp; R to restart
+    Arrow keys / WASD &nbsp;|&nbsp; P to pause &nbsp;|&nbsp; R to restart &nbsp;|&nbsp; Swipe on mobile
+  </div>
+  <div class="lb-panel" style="margin-top:1rem;width:min(400px,90vw)">
+    <h3>Top Scores</h3>
+    <div id="lb-widget"></div>
   </div>
 
+  <script src="leaderboard.js"></script>
+  <script>
+    const GAME_KEY = 'snake';
+  </script>
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
@@ -155,7 +144,6 @@
     const overlayMsg = document.getElementById('overlay-msg');
     const overlaySub = document.getElementById('overlay-sub');
     const restartBtn = document.getElementById('restart-btn');
-    const shareBtn   = document.getElementById('share-btn');
 
     let snake, dir, nextDir, food, specialFood, score, hiScore, level, speed;
     let state = 'idle'; // idle | playing | paused | dead
@@ -308,20 +296,10 @@
       overlayMsg.textContent = 'GAME OVER';
       overlaySub.textContent = `Score: ${score}`;
       restartBtn.textContent = '↺ Play Again';
-      shareBtn.style.display = 'inline-block';
-      shareBtn.onclick = () => shareScore('Snake', score);
       overlay.classList.remove('hidden');
-    }
-
-    function shareScore(gameName, finalScore) {
-      const text = `I scored ${finalScore} on ${gameName} at https://cloudyclawai.github.io/snake-game/ — can you beat it?`;
-      if (navigator.share) {
-        navigator.share({ text }).catch(() => {});
-      } else {
-        navigator.clipboard.writeText(text).then(() => {
-          shareBtn.textContent = '✓ Copied!';
-          setTimeout(() => { shareBtn.textContent = '🔗 Share Score'; }, 2000);
-        }).catch(() => {});
+      if (typeof Leaderboard !== 'undefined') {
+        Leaderboard.saveScore(GAME_KEY, score);
+        Leaderboard.renderWidget(GAME_KEY, 'lb-widget');
       }
     }
 
@@ -496,11 +474,15 @@
     function startGame() {
       init();
       state = 'playing';
-      shareBtn.style.display = 'none';
       overlay.classList.add('hidden');
     }
 
     restartBtn.addEventListener('click', startGame);
+
+    // Render leaderboard on page load
+    if (typeof Leaderboard !== 'undefined') {
+      Leaderboard.renderWidget(GAME_KEY, 'lb-widget');
+    }
 
     // Kick off the render loop immediately so idle screen renders
     lastTs = performance.now();
