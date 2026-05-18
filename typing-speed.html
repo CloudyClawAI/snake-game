@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typing Speed Test — CloudyClaw Games</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --border: #ffffff14;
+      --text: #e0e0e0;
+      --muted: #888;
+      --accent: #7c6aff;
+      --accent-glow: #7c6aff44;
+      --correct: #4ade80;
+      --incorrect: #f87171;
+      --correct-bg: #4ade8018;
+      --incorrect-bg: #f8717118;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+    .logo span { color: var(--accent); }
+
+    .best-score {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .best-score strong { color: var(--accent); }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem 2rem;
+      gap: 1.2rem;
+      max-width: 860px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 0 30px var(--accent-glow);
+      letter-spacing: 0.05em;
+    }
+
+    /* Controls bar */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+    }
+
+    .control-group label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    .radio-group input[type="radio"] { display: none; }
+
+    .radio-group label {
+      cursor: pointer;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      border: 1px solid transparent;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .radio-group input[type="radio"]:checked + label {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .radio-group label:hover { color: var(--text); }
+
+    select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--accent); }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 1.2rem;
+      text-align: center;
+      min-width: 90px;
+      flex: 1;
+      max-width: 150px;
+    }
+
+    .stat-val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Text display */
+    .text-display {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem;
+      width: 100%;
+      min-height: 110px;
+      font-size: clamp(1rem, 2.5vw, 1.15rem);
+      line-height: 1.9;
+      letter-spacing: 0.01em;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .word {
+      display: inline-block;
+      margin-right: 0.3em;
+      padding: 0 0.05em;
+      border-radius: 3px;
+      transition: background 0.1s;
+    }
+
+    .word.current {
+      background: var(--accent-glow);
+      outline: 1px solid var(--accent);
+      border-radius: 3px;
+    }
+
+    .char {
+      display: inline;
+    }
+
+    .char.correct { color: var(--correct); }
+    .char.incorrect { color: var(--incorrect); background: var(--incorrect-bg); border-radius: 2px; }
+    .char.untyped { color: var(--muted); }
+    .char.current-cursor {
+      border-left: 2px solid var(--accent);
+      margin-left: -1px;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { border-color: var(--accent); }
+      50% { border-color: transparent; }
+    }
+
+    /* Input area */
+    .input-area {
+      width: 100%;
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .typing-input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      min-height: 52px;
+    }
+
+    .typing-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .typing-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.3rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #9b8fff; box-shadow: 0 4px 16px var(--accent-glow); }
+    .btn:active { transform: scale(0.97); }
+    .btn.secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn.secondary:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+
+    .btn-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0a0a14cc;
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .overlay.active { display: flex; }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      padding: 2rem 2.5rem;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 60px var(--accent-glow);
+    }
+
+    .result-card h2 {
+      font-size: 1.6rem;
+      color: #fff;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .result-stat {
+      background: #ffffff08;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 0.8rem;
+    }
+
+    .result-stat .val {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .result-stat .lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .result-stat.best .val { color: #fbbf24; }
+
+    .new-best {
+      font-size: 0.85rem;
+      color: #fbbf24;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    /* Countdown */
+    .countdown-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0a0a14bb;
+      z-index: 99;
+      align-items: center;
+      justify-content: center;
+    }
+    .countdown-overlay.active { display: flex; }
+    .countdown-num {
+      font-size: 8rem;
+      font-weight: 900;
+      color: var(--accent);
+      text-shadow: 0 0 60px var(--accent-glow);
+      animation: pop 0.9s ease;
+    }
+    @keyframes pop {
+      0% { transform: scale(1.6); opacity: 0; }
+      40% { transform: scale(1); opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0.1; }
+    }
+
+    /* Timer bar */
+    .timer-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .timer-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.25s linear, background 0.5s;
+      width: 100%;
+    }
+    .timer-bar.danger { background: var(--incorrect); }
+
+    @media (max-width: 500px) {
+      .result-card { padding: 1.5rem 1.2rem; }
+      .result-grid { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+      .result-stat .val { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="back-link" href="index.html">&#8592; Hub</a>
+  <div class="logo">Cloudy<span>Claw</span></div>
+  <div class="best-score">Best: <strong id="bestDisplay">—</strong> WPM</div>
+</header>
+
+<main>
+  <h1>Typing Speed Test</h1>
+
+  <div class="controls">
+    <div class="control-group">
+      <span style="font-size:0.8rem;color:var(--muted);margin-right:0.2rem">Duration:</span>
+      <div class="radio-group">
+        <input type="radio" name="duration" id="d30" value="30">
+        <label for="d30">30s</label>
+        <input type="radio" name="duration" id="d60" value="60" checked>
+        <label for="d60">60s</label>
+        <input type="radio" name="duration" id="d120" value="120">
+        <label for="d120">120s</label>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="diffSelect">Level:</label>
+      <select id="diffSelect">
+        <option value="0">1 – Very Easy</option>
+        <option value="1">2 – Easy</option>
+        <option value="2">3 – Easy+</option>
+        <option value="3">4 – Normal</option>
+        <option value="4">5 – Normal+</option>
+        <option value="5">6 – Medium</option>
+        <option value="6">7 – Medium+</option>
+        <option value="7">8 – Hard</option>
+        <option value="8">9 – Hard+</option>
+        <option value="9">10 – Expert</option>
+        <option value="10">11 – Expert+</option>
+        <option value="11">12 – Elite</option>
+        <option value="12">13 – Elite+</option>
+        <option value="13">14 – Master</option>
+        <option value="14">15 – Legend</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-val" id="timerDisplay">60</div>
+      <div class="stat-label">Seconds</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="wpmDisplay">0</div>
+      <div class="stat-label">WPM</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="accDisplay">100%</div>
+      <div class="stat-label">Accuracy</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="wordDisplay">0</div>
+      <div class="stat-label">Words</div>
+    </div>
+  </div>
+
+  <div class="timer-bar-wrap">
+    <div class="timer-bar" id="timerBar"></div>
+  </div>
+
+  <div class="text-display" id="textDisplay" aria-live="polite"></div>
+
+  <div class="input-area">
+    <input
+      class="typing-input"
+      id="typingInput"
+      type="text"
+      placeholder="Click here and start typing…"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+    />
+    <button class="btn secondary" id="newTextBtn">New Text</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" id="startBtn">Start Test</button>
+  </div>
+</main>
+
+<!-- Result overlay -->
+<div class="overlay" id="resultOverlay">
+  <div class="result-card">
+    <h2>Test Complete!</h2>
+    <div id="newBestMsg" class="new-best" style="display:none">New Best Score!</div>
+    <div class="result-grid">
+      <div class="result-stat">
+        <div class="val" id="resWpm">0</div>
+        <div class="lbl">WPM</div>
+      </div>
+      <div class="result-stat">
+        <div class="val" id="resAcc">0%</div>
+        <div class="lbl">Accuracy</div>
+      </div>
+      <div class="result-stat">
+        <div class="val" id="resCorrect">0</div>
+        <div class="lbl">Correct Words</div>
+      </div>
+      <div class="result-stat">
+        <div class="val" id="resErrors">0</div>
+        <div class="lbl">Errors</div>
+      </div>
+      <div class="result-stat best" style="grid-column:1/-1">
+        <div class="val" id="resBest">0</div>
+        <div class="lbl">Best WPM (all time)</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="tryAgainBtn">Try Again</button>
+      <button class="btn secondary" id="newTextBtn2">New Text</button>
+    </div>
+  </div>
+</div>
+
+<!-- Countdown overlay -->
+<div class="countdown-overlay" id="countdownOverlay">
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<script>
+// ─── WORD BANKS ────────────────────────────────────────────────────────────────
+// 15 difficulty tiers, each with a word list
+const LEVELS = [
+  // 0 – Very Easy: 2-3 letter simple words
+  { name:"Very Easy", words:["the","cat","dog","run","sit","big","red","hot","cold","and","but","can","did","got","had","has","him","his","how","its","let","not","now","put","say","see","she","too","use","was","who","you","our","day","get","old","two","way","new","her","from","will","time","one","just","all","any","may","out","up","so","go","do","am","an","at","be","by","in","is","it","no","of","on","or","to","us","we"] },
+  // 1 – Easy: 3-4 letter common words
+  { name:"Easy", words:["this","that","with","have","from","they","what","when","your","more","been","like","just","know","take","into","year","made","over","also","back","come","good","here","much","some","then","them","well","only","even","most","tell","same","help","move","look","live","work","play","keep","hand","part","turn","door","form","next","each","face","real","left","true","best","both","read","open","away","line","kind","gave","hard","hold","mean","name","once","rest","sell","send","show","side","sign","soon","sure","town","very","want","ways","wide","word","case","make","such","give","last","long","most","need","walk","feel","seem","talk"] },
+  // 2 – Easy+: mix 3-5 letter words
+  { name:"Easy+", words:["about","other","there","after","first","could","these","their","would","which","those","being","under","every","might","while","place","right","still","think","where","great","often","never","going","small","found","world","again","three","state","large","later","point","early","start","until","water","light","night","given","green","group","heart","house","human","image","least","local","money","music","north","paper","phone","power","price","radio","raise","reach","ready","river","round","serve","share","south","speak","stand","store","study","table","teach","thank","think","three","today","total","trade","train","treat","trial","trust","truth","union","until","upper","value","video","voice","visit","watch","while","white","whole","whose","young","black","brown","clear","clean","cross","drive","early","earth","eight","enjoy","enter","event","every","exact","exist","extra"] },
+  // 3 – Normal: common 5-6 letter words
+  { name:"Normal", words:["people","around","before","during","number","little","always","become","change","choose","course","create","detail","differ","energy","enough","family","follow","friend","future","happen","health","impact","indeed","inside","issues","method","moment","mother","moving","myself","nature","notice","office","opened","origin","parent","passed","permit","places","please","policy","pretty","public","rather","reason","record","regard","remain","return","school","should","simple","single","skills","social","source","stayed","street","strong","system","taking","things","though","toward","travel","trying","turned","unique","unless","useful","values","wanted","within","wonder","worked","writer","across","almost","amount","appear","attend","behind","better","brings","called","cannot","cities","coming","common","direct","editor","effort","either","engage","entire","expect","famous","father","follow","forces","forget","global","ground","growth","happen","having","higher","itself","joined","launch","leader","likely","listen","living","losing","loving","making","manage","matter","mental","middle","modern","months","moving","normal","noting","object","others","output"] },
+  // 4 – Normal+: 5-7 letter words with variety
+  { name:"Normal+", words:["already","another","because","between","brought","certain","channel","chapter","clearly","climate","company","compare","complex","concern","connect","control","country","created","culture","current","decided","deliver","despite","develop","digital","disease","discuss","divided","economy","edition","element","enjoyed","explain","exposed","express","forward","freedom","general","getting","grammar","growing","history","however","imagine","improve","include","initial","instead","involve","journey","keeping","keyword","knowing","largely","leading","learned","leaving","limited","looking","managed","meaning","measure","meeting","mention","message","methods","million","missing","morning","mothers","mounted","natural","nothing","numbers","opinion","options","outside","overall","perfect","picture","playing","popular","problem","program","project","protect","provide","pushing","quality","quickly","reached","reading","realize","receive","remains","results","running","several","society","someone","special","started","station","stopped","storage","student","subject","support","telling","thought","through","tonight","totally","turning","typical","usually","variety","version","waiting","walking","wanting","warming","welcome","western","whether","willing","without","working","writing","written","younger","Zealand"] },
+  // 5 – Medium: 6-8 letter words
+  { name:"Medium", words:["absolute","accuracy","achieved","actually","addition","adequate","adjusted","admitted","advanced","affected","agencies","analysis","apparent","approach","argument","articles","assigned","assuming","attached","attempts","attitude","audience","baseline","behavior","building","business","calendar","capacity","captured","carrying","category","changing","children","choosing","citizens","comments","complete","concerns","congress","consider","constant","continue","contrast","creating","critical","cultural","database","december","decision","defining","describe","designed","detailed","diameter","directly","discover","distance","district","document","dominant","download","duration","economic","educated","election","elements","emerging","emphasis","employed","engaging","enormous","equipped","estimate","evaluate","evidence","examples","exchange","exercise","existing","expanded","expected","explains","exposure","external","facility","featured","feelings","financial","flexible","followed","function","generate","happened","historic","hospital","identify","improve","included","increase","indicate","industry","informed","instance","internal","internet","involved","isolated","launched","learning"] },
+  // 6 – Medium+: 7-9 letter words
+  { name:"Medium+", words:["absolutely","accessible","accidents","according","accurately","achieved","acquiring","addressed","admission","adventure","affecting","afternoon","algorithm","allocated","alongside","ambitious","Americans","analyzing","announced","answering","apparatus","appearing","appointed","arbitrary","architect","arguments","assembled","assigning","assistant","attacking","available","background","balanced","beginning","believing","brilliant","calculating","campaigns","candidate","capturing","certainly","challenge","character","chemistry","comparing","completed","condensed","confident","connecting","continued","convinced","correctly","countries","criticism","dangerous","decreased","delivered","depending","describes","different","dimension","direction","discussed","disorder","displayed","distinct","diversity","documents","emergency","employees","encounter","exercises","exhibited","exploring","expressed","extension","extremely","financial","formatted","generated","graduated","happening","highlight","hospitals","identical","important","indicated","industry","influence","inherited","integrate","investing","knowledge","launching","literally","locations","machinery","marketing","measuring","mechanism","mentioning","molecular","necessary","newspaper","observing","operating","organized","otherwise","perfectly","political","precision"] },
+  // 7 – Hard: longer words, less common
+  { name:"Hard", words:["accommodation","achievement","acknowledgment","administered","advertisement","approximately","architecture","authorization","availability","breakthrough","circumstances","collaboration","communication","comprehensive","concentration","configuration","congratulations","consideration","contributions","controversial","correspondent","demonstration","determination","developmental","differentiate","disadvantages","distinguished","documentation","effectiveness","electromagnetic","encouragement","entertainment","environmental","establishment","experimentation","fundamentally","generalization","implementation","inappropriate","incorporation","independently","infrastructure","initialization","internationally","justification","knowledgeable","manufactured","mathematician","mechanisms","methodology","misunderstanding","modification","multiplication","nevertheless","opportunities","organizational","participating","philosophical","possibilities","predominantly","prioritization","programming","qualification","recommendations","relationships","responsibilities","significantly","sophisticated","specifications","standardization","straightforward","strengthening","substantiated","transformation","underestimate","understanding","unfortunately","universities","unquestionably","verification","visualization","vulnerability","simultaneously","characteristics","circumstances","compartmentalize","comprehensive","consequences","considerably","constitutional","counterintuitive","customization"] },
+  // 8 – Hard+: complex vocabulary
+  { name:"Hard+", words:["abbreviation","abnormalities","abolishment","absenteeism","abstraction","accomplishment","accountability","accumulation","acknowledging","adaptability","administrative","advantageously","affectionately","aggressiveness","alternatively","ambiguously","amelioration","amplification","approximation","arbitrarily","architecturally","argumentative","artificially","assertiveness","association","astonishment","authoritative","automatically","categorization","centralization","characterization","chronologically","circumscription","clarification","classification","collaboration","collectivization","commercialization","compulsively","conceptualization","conciseness","conclusively","confrontation","consecutively","consolidation","constitutionally","constructively","contextualization","conventionally","correspondingly","deliberatively","demilitarization","democratically","differentiated","diplomatically","discrimination","disproportionate","dramatization","economization","elaborately","electromagnetically","emancipation","approximately","enthusiastically","equalization","exemplification","expansively","experimentally","extraordinarily","facilitation","familiarization","fragmentation","fundamentalism","generalization","globalization","characterization","hypothetically","identification","illumination","impersonation","implementation","improvisation","incompatibility","inconsistency","indeterminate","initialization","intellectually","internationalization"] },
+  // 9 – Expert: technical/advanced vocabulary
+  { name:"Expert", words:["abstraction","accessibility","accountability","accreditation","acknowledgment","actualization","administration","agglomeration","algorithmically","amelioration","amplification","anthropomorphic","approximation","arbitration","archaeology","argumentation","articulation","authentication","authorization","biomechanics","biotechnology","bureaucratization","capitalization","cardiovascular","categorization","centralization","certification","characterization","circumnavigation","circumscription","classification","collaboration","commodification","comprehension","concatenation","conceptualization","configurability","conglomeration","contextualization","counterbalance","crystallography","decentralization","decomposition","decontextualize","defragmentation","deliberation","democratization","desynchronization","determination","differentiation","disambiguation","disassociation","documentation","electromagnetic","encapsulation","entrepreneurship","epistemological","equilibration","exemplification","experimentation","extrapolation","familiarization","fragmentation","functionalization","generalization","globalization","heterogeneous","hierarchical","hybridization","hypothetical","identification","implementation","incomprehensible","inconsequential","infrastructure","initialization","instrumentalization","interoperability","introspection","justification","legitimization","linearization","manifestation","mathematically","mechanization","meticulousness","microbiology","miniaturization","modernization"] },
+  // 10 – Expert+: rare and technical words
+  { name:"Expert+", words:["absentmindedness","abstemiousness","absurdification","accommodation","accomplishments","accountability","accreditations","acknowledgements","acquaintanceship","actualization","administrations","agglomeration","agglutination","aliteralization","allegorization","amelioration","anthropomorphism","antidisestablishment","appropriateness","approximately","arbitrariness","archaeologically","argumentativeness","articulations","authentication","authoritatively","bacteriological","bioengineering","biotechnological","bureaucratization","cardiopulmonary","categorizations","centralization","circumnavigation","circumscription","classifications","collaborations","commodification","comprehensions","concatenations","conceptualizing","configurations","conglomeration","contextualization","counterproductive","crystallographic","decentralization","decompositions","defragmentation","deliberativeness","democratization","desynchronization","determinations","differentiation","disambiguating","disorganization","documentations","electromagnetics","encapsulations","entrepreneurship","epistemological","equilibrations","exemplifications","experimentally","extrapolations","familiarization","fragmentations","functionalization","generalizations","globalization","heterogeneous","hierarchically","hybridization","hypothetically","identification","implementations","incomprehensibly","inconsequential","infrastructure","instrumentalization","interoperability","introspection","justifications","legitimizations"] },
+  // 11 – Elite: scientific/academic words
+  { name:"Elite", words:["adenosylmethionine","amphitheater","antidisestablishmentarianism","approximately","archaeopteryx","biogeochemistry","bioinformatics","cardiomyopathy","characterization","circumnavigation","climatological","collaboratively","commodification","comprehensiveness","conceptualization","conscientiously","contemporaneous","counterintuitive","crystallography","decriminalization","deoxyribonucleic","desynchronization","disambiguation","disestablishment","disorganization","documentation","electromagnetically","electrophysiology","entrepreneurship","environmentally","epidemiologically","equidistant","exemplification","experimentally","extraordinarily","familiarization","foreshadowing","fragmentation","fundamentalism","globalization","gravitational","heterogeneous","hierarchically","hybridization","hyperventilation","hypothetically","identification","implementation","incomprehensibly","inconsequential","infrastructure","institutionalize","instrumentation","interoperability","introspective","juxtaposition","legitimization","macroeconomics","magnetospheric","manifestations","mathematically","mechanization","microbiological","miniaturization","modernization","multidimensional","neuropharmacology","neuropsychology","objectification","onomatopoeia","ophthalmologist","organizational","ornamentation","overrepresented","paleontological","parameterization","paraphrasing","parenthetically","participatory","permaculture","personification","photosynthesis","physiologically","pluralization","polemicization","population","postmodernism","pragmatically","prioritization"] },
+  // 12 – Elite+: complex academic terms
+  { name:"Elite+", words:["accommodatingly","accompaniments","accomplishments","accountability","acknowledgement","administration","agglomeration","agglutinative","allegorically","anthropomorphize","antidisestablishmentarianism","appropriateness","archaeologically","argumentatively","authoritatively","bacteriological","bioengineering","bureaucratically","cardiovascular","characteristically","chronologically","circumscription","classifications","collaboratively","commercialization","comprehensiveness","conceptualization","configurationally","conglomeratization","conscientiously","constructivism","contextualization","correspondingly","counterproductive","crystallography","decentralization","decomposability","defragmentation","deliberativeness","democratization","desynchronization","differentiability","disambiguating","disorganization","electromagnetically","encapsulations","entrepreneurially","epistemological","equilibrations","exemplifications","experimentally","extrapolations","fragmentations","functionalization","generalizations","globalization","heterogeneously","hierarchically","hybridization","hypercorrection","hypothetically","identification","implementations","incomprehensibly","inconsequentially","infrastructure","institutionalize","instrumentalization","interoperability","introspectively","legitimizations","macroeconomics","magnetospheric","manifestations","mathematically","mechanization","microbiological","miniaturizations","modernizations","multidimensional","neuropharmacology","neuropsychological"] },
+  // 13 – Master: long compound and technical terms
+  { name:"Master", words:["authoritarianism","bacteriophage","biocompatibility","bioremediation","cardiovasculature","characteristically","chemiluminescence","chronobiological","circumnavigation","clairvoyance","collaboratively","commercialization","comprehensiveness","conceptualization","contemporaneously","contradistinction","conventionalism","counterintuitive","cryptographically","decentralization","demilitarization","democratization","deoxyribose","desynchronization","differentiability","disambiguation","disestablishment","documentation","ecophysiology","electromagnetically","electrophysiology","entrepreneurially","environmentalism","epidemiologically","ethnomusicology","exemplification","experimentally","extraordinarily","familiarization","fragmentation","geostationary","geothermal","globalization","gravitational","hierarchically","hybridization","hyperventilation","hypothetically","immunosuppressant","implementation","incomprehensibly","infrastructure","institutionalize","instrumentalization","interoperability","introspection","juxtaposition","macroeconomics","magnetospheric","manifestation","mathematically","mechanization","microbiological","miniaturization","modernization","multidimensional","neuropsychological","objectification","ophthalmological","paleontological","parameterization","pharmacokinetics","photosynthetically","physiologically","postmodernism","prioritization","radicalization","recontextualize","retrospectively","self-determination","socioeconomic","standardization","supranational","systematically","temporalization","transcendental","transformational","unconventionally","underdevelopment","unquestionably","utilization"] },
+  // 14 – Legend: hardest possible words
+  { name:"Legend", words:["anthropocentrism","antidisestablishmentarianism","archaeoastronomy","autoimmunological","bacteriophagology","bioaccumulation","biocompatibility","bioremediation","cardiopulmonary","characteristically","chemiluminescence","chronobiological","circumnavigation","clairvoyantly","collaboratively","commercialization","comprehensiveness","conceptualization","contemporaneously","contradistinction","conventionalism","counterproductively","cryptographically","decriminalization","demilitarization","democratically","deoxyribonucleic","desynchronization","differentiability","disambiguation","disestablishment","ecophysiology","electromagnetically","electrophysiology","entrepreneurially","environmentalism","epidemiologically","ethnomusicological","exemplification","experimentally","extraordinarily","familiarization","geocentricism","geostationary","globalization","gravitationally","hierarchically","hybridization","hyperventilation","hypothetically","immunosuppressant","implementation","incomprehensibly","institutionalize","instrumentalization","interoperability","introspection","juxtaposition","macroeconomics","magnetospheric","mathematically","mechanization","microbiological","miniaturization","multidimensional","neuropsychological","objectification","ophthalmological","paleontological","parameterization","pharmacokinetics","photosynthetically","physiologically","postmodernism","prioritization","radicalization","recontextualize","retrospectively","self-determination","socioeconomic","standardization","supranational","systematically","temporalization","transcendentalism","transformational","unconventionally","underdevelopment","unquestionably","utilitarianism"] }
+];
+
+// ─── STATE ─────────────────────────────────────────────────────────────────────
+let words = [];
+let wordIndex = 0;
+let charIndex = 0;
+let timerInterval = null;
+let timeLeft = 60;
+let totalDuration = 60;
+let started = false;
+let correctWords = 0;
+let errorCount = 0;
+let totalTyped = 0;
+let inputHistory = []; // per word: {typed, target}
+
+// ─── DOM REFS ──────────────────────────────────────────────────────────────────
+const textDisplay = document.getElementById('textDisplay');
+const typingInput = document.getElementById('typingInput');
+const timerDisplay = document.getElementById('timerDisplay');
+const wpmDisplay = document.getElementById('wpmDisplay');
+const accDisplay = document.getElementById('accDisplay');
+const wordDisplay = document.getElementById('wordDisplay');
+const timerBar = document.getElementById('timerBar');
+const startBtn = document.getElementById('startBtn');
+const newTextBtn = document.getElementById('newTextBtn');
+const newTextBtn2 = document.getElementById('newTextBtn2');
+const tryAgainBtn = document.getElementById('tryAgainBtn');
+const resultOverlay = document.getElementById('resultOverlay');
+const countdownOverlay = document.getElementById('countdownOverlay');
+const countdownNum = document.getElementById('countdownNum');
+const bestDisplay = document.getElementById('bestDisplay');
+const diffSelect = document.getElementById('diffSelect');
+
+// ─── LOCAL STORAGE ─────────────────────────────────────────────────────────────
+function getBestWpm() {
+  return parseInt(localStorage.getItem('cc_typing_best') || '0', 10);
+}
+function saveBestWpm(wpm) {
+  const cur = getBestWpm();
+  if (wpm > cur) { localStorage.setItem('cc_typing_best', wpm); return true; }
+  return false;
+}
+function updateBestDisplay() {
+  const b = getBestWpm();
+  bestDisplay.textContent = b > 0 ? b : '—';
+}
+updateBestDisplay();
+
+// ─── DURATION ─────────────────────────────────────────────────────────────────
+function getSelectedDuration() {
+  const r = document.querySelector('input[name="duration"]:checked');
+  return r ? parseInt(r.value) : 60;
+}
+
+// ─── WORD GENERATION ──────────────────────────────────────────────────────────
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateWordList(levelIndex) {
+  const level = LEVELS[levelIndex];
+  const pool = shuffleArray(level.words);
+  // produce ~100 words by cycling the pool
+  const out = [];
+  while (out.length < 100) {
+    out.push(...pool);
+  }
+  return out.slice(0, 100);
+}
+
+// ─── RENDER TEXT ──────────────────────────────────────────────────────────────
+function renderText() {
+  textDisplay.innerHTML = '';
+  words.forEach((word, wi) => {
+    const wSpan = document.createElement('span');
+    wSpan.className = 'word' + (wi === wordIndex ? ' current' : '');
+    wSpan.id = 'word-' + wi;
+
+    [...word].forEach((ch, ci) => {
+      const cSpan = document.createElement('span');
+      cSpan.className = 'char untyped';
+      cSpan.textContent = ch;
+      wSpan.appendChild(cSpan);
+    });
+
+    // cursor position indicator
+    if (wi === wordIndex) {
+      // cursor will be painted by updateWordChars
+    }
+
+    textDisplay.appendChild(wSpan);
+    if (wi < words.length - 1) {
+      textDisplay.appendChild(document.createTextNode(' '));
+    }
+  });
+  updateWordChars('');
+  scrollToCurrentWord();
+}
+
+function updateWordChars(typed) {
+  const wSpan = document.getElementById('word-' + wordIndex);
+  if (!wSpan) return;
+  const chars = wSpan.querySelectorAll('.char');
+  chars.forEach((c, i) => {
+    c.classList.remove('correct', 'incorrect', 'untyped', 'current-cursor');
+    if (i < typed.length) {
+      c.classList.add(typed[i] === words[wordIndex][i] ? 'correct' : 'incorrect');
+    } else {
+      c.classList.add('untyped');
+    }
+  });
+  // place cursor
+  if (typed.length < chars.length) {
+    chars[typed.length].classList.add('current-cursor');
+  }
+}
+
+function markWordDone(typed, target) {
+  const wSpan = document.getElementById('word-' + wordIndex);
+  if (!wSpan) return;
+  wSpan.classList.remove('current');
+  const chars = wSpan.querySelectorAll('.char');
+  const maxLen = Math.max(typed.length, target.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < chars.length) {
+      chars[i].classList.remove('correct', 'incorrect', 'untyped', 'current-cursor');
+      chars[i].classList.add((typed[i] === target[i]) ? 'correct' : 'incorrect');
+    }
+  }
+}
+
+function scrollToCurrentWord() {
+  const wSpan = document.getElementById('word-' + wordIndex);
+  if (wSpan) {
+    const dRect = textDisplay.getBoundingClientRect();
+    const wRect = wSpan.getBoundingClientRect();
+    if (wRect.bottom > dRect.bottom || wRect.top < dRect.top) {
+      wSpan.scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
+
+// ─── STATS ─────────────────────────────────────────────────────────────────────
+function calcWpm() {
+  const elapsed = (totalDuration - timeLeft) / 60;
+  if (elapsed <= 0) return 0;
+  return Math.round(correctWords / elapsed);
+}
+
+function calcAcc() {
+  if (totalTyped === 0) return 100;
+  return Math.round(((totalTyped - errorCount) / totalTyped) * 100);
+}
+
+function updateStats() {
+  wpmDisplay.textContent = calcWpm();
+  accDisplay.textContent = calcAcc() + '%';
+  wordDisplay.textContent = correctWords;
+}
+
+// ─── TIMER ─────────────────────────────────────────────────────────────────────
+function startTimer() {
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerDisplay.textContent = timeLeft;
+    timerBar.style.width = (timeLeft / totalDuration * 100) + '%';
+    if (timeLeft <= 10) timerBar.classList.add('danger');
+    updateStats();
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+// ─── GAME LIFECYCLE ────────────────────────────────────────────────────────────
+function resetGame(newText = false) {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  started = false;
+  wordIndex = 0;
+  charIndex = 0;
+  correctWords = 0;
+  errorCount = 0;
+  totalTyped = 0;
+  inputHistory = [];
+  totalDuration = getSelectedDuration();
+  timeLeft = totalDuration;
+  timerDisplay.textContent = timeLeft;
+  wpmDisplay.textContent = '0';
+  accDisplay.textContent = '100%';
+  wordDisplay.textContent = '0';
+  timerBar.style.width = '100%';
+  timerBar.classList.remove('danger');
+  typingInput.value = '';
+  typingInput.disabled = false;
+  resultOverlay.classList.remove('active');
+
+  if (newText) {
+    words = generateWordList(parseInt(diffSelect.value));
+  }
+  renderText();
+  startBtn.textContent = 'Start Test';
+}
+
+function loadNewText() {
+  resetGame(true);
+}
+
+function startCountdown(cb) {
+  let count = 3;
+  countdownNum.textContent = count;
+  countdownOverlay.classList.add('active');
+  const iv = setInterval(() => {
+    count--;
+    if (count <= 0) {
+      clearInterval(iv);
+      countdownOverlay.classList.remove('active');
+      cb();
+    } else {
+      countdownNum.textContent = count;
+      // re-trigger animation
+      countdownNum.style.animation = 'none';
+      countdownNum.offsetHeight; // reflow
+      countdownNum.style.animation = '';
+    }
+  }, 900);
+}
+
+function beginTest() {
+  typingInput.focus();
+  started = true;
+  startBtn.textContent = 'Restart';
+  startTimer();
+}
+
+function endGame() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  typingInput.disabled = true;
+
+  const wpm = calcWpm();
+  const acc = calcAcc();
+  const errors = inputHistory.reduce((sum, h) => {
+    let e = 0;
+    for (let i = 0; i < Math.max(h.typed.length, h.target.length); i++) {
+      if ((h.typed[i] || '') !== h.target[i]) e++;
+    }
+    return sum + e;
+  }, 0);
+
+  document.getElementById('resWpm').textContent = wpm;
+  document.getElementById('resAcc').textContent = acc + '%';
+  document.getElementById('resCorrect').textContent = correctWords;
+  document.getElementById('resErrors').textContent = errors;
+  document.getElementById('resBest').textContent = Math.max(wpm, getBestWpm());
+
+  const isNew = saveBestWpm(wpm);
+  document.getElementById('newBestMsg').style.display = isNew ? 'block' : 'none';
+  updateBestDisplay();
+
+  resultOverlay.classList.add('active');
+}
+
+// ─── INPUT HANDLING ────────────────────────────────────────────────────────────
+typingInput.addEventListener('input', (e) => {
+  if (!started) return;
+
+  const val = typingInput.value;
+
+  // Space pressed → submit word
+  if (val.endsWith(' ')) {
+    const typed = val.trimEnd();
+    inputHistory.push({ typed, target: words[wordIndex] });
+
+    // score
+    let correct = true;
+    for (let i = 0; i < Math.max(typed.length, words[wordIndex].length); i++) {
+      if ((typed[i] || '') !== (words[wordIndex][i] || '')) { correct = false; break; }
+    }
+    if (correct) correctWords++;
+
+    // count errors on this word
+    for (let i = 0; i < Math.max(typed.length, words[wordIndex].length); i++) {
+      totalTyped++;
+      if ((typed[i] || '') !== (words[wordIndex][i] || '')) errorCount++;
+    }
+
+    markWordDone(typed, words[wordIndex]);
+
+    wordIndex++;
+    typingInput.value = '';
+
+    if (wordIndex >= words.length) {
+      // generate more words
+      const extra = generateWordList(parseInt(diffSelect.value));
+      words.push(...extra.slice(0, 50));
+      renderText();
+    } else {
+      // highlight next word
+      const nextSpan = document.getElementById('word-' + wordIndex);
+      if (nextSpan) nextSpan.classList.add('current');
+      scrollToCurrentWord();
+      updateWordChars('');
+    }
+    updateStats();
+    return;
+  }
+
+  // Regular typing
+  updateWordChars(val);
+});
+
+typingInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Backspace' && typingInput.value === '' && wordIndex > 0) {
+    // optional: go back to previous word (disable for simplicity)
+  }
+});
+
+// ─── BUTTONS ──────────────────────────────────────────────────────────────────
+startBtn.addEventListener('click', () => {
+  if (started) {
+    resetGame(false);
+  } else {
+    resetGame(false);
+    startCountdown(beginTest);
+  }
+});
+
+newTextBtn.addEventListener('click', loadNewText);
+newTextBtn2.addEventListener('click', () => { loadNewText(); });
+tryAgainBtn.addEventListener('click', () => {
+  resetGame(false);
+});
+
+// Duration change
+document.querySelectorAll('input[name="duration"]').forEach(r => {
+  r.addEventListener('change', () => {
+    if (!started) {
+      totalDuration = getSelectedDuration();
+      timeLeft = totalDuration;
+      timerDisplay.textContent = timeLeft;
+      timerBar.style.width = '100%';
+    }
+  });
+});
+
+// Difficulty change
+diffSelect.addEventListener('change', loadNewText);
+
+// Click on display focuses input
+textDisplay.addEventListener('click', () => typingInput.focus());
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+words = generateWordList(parseInt(diffSelect.value));
+renderText();
+</script>
+</body>
+</html>

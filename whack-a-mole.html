@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Whack-a-Mole — CloudyClaw Games</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --border: #ffffff14;
+      --text: #e0e0e0;
+      --muted: #888;
+      --accent: #7c6aff;
+      --accent-glow: #7c6aff44;
+      --gold: #ffd700;
+      --gold-glow: #ffd70044;
+      --red: #ff4d6a;
+      --green: #4dff91;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 3rem;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 700px;
+      padding: 1.2rem 1.5rem 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+      white-space: nowrap;
+    }
+    .back-link:hover { color: var(--accent); }
+    .back-link::before { content: '‹ '; }
+
+    header h1 {
+      flex: 1;
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      color: #fff;
+      text-shadow: 0 0 24px var(--accent-glow);
+      letter-spacing: 0.06em;
+      text-align: center;
+    }
+
+    .header-spacer { width: 80px; }
+
+    /* ── HUD ── */
+    .hud {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 1rem 1rem 0.8rem;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .hud-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.5rem 1.2rem;
+      text-align: center;
+      min-width: 100px;
+      flex: 1;
+    }
+    .hud-box .label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .hud-box .value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .hud-box.timer .value {
+      color: var(--accent);
+    }
+    .hud-box.timer .value.urgent {
+      color: var(--red);
+      animation: pulse 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 1; }
+      to { opacity: 0.5; }
+    }
+
+    /* ── Game board ── */
+    .game-area {
+      width: 100%;
+      max-width: 520px;
+      padding: 0 1rem;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 0 auto;
+    }
+
+    .hole-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .hole {
+      width: 100%;
+      aspect-ratio: 1 / 0.8;
+      position: relative;
+      cursor: pointer;
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    /* Dirt mound */
+    .hole-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 70%, #3a2a18 0%, #1e1408 60%, #0d0a06 100%);
+      border-radius: 12px;
+      border: 1px solid #3a2a1844;
+      transition: box-shadow 0.15s;
+    }
+
+    .hole:hover .hole-bg {
+      box-shadow: 0 0 12px #3a2a1866;
+    }
+
+    /* The dark hole opening */
+    .hole-opening {
+      position: absolute;
+      bottom: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 68%;
+      height: 40%;
+      background: radial-gradient(ellipse, #05030a 30%, #0a0618 100%);
+      border-radius: 50%;
+      border: 1px solid #ffffff08;
+      box-shadow: inset 0 4px 12px #000a;
+    }
+
+    /* Mole character */
+    .mole {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%) translateY(110%);
+      width: 58%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hole.active .mole {
+      transform: translateX(-50%) translateY(0%);
+    }
+
+    .hole.retreating .mole {
+      transform: translateX(-50%) translateY(110%);
+      transition: transform 0.22s ease-in;
+    }
+
+    .mole-body {
+      width: 100%;
+      background: radial-gradient(circle at 40% 35%, #9b7350 0%, #6b4e2e 55%, #4a3320 100%);
+      border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+      aspect-ratio: 1 / 1.1;
+      position: relative;
+      box-shadow: 0 4px 16px #0008;
+    }
+
+    .hole.golden .mole-body {
+      background: radial-gradient(circle at 40% 35%, #ffe066 0%, #d4a017 55%, #a07010 100%);
+      box-shadow: 0 0 20px var(--gold-glow), 0 4px 16px #0008;
+    }
+
+    /* Eyes */
+    .mole-eyes {
+      position: absolute;
+      top: 28%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 22%;
+      width: 70%;
+    }
+
+    .eye {
+      width: 22%;
+      aspect-ratio: 1;
+      background: #1a0a00;
+      border-radius: 50%;
+      position: relative;
+    }
+    .eye::after {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 20%;
+      width: 35%;
+      height: 35%;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    /* Nose */
+    .mole-nose {
+      position: absolute;
+      top: 52%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18%;
+      aspect-ratio: 1;
+      background: #e86090;
+      border-radius: 50%;
+    }
+
+    .hole.golden .mole-nose { background: #ff9040; }
+
+    /* Star crown for golden */
+    .mole-crown {
+      display: none;
+      position: absolute;
+      top: -30%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.4em;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px #ffd700);
+    }
+    .hole.golden .mole-crown { display: block; }
+
+    /* Smack flash */
+    .smack {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      font-weight: 900;
+      color: var(--accent);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 12px var(--accent);
+    }
+    .smack.golden { color: var(--gold); text-shadow: 0 0 12px var(--gold); }
+    .smack.penalty { color: var(--red); text-shadow: 0 0 12px var(--red); }
+
+    @keyframes smack-anim {
+      0%   { opacity: 1; transform: scale(0.7) translateY(0); }
+      60%  { opacity: 1; transform: scale(1.2) translateY(-12px); }
+      100% { opacity: 0; transform: scale(1) translateY(-28px); }
+    }
+    .smack.show { animation: smack-anim 0.5s ease-out forwards; }
+
+    /* Missed flash */
+    @keyframes miss-flash {
+      0%   { box-shadow: inset 0 0 0 3px var(--red); }
+      100% { box-shadow: none; }
+    }
+    .hole.miss { animation: miss-flash 0.35s ease-out; }
+
+    /* ── Start / Game-over overlay ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #0a0a14dd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+
+    .overlay-box {
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      max-width: 360px;
+      width: 90%;
+      box-shadow: 0 0 60px var(--accent-glow);
+    }
+
+    .overlay-box h2 {
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .overlay-box .big-score {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--accent);
+      text-shadow: 0 0 30px var(--accent);
+      line-height: 1.1;
+      margin: 0.6rem 0 0.2rem;
+    }
+
+    .overlay-box .hs-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.4rem;
+    }
+    .overlay-box .hs-line span { color: var(--gold); font-weight: 700; }
+
+    .overlay-box p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.6rem;
+      line-height: 1.6;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 2rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .btn:hover {
+      background: #9b8fff;
+      transform: scale(1.04);
+      box-shadow: 0 0 28px var(--accent-glow);
+    }
+    .btn:active { transform: scale(0.97); }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 1rem 1rem 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .legend-dot.normal { background: #9b7350; }
+    .legend-dot.golden { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+
+    /* ── Wiggle animation ── */
+    @keyframes wiggle {
+      0%, 100% { transform: translateX(-50%) translateY(0%) rotate(-4deg); }
+      50%       { transform: translateX(-50%) translateY(0%) rotate(4deg); }
+    }
+    .hole.active .mole { animation: wiggle 0.4s ease-in-out infinite; }
+    .hole.active.hit .mole, .hole.retreating .mole { animation: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Start overlay -->
+  <div class="overlay" id="startOverlay">
+    <div class="overlay-box">
+      <h2>Whack-a-Mole</h2>
+      <p>
+        Click or tap the moles before they retreat!<br>
+        <strong style="color:#fff">+10</strong> per mole &nbsp;
+        <strong style="color:var(--gold)">+50</strong> golden mole &nbsp;
+        <strong style="color:var(--red)">−5</strong> empty hole<br><br>
+        You have <strong style="color:#fff">60 seconds</strong>. Good luck!
+      </p>
+      <button class="btn" id="startBtn">▶ Start Game</button>
+    </div>
+  </div>
+
+  <!-- Game-over overlay -->
+  <div class="overlay hidden" id="gameOverOverlay">
+    <div class="overlay-box">
+      <h2>Time's Up!</h2>
+      <div class="big-score" id="finalScore">0</div>
+      <div class="hs-line">High Score: <span id="finalHS">0</span></div>
+      <button class="btn" id="restartBtn">↺ Play Again</button>
+    </div>
+  </div>
+
+  <header>
+    <a class="back-link" href="index.html">Back to Hub</a>
+    <h1>Whack-a-Mole</h1>
+    <div class="header-spacer"></div>
+  </header>
+
+  <div class="hud">
+    <div class="hud-box">
+      <div class="label">Score</div>
+      <div class="value" id="scoreEl">0</div>
+    </div>
+    <div class="hud-box timer">
+      <div class="label">Time</div>
+      <div class="value" id="timerEl">60</div>
+    </div>
+    <div class="hud-box">
+      <div class="label">Best</div>
+      <div class="value" id="highScoreEl">0</div>
+    </div>
+  </div>
+
+  <div class="game-area">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot normal"></div> Regular mole +10</div>
+    <div class="legend-item"><div class="legend-dot golden"></div> Golden mole +50</div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Constants ── */
+  const TOTAL_TIME     = 60;
+  const GOLDEN_CHANCE  = 0.12;   // 12% chance a new mole is golden
+  const BASE_MIN_UP    = 900;    // ms mole stays up (min)
+  const BASE_MAX_UP    = 2000;   // ms mole stays up (max)
+  const BASE_INTERVAL  = 900;    // ms between spawns initially
+  const HS_KEY         = 'cc_wam_hs';
+
+  /* ── State ── */
+  let score       = 0;
+  let timeLeft    = TOTAL_TIME;
+  let gameRunning = false;
+  let spawnTimer  = null;
+  let countdownTimer = null;
+
+  // Per-hole state
+  const holes = [];  // { el, moleEl, smackEl, active, golden, hideTimeout }
+
+  /* ── DOM ── */
+  const boardEl        = document.getElementById('board');
+  const scoreEl        = document.getElementById('scoreEl');
+  const timerEl        = document.getElementById('timerEl');
+  const highScoreEl    = document.getElementById('highScoreEl');
+  const startOverlay   = document.getElementById('startOverlay');
+  const gameOverOverlay= document.getElementById('gameOverOverlay');
+  const finalScoreEl   = document.getElementById('finalScore');
+  const finalHSEl      = document.getElementById('finalHS');
+  const startBtn       = document.getElementById('startBtn');
+  const restartBtn     = document.getElementById('restartBtn');
+
+  /* ── Build board ── */
+  function buildBoard() {
+    boardEl.innerHTML = '';
+    holes.length = 0;
+    for (let i = 0; i < 9; i++) {
+      const wrap = document.createElement('div');
+      wrap.className = 'hole-wrap';
+
+      const hole = document.createElement('div');
+      hole.className = 'hole';
+      hole.setAttribute('role', 'button');
+      hole.setAttribute('aria-label', 'Mole hole ' + (i + 1));
+
+      hole.innerHTML = `
+        <div class="hole-bg"></div>
+        <div class="hole-opening"></div>
+        <div class="mole">
+          <div class="mole-body">
+            <div class="mole-crown">★</div>
+            <div class="mole-eyes">
+              <div class="eye"></div>
+              <div class="eye"></div>
+            </div>
+            <div class="mole-nose"></div>
+          </div>
+        </div>
+        <div class="smack" aria-hidden="true"></div>
+      `;
+
+      wrap.appendChild(hole);
+      boardEl.appendChild(wrap);
+
+      const state = {
+        el: hole,
+        moleEl: hole.querySelector('.mole'),
+        smackEl: hole.querySelector('.smack'),
+        active: false,
+        golden: false,
+        hideTimeout: null,
+      };
+      holes.push(state);
+
+      hole.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        onHoleClick(state);
+      });
+    }
+  }
+
+  /* ── High Score ── */
+  function getHS() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
+  function setHS(v) { localStorage.setItem(HS_KEY, String(v)); }
+
+  function refreshHSDisplay() {
+    const hs = getHS();
+    highScoreEl.textContent = hs;
+  }
+
+  /* ── Score ── */
+  function addScore(delta) {
+    score = Math.max(0, score + delta);
+    scoreEl.textContent = score;
+  }
+
+  /* ── Show smack label ── */
+  function showSmack(state, text, cls) {
+    const el = state.smackEl;
+    el.textContent = text;
+    el.className = 'smack ' + cls;
+    // Force reflow to restart animation
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(() => { el.classList.remove('show'); }, 520);
+  }
+
+  /* ── Hide a mole ── */
+  function hideMole(state, missed) {
+    if (!state.active) return;
+    clearTimeout(state.hideTimeout);
+    state.hideTimeout = null;
+
+    state.active = false;
+    state.el.classList.remove('active', 'golden', 'hit');
+    state.el.classList.add('retreating');
+
+    if (missed) {
+      // brief miss flash handled by CSS
+    }
+
+    setTimeout(() => {
+      state.el.classList.remove('retreating');
+      state.golden = false;
+    }, 250);
+  }
+
+  /* ── Show a mole ── */
+  function showMole(state, isGolden) {
+    if (state.active || !gameRunning) return;
+    state.active = true;
+    state.golden = isGolden;
+
+    state.el.classList.remove('retreating', 'hit', 'golden');
+    if (isGolden) state.el.classList.add('golden');
+    state.el.classList.add('active');
+
+    // How long this mole stays up (gets shorter over time)
+    const elapsed   = TOTAL_TIME - timeLeft;
+    const progress  = Math.min(elapsed / TOTAL_TIME, 1);
+    const minUp = BASE_MIN_UP - progress * 400;
+    const maxUp = BASE_MAX_UP - progress * 700;
+    const upDur = minUp + Math.random() * (maxUp - minUp);
+
+    state.hideTimeout = setTimeout(() => {
+      hideMole(state, true);
+    }, upDur);
+  }
+
+  /* ── Click handler ── */
+  function onHoleClick(state) {
+    if (!gameRunning) return;
+
+    if (state.active) {
+      // Hit!
+      clearTimeout(state.hideTimeout);
+      state.hideTimeout = null;
+
+      const pts = state.golden ? 50 : 10;
+      addScore(pts);
+
+      state.el.classList.add('hit');
+      showSmack(state, (state.golden ? '★ ' : '') + '+' + pts, state.golden ? 'golden' : '');
+
+      // Retreat immediately
+      setTimeout(() => hideMole(state, false), 80);
+    } else {
+      // Missed — penalty
+      addScore(-5);
+      showSmack(state, '−5', 'penalty');
+      state.el.classList.add('miss');
+      setTimeout(() => state.el.classList.remove('miss'), 360);
+    }
+  }
+
+  /* ── Spawning ── */
+  function getIdleHoles() {
+    return holes.filter(h => !h.active);
+  }
+
+  function spawnMoles() {
+    if (!gameRunning) return;
+
+    const elapsed   = TOTAL_TIME - timeLeft;
+    const progress  = Math.min(elapsed / TOTAL_TIME, 1);
+
+    // How many simultaneous moles: starts at 1, goes up to 3
+    const maxSimul = 1 + Math.floor(progress * 2.5);
+    const currentActive = holes.filter(h => h.active).length;
+    const toSpawn = Math.max(0, maxSimul - currentActive);
+
+    const idle = getIdleHoles();
+    const pick = shuffleSlice(idle, Math.min(toSpawn, idle.length));
+
+    pick.forEach(state => {
+      const isGolden = Math.random() < GOLDEN_CHANCE;
+      showMole(state, isGolden);
+    });
+
+    // Next spawn interval (gets shorter)
+    const interval = BASE_INTERVAL - progress * 400;
+    spawnTimer = setTimeout(spawnMoles, Math.max(350, interval));
+  }
+
+  function shuffleSlice(arr, n) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.slice(0, n);
+  }
+
+  /* ── Timer ── */
+  function startCountdown() {
+    countdownTimer = setInterval(() => {
+      timeLeft--;
+      timerEl.textContent = timeLeft;
+
+      if (timeLeft <= 10) {
+        timerEl.classList.add('urgent');
+      }
+
+      if (timeLeft <= 0) {
+        endGame();
+      }
+    }, 1000);
+  }
+
+  /* ── Game lifecycle ── */
+  function startGame() {
+    score    = 0;
+    timeLeft = TOTAL_TIME;
+    gameRunning = true;
+
+    scoreEl.textContent  = '0';
+    timerEl.textContent  = TOTAL_TIME;
+    timerEl.classList.remove('urgent');
+    refreshHSDisplay();
+
+    startOverlay.classList.add('hidden');
+    gameOverOverlay.classList.add('hidden');
+
+    // Reset all holes
+    holes.forEach(h => {
+      clearTimeout(h.hideTimeout);
+      h.hideTimeout = null;
+      h.active = false;
+      h.golden = false;
+      h.el.classList.remove('active', 'golden', 'retreating', 'hit', 'miss');
+    });
+
+    // Slight delay before first mole
+    setTimeout(() => {
+      spawnMoles();
+      startCountdown();
+    }, 500);
+  }
+
+  function endGame() {
+    gameRunning = false;
+
+    clearTimeout(spawnTimer);
+    clearInterval(countdownTimer);
+    spawnTimer = null;
+    countdownTimer = null;
+
+    // Hide all active moles
+    holes.forEach(h => hideMole(h, false));
+
+    // Update high score
+    const hs = getHS();
+    if (score > hs) setHS(score);
+    const newHS = getHS();
+
+    finalScoreEl.textContent = score;
+    finalHSEl.textContent    = newHS;
+    refreshHSDisplay();
+
+    setTimeout(() => {
+      gameOverOverlay.classList.remove('hidden');
+    }, 400);
+  }
+
+  /* ── Init ── */
+  buildBoard();
+  refreshHSDisplay();
+
+  startBtn.addEventListener('click',   startGame);
+  restartBtn.addEventListener('click', startGame);
+
+})();
+</script>
+</body>
+</html>

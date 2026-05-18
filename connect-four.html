@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect Four — CloudyClaw Games</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --border: #ffffff14;
+      --text: #e0e0e0;
+      --muted: #888;
+      --accent: #7c6aff;
+      --accent-glow: #7c6aff44;
+      --p1: #ff4b4b;
+      --p1-glow: #ff4b4b55;
+      --p2: #f5c518;
+      --p2-glow: #f5c51855;
+      --cell-bg: #0d0d1e;
+      --empty: #1a1a2e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.4rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .back-link {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--accent); }
+    .back-link svg { width: 14px; height: 14px; }
+    nav .title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+    nav .mode-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      background: var(--accent-glow);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 0.2rem 0.7rem;
+    }
+
+    /* LAYOUT */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem 3rem;
+      gap: 1.2rem;
+    }
+
+    /* SCOREBOARD */
+    .scoreboard {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 1.4rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    .score-player {
+      flex: 1;
+      text-align: center;
+    }
+    .score-player .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.15rem;
+    }
+    .score-player .disc-dot {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    .score-player.p1 .disc-dot { background: var(--p1); box-shadow: 0 0 6px var(--p1-glow); }
+    .score-player.p2 .disc-dot { background: var(--p2); box-shadow: 0 0 6px var(--p2-glow); }
+    .score-player .val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .score-divider {
+      color: var(--muted);
+      font-size: 1.2rem;
+      font-weight: 300;
+    }
+
+    /* TURN INDICATOR */
+    .turn-bar {
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--muted);
+      min-height: 1.5rem;
+      transition: color 0.2s;
+    }
+    .turn-bar .disc-dot {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 5px;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .turn-bar.p1 { color: var(--p1); }
+    .turn-bar.p1 .disc-dot { background: var(--p1); box-shadow: 0 0 8px var(--p1); }
+    .turn-bar.p2 { color: var(--p2); }
+    .turn-bar.p2 .disc-dot { background: var(--p2); box-shadow: 0 0 8px var(--p2); }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.7; }
+    }
+
+    /* BOARD WRAPPER */
+    .board-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* COLUMN HOVER BUTTONS */
+    .col-hints {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+      padding: 0 2px;
+    }
+    .col-hint {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 0;
+      border-radius: 6px;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: transparent;
+      position: relative;
+    }
+    .col-hint::after {
+      content: '▼';
+      font-size: 0.75rem;
+      color: transparent;
+      transition: color 0.15s;
+    }
+    .col-hint:hover::after { color: var(--accent); }
+    .col-hint.active::after { color: var(--accent); }
+    .col-hint:disabled { cursor: not-allowed; }
+    .col-hint:disabled::after { color: transparent !important; }
+
+    /* BOARD GRID */
+    .board {
+      background: #1e1b3a;
+      border: 2px solid #2d2860;
+      border-radius: 12px;
+      padding: 6px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      box-shadow: 0 0 40px #1e1b3a88, inset 0 2px 8px #00000066;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--empty);
+      box-shadow: inset 0 2px 6px #00000066;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.1s;
+    }
+    .cell.p1 {
+      background: var(--p1);
+      box-shadow: 0 0 12px var(--p1-glow), inset 0 2px 4px #ffffff22;
+    }
+    .cell.p2 {
+      background: var(--p2);
+      box-shadow: 0 0 12px var(--p2-glow), inset 0 2px 4px #ffffff22;
+    }
+    .cell.win {
+      animation: winPulse 0.6s ease-in-out infinite alternate;
+    }
+    .cell.p1.win {
+      box-shadow: 0 0 20px var(--p1), 0 0 6px #fff;
+    }
+    .cell.p2.win {
+      box-shadow: 0 0 20px var(--p2), 0 0 6px #fff;
+    }
+    @keyframes winPulse {
+      from { transform: scale(0.92); }
+      to   { transform: scale(1.06); }
+    }
+
+    /* Drop animation */
+    .cell.drop {
+      animation: dropIn 0.32s cubic-bezier(0.36, 0, 0.66, -0.2) forwards;
+    }
+    @keyframes dropIn {
+      0% { transform: translateY(-300%); opacity: 0.6; }
+      80% { transform: translateY(8%); }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    /* BUTTONS */
+    .controls {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 480px;
+    }
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.55rem 1.2rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      letter-spacing: 0.04em;
+    }
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 700;
+    }
+    .btn.primary:hover { background: #9b8fff; border-color: #9b8fff; color: #fff; }
+
+    /* OVERLAY */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #0a0a14cc;
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .overlay-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2.4rem;
+      text-align: center;
+      max-width: 340px;
+      width: 90%;
+      box-shadow: 0 0 60px var(--accent-glow);
+      transform: scale(0.92);
+      transition: transform 0.3s;
+    }
+    .overlay.show .overlay-card { transform: scale(1); }
+    .overlay-card h2 {
+      font-size: 1.6rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .overlay-card p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.4rem;
+    }
+    .overlay-card .winner-disc {
+      display: inline-block;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      margin-bottom: 0.8rem;
+    }
+    .winner-disc.p1 { background: var(--p1); box-shadow: 0 0 20px var(--p1); }
+    .winner-disc.p2 { background: var(--p2); box-shadow: 0 0 20px var(--p2); }
+    .overlay-btns { display: flex; gap: 0.8rem; justify-content: center; }
+
+    /* Responsive tweaks */
+    @media (max-width: 400px) {
+      .board { gap: 4px; padding: 5px; }
+      .scoreboard { padding: 0.6rem 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="back-link" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Back to Hub
+  </a>
+  <span class="title">Connect Four</span>
+  <span class="mode-badge" id="modeBadge">vs AI</span>
+</nav>
+
+<main>
+  <div class="scoreboard">
+    <div class="score-player p1">
+      <div class="label"><span class="disc-dot"></span>Player 1</div>
+      <div class="val" id="score1">0</div>
+    </div>
+    <div class="score-divider">—</div>
+    <div class="score-player p2">
+      <div class="label"><span class="disc-dot"></span><span id="p2label">AI</span></div>
+      <div class="val" id="score2">0</div>
+    </div>
+  </div>
+
+  <div class="turn-bar p1" id="turnBar">
+    <span class="disc-dot"></span><span id="turnText">Player 1's turn</span>
+  </div>
+
+  <div class="board-wrap">
+    <div class="col-hints" id="colHints"></div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" id="btnNew">New Game</button>
+    <button class="btn" id="btnMode">Switch to 2P</button>
+  </div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="winner-disc" id="overlayDisc"></div>
+    <h2 id="overlayTitle">Player 1 Wins!</h2>
+    <p id="overlayMsg">Connecting four in a row.</p>
+    <div class="overlay-btns">
+      <button class="btn primary" id="btnRestart">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const ROWS = 6, COLS = 7;
+  const EMPTY = 0, P1 = 1, P2 = 2;
+
+  // State
+  let board = [], currentPlayer = P1, gameOver = false;
+  let score = [0, 0];
+  let vsAI = true;
+  let aiThinking = false;
+
+  // Load scores from localStorage
+  const LS_KEY = 'cf_scores';
+  function loadScores() {
+    try {
+      const s = JSON.parse(localStorage.getItem(LS_KEY));
+      if (s && s.length === 2) score = s;
+    } catch (_) {}
+  }
+  function saveScores() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(score)); } catch (_) {}
+  }
+
+  // DOM refs
+  const boardEl = document.getElementById('board');
+  const colHintsEl = document.getElementById('colHints');
+  const turnBar = document.getElementById('turnBar');
+  const turnText = document.getElementById('turnText');
+  const score1El = document.getElementById('score1');
+  const score2El = document.getElementById('score2');
+  const p2label = document.getElementById('p2label');
+  const modeBadge = document.getElementById('modeBadge');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayMsg = document.getElementById('overlayMsg');
+  const overlayDisc = document.getElementById('overlayDisc');
+  const btnNew = document.getElementById('btnNew');
+  const btnMode = document.getElementById('btnMode');
+  const btnRestart = document.getElementById('btnRestart');
+
+  // Build empty board (row 0 = top)
+  function newBoard() {
+    board = Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY));
+  }
+
+  // Render the grid from scratch
+  function renderBoard() {
+    boardEl.innerHTML = '';
+    colHintsEl.innerHTML = '';
+
+    // Column hint buttons
+    for (let c = 0; c < COLS; c++) {
+      const btn = document.createElement('button');
+      btn.className = 'col-hint';
+      btn.dataset.col = c;
+      btn.setAttribute('aria-label', `Drop in column ${c + 1}`);
+      btn.addEventListener('click', () => handleClick(c));
+      btn.addEventListener('mouseenter', () => highlightCol(c, true));
+      btn.addEventListener('mouseleave', () => highlightCol(c, false));
+      colHintsEl.appendChild(btn);
+    }
+
+    // Cells (row 0 top → row 5 bottom visually)
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        cell.addEventListener('click', () => handleClick(c));
+        cell.addEventListener('mouseenter', () => highlightCol(c, true));
+        cell.addEventListener('mouseleave', () => highlightCol(c, false));
+        boardEl.appendChild(cell);
+      }
+    }
+    updateCells();
+  }
+
+  function highlightCol(col, on) {
+    if (gameOver || aiThinking) return;
+    document.querySelectorAll('.col-hint').forEach((b, i) => {
+      b.classList.toggle('active', on && i === col);
+    });
+  }
+
+  // Update cell visual states
+  function updateCells(winCells) {
+    const winSet = new Set((winCells || []).map(([r, c]) => r * COLS + c));
+    document.querySelectorAll('.cell').forEach(cell => {
+      const r = +cell.dataset.row, c = +cell.dataset.col;
+      const val = board[r][c];
+      cell.className = 'cell';
+      if (val === P1) cell.classList.add('p1');
+      if (val === P2) cell.classList.add('p2');
+      if (winSet.has(r * COLS + c)) cell.classList.add('win');
+    });
+  }
+
+  function dropAnimate(row, col, player) {
+    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    if (!cell) return;
+    cell.classList.remove('drop');
+    void cell.offsetWidth; // reflow
+    cell.classList.add(player === P1 ? 'p1' : 'p2');
+    cell.classList.add('drop');
+  }
+
+  // Drop disc into column; returns row placed or -1 if full
+  function drop(col, player) {
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][col] === EMPTY) {
+        board[r][col] = player;
+        return r;
+      }
+    }
+    return -1;
+  }
+
+  // Check for 4 in a row; returns array of [r,c] pairs or null
+  function checkWin(player) {
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (board[r][c] !== player) continue;
+        for (const [dr, dc] of dirs) {
+          const cells = [[r, c]];
+          for (let k = 1; k < 4; k++) {
+            const nr = r + dr * k, nc = c + dc * k;
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[nr][nc] !== player) break;
+            cells.push([nr, nc]);
+          }
+          if (cells.length === 4) return cells;
+        }
+      }
+    }
+    return null;
+  }
+
+  function isBoardFull() {
+    return board[0].every(v => v !== EMPTY);
+  }
+
+  function updateTurnBar() {
+    turnBar.className = `turn-bar ${currentPlayer === P1 ? 'p1' : 'p2'}`;
+    if (currentPlayer === P1) {
+      turnText.textContent = "Player 1's turn";
+    } else {
+      turnText.textContent = vsAI ? "AI thinking…" : "Player 2's turn";
+    }
+  }
+
+  function showOverlay(winner) {
+    overlayDisc.className = `winner-disc ${winner === P1 ? 'p1' : 'p2'}`;
+    if (winner === 0) {
+      overlayTitle.textContent = "It's a Draw!";
+      overlayMsg.textContent = 'The board is full. No winner this time.';
+      overlayDisc.style.display = 'none';
+    } else {
+      overlayDisc.style.display = 'inline-block';
+      const name = winner === P1 ? 'Player 1' : (vsAI ? 'AI' : 'Player 2');
+      overlayTitle.textContent = `${name} Wins!`;
+      overlayMsg.textContent = 'Connected four in a row!';
+    }
+    overlay.classList.add('show');
+  }
+
+  function handleClick(col) {
+    if (gameOver || aiThinking) return;
+    if (vsAI && currentPlayer === P2) return;
+
+    const row = drop(col, currentPlayer);
+    if (row === -1) return; // column full
+
+    dropAnimate(row, col, currentPlayer);
+
+    setTimeout(() => {
+      const win = checkWin(currentPlayer);
+      if (win) {
+        updateCells(win);
+        score[currentPlayer - 1]++;
+        saveScores();
+        updateScoreDisplay();
+        gameOver = true;
+        updateColHintState();
+        setTimeout(() => showOverlay(currentPlayer), 400);
+        return;
+      }
+      if (isBoardFull()) {
+        updateCells();
+        gameOver = true;
+        updateColHintState();
+        setTimeout(() => showOverlay(0), 400);
+        return;
+      }
+      currentPlayer = currentPlayer === P1 ? P2 : P1;
+      updateTurnBar();
+      if (vsAI && currentPlayer === P2) {
+        aiThinking = true;
+        updateColHintState();
+        setTimeout(doAIMove, 400);
+      }
+    }, 100);
+  }
+
+  function updateColHintState() {
+    document.querySelectorAll('.col-hint').forEach((btn, c) => {
+      btn.disabled = gameOver || aiThinking || board[0][c] !== EMPTY;
+    });
+  }
+
+  function doAIMove() {
+    const col = getBestMove();
+    aiThinking = false;
+    if (col === -1) return;
+
+    const row = drop(col, P2);
+    if (row === -1) { aiThinking = false; return; }
+    dropAnimate(row, col, P2);
+
+    setTimeout(() => {
+      const win = checkWin(P2);
+      if (win) {
+        updateCells(win);
+        score[1]++;
+        saveScores();
+        updateScoreDisplay();
+        gameOver = true;
+        updateColHintState();
+        setTimeout(() => showOverlay(P2), 400);
+        return;
+      }
+      if (isBoardFull()) {
+        updateCells();
+        gameOver = true;
+        updateColHintState();
+        setTimeout(() => showOverlay(0), 400);
+        return;
+      }
+      currentPlayer = P1;
+      updateTurnBar();
+      updateColHintState();
+    }, 100);
+  }
+
+  // ---- MINIMAX WITH ALPHA-BETA ----
+  const AI  = P2, HU = P1;
+
+  function scoreWindow(window, player) {
+    const opp = player === AI ? HU : AI;
+    const myCount = window.filter(v => v === player).length;
+    const emptyCount = window.filter(v => v === EMPTY).length;
+    const oppCount = window.filter(v => v === opp).length;
+
+    if (myCount === 4) return 100;
+    if (myCount === 3 && emptyCount === 1) return 5;
+    if (myCount === 2 && emptyCount === 2) return 2;
+    if (oppCount === 3 && emptyCount === 1) return -4;
+    return 0;
+  }
+
+  function scoreBoard(player) {
+    let s = 0;
+    // Center column preference
+    const centerCol = Math.floor(COLS / 2);
+    let centerArr = board.map(r => r[centerCol]);
+    s += centerArr.filter(v => v === player).length * 3;
+
+    // Horizontal
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c <= COLS - 4; c++) {
+        const w = [board[r][c], board[r][c+1], board[r][c+2], board[r][c+3]];
+        s += scoreWindow(w, player);
+      }
+    }
+    // Vertical
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r <= ROWS - 4; r++) {
+        const w = [board[r][c], board[r+1][c], board[r+2][c], board[r+3][c]];
+        s += scoreWindow(w, player);
+      }
+    }
+    // Diagonal /
+    for (let r = 3; r < ROWS; r++) {
+      for (let c = 0; c <= COLS - 4; c++) {
+        const w = [board[r][c], board[r-1][c+1], board[r-2][c+2], board[r-3][c+3]];
+        s += scoreWindow(w, player);
+      }
+    }
+    // Diagonal \
+    for (let r = 0; r <= ROWS - 4; r++) {
+      for (let c = 0; c <= COLS - 4; c++) {
+        const w = [board[r][c], board[r+1][c+1], board[r+2][c+2], board[r+3][c+3]];
+        s += scoreWindow(w, player);
+      }
+    }
+    return s;
+  }
+
+  function isTerminal() {
+    return checkWin(AI) !== null || checkWin(HU) !== null || isBoardFull();
+  }
+
+  function getValidCols() {
+    return Array.from({ length: COLS }, (_, i) => i).filter(c => board[0][c] === EMPTY);
+  }
+
+  function getNextOpenRow(col) {
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][col] === EMPTY) return r;
+    }
+    return -1;
+  }
+
+  function minimax(depth, alpha, beta, maximizing) {
+    const valid = getValidCols();
+    const terminal = isTerminal();
+
+    if (depth === 0 || terminal) {
+      if (terminal) {
+        if (checkWin(AI)) return [null, 1000000];
+        if (checkWin(HU)) return [null, -1000000];
+        return [null, 0]; // draw
+      }
+      return [null, scoreBoard(AI)];
+    }
+
+    if (maximizing) {
+      let best = -Infinity, bestCol = valid[0];
+      for (const col of valid) {
+        const row = getNextOpenRow(col);
+        board[row][col] = AI;
+        const [, sc] = minimax(depth - 1, alpha, beta, false);
+        board[row][col] = EMPTY;
+        if (sc > best) { best = sc; bestCol = col; }
+        alpha = Math.max(alpha, best);
+        if (alpha >= beta) break;
+      }
+      return [bestCol, best];
+    } else {
+      let best = Infinity, bestCol = valid[0];
+      for (const col of valid) {
+        const row = getNextOpenRow(col);
+        board[row][col] = HU;
+        const [, sc] = minimax(depth - 1, alpha, beta, true);
+        board[row][col] = EMPTY;
+        if (sc < best) { best = sc; bestCol = col; }
+        beta = Math.min(beta, best);
+        if (alpha >= beta) break;
+      }
+      return [bestCol, best];
+    }
+  }
+
+  function getBestMove() {
+    const valid = getValidCols();
+    if (!valid.length) return -1;
+
+    // Check immediate win
+    for (const col of valid) {
+      const row = getNextOpenRow(col);
+      board[row][col] = AI;
+      const win = checkWin(AI);
+      board[row][col] = EMPTY;
+      if (win) return col;
+    }
+    // Block immediate human win
+    for (const col of valid) {
+      const row = getNextOpenRow(col);
+      board[row][col] = HU;
+      const win = checkWin(HU);
+      board[row][col] = EMPTY;
+      if (win) return col;
+    }
+
+    const [bestCol] = minimax(5, -Infinity, Infinity, true);
+    return bestCol !== null ? bestCol : valid[Math.floor(valid.length / 2)];
+  }
+
+  // ---- SCORE DISPLAY ----
+  function updateScoreDisplay() {
+    score1El.textContent = score[0];
+    score2El.textContent = score[1];
+  }
+
+  // ---- GAME INIT ----
+  function startGame() {
+    newBoard();
+    currentPlayer = P1;
+    gameOver = false;
+    aiThinking = false;
+    overlay.classList.remove('show');
+    renderBoard();
+    updateTurnBar();
+    updateColHintState();
+  }
+
+  function setMode(ai) {
+    vsAI = ai;
+    modeBadge.textContent = vsAI ? 'vs AI' : '2 Player';
+    p2label.textContent = vsAI ? 'AI' : 'Player 2';
+    btnMode.textContent = vsAI ? 'Switch to 2P' : 'Switch to AI';
+  }
+
+  // ---- EVENT LISTENERS ----
+  btnNew.addEventListener('click', startGame);
+  btnRestart.addEventListener('click', startGame);
+  btnMode.addEventListener('click', () => {
+    setMode(!vsAI);
+    startGame();
+  });
+
+  // ---- BOOT ----
+  loadScores();
+  updateScoreDisplay();
+  setMode(true);
+  startGame();
+})();
+</script>
+</body>
+</html>
