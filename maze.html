@@ -472,9 +472,10 @@ function updatePlayer(dt) {
     const ntx = pixelToTile(p.x) + p.queuedDx;
     const nty = pixelToTile(p.y) + p.queuedDy;
     if (isWalkable(ntx, nty)) {
+      const dirChanged = p.dx !== p.queuedDx || p.dy !== p.queuedDy;
       p.dx = p.queuedDx;
       p.dy = p.queuedDy;
-      snapToTile(p);
+      if (dirChanged) snapToTile(p);
     }
   }
 
@@ -595,8 +596,9 @@ function updateGhost(g, dt) {
     const target = getGhostTarget(g);
     const dir = pickGhostDir(g, target);
     if (dir) {
+      const dirChanged = g.dx !== dir.dx || g.dy !== dir.dy;
       g.dx = dir.dx; g.dy = dir.dy;
-      snapToTile(g);
+      if (dirChanged) snapToTile(g);
     }
     g.tx = pixelToTile(g.x);
     g.ty = pixelToTile(g.y);
