@@ -508,7 +508,8 @@
           if (emptyNeighbor) {
             placeBubble(emptyNeighbor.row, emptyNeighbor.col, projectile.color);
           } else {
-            // Fallback: snap to nearest empty cell
+            // All neighbors occupied — snap to nearest empty cell anywhere in grid
+            // snapAndPlace will extend the grid if completely full
             snapAndPlace(projectile.x, projectile.y, projectile.color);
           }
           projectile = null;
@@ -563,6 +564,18 @@
     }
     if (best) {
       placeBubble(best.row, best.col, color);
+    } else {
+      // Grid is completely full — extend it by one row and place closest column
+      const newRow = grid.length;
+      const cols = colsForRow(newRow);
+      grid.push(new Array(cols).fill(-1));
+      let bestCol = 0, bestColD = Infinity;
+      for (let col = 0; col < cols; col++) {
+        const p = bubblePos(newRow, col);
+        const d = Math.hypot(px - p.x, py - p.y);
+        if (d < bestColD) { bestColD = d; bestCol = col; }
+      }
+      placeBubble(newRow, bestCol, color);
     }
   }
 
