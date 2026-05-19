@@ -87,9 +87,135 @@
       text-shadow: 0 0 12px var(--neon-cyan);
     }
 
+    #hud .hud-center {
+      text-align: center;
+    }
+
     #hud .lap {
       color: var(--neon-magenta);
       text-shadow: 0 0 12px var(--neon-magenta);
+    }
+
+    #hud .speed {
+      color: var(--neon-cyan);
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+
+    .game-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+      background: rgba(5, 5, 16, 0.88);
+      z-index: 20;
+      pointer-events: auto;
+      font-family: var(--font);
+    }
+
+    .game-overlay.visible {
+      display: flex;
+    }
+
+    .game-overlay h1,
+    .game-overlay h2 {
+      margin: 0 0 0.5rem;
+      letter-spacing: 0.08em;
+    }
+
+    #start-screen h1 {
+      font-size: clamp(1.8rem, 6vw, 2.8rem);
+      color: var(--neon-cyan);
+      text-shadow: 0 0 24px var(--neon-cyan);
+    }
+
+    #results-screen h2 {
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      color: var(--neon-magenta);
+      text-shadow: 0 0 20px var(--neon-magenta);
+    }
+
+    .overlay-sub {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      max-width: 32ch;
+      margin: 0 0 1rem;
+    }
+
+    .overlay-stat {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0.25rem 0;
+    }
+
+    .overlay-score {
+      font-size: 1.1rem;
+      color: var(--neon-cyan);
+      margin-bottom: 1rem;
+    }
+
+    .overlay-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    .overlay-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: var(--font);
+      letter-spacing: 0.06em;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .overlay-btn:hover {
+      background: #9b8fff;
+      transform: scale(1.04);
+    }
+
+    .overlay-btn.secondary {
+      background: var(--surface-2, #1a1a2e);
+      border: 1px solid var(--border);
+    }
+
+    .leaderboard-mini {
+      margin-top: 1rem;
+      width: min(260px, 90%);
+    }
+
+    #countdown-overlay {
+      z-index: 25;
+      background: rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+    }
+
+    #countdown-num {
+      font-size: clamp(4rem, 18vw, 7rem);
+      font-weight: 900;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 40px var(--neon-cyan), 0 0 80px var(--neon-magenta);
+      animation: countdown-pop 0.85s ease;
+    }
+
+    @keyframes countdown-pop {
+      0% { transform: scale(1.5); opacity: 0; }
+      35% { transform: scale(1); opacity: 1; }
+      85% { opacity: 1; }
+      100% { opacity: 0.15; }
     }
 
     #status-banner {
@@ -194,7 +320,29 @@
     </div>
     <div id="hud" aria-live="polite">
       <div id="race-time">0:00.0</div>
+      <div class="hud-center">
+        <div class="speed" id="speed-display">0 KM/H</div>
+      </div>
       <div class="lap" id="lap-display">LAP 0/3</div>
+    </div>
+    <div id="start-screen" class="game-overlay visible">
+      <h1>NEON CIRCUIT</h1>
+      <p class="overlay-sub">3 laps on the neon track. WASD / arrows to steer · Space or GAS to start</p>
+      <button type="button" class="overlay-btn" id="start-btn">START RACE</button>
+      <div class="leaderboard-mini" id="lb-widget-start"></div>
+    </div>
+    <div id="countdown-overlay" class="game-overlay" aria-live="assertive">
+      <div id="countdown-num">3</div>
+    </div>
+    <div id="results-screen" class="game-overlay">
+      <h2>RACE COMPLETE</h2>
+      <div class="overlay-stat" id="final-time">0:00.0</div>
+      <div class="overlay-score" id="final-score">SCORE: 0</div>
+      <div class="overlay-actions">
+        <button type="button" class="overlay-btn" id="retry-btn">RETRY</button>
+        <button type="button" class="overlay-btn secondary" id="share-btn">SHARE</button>
+      </div>
+      <div class="leaderboard-mini" id="lb-widget-results"></div>
     </div>
     <div id="status-banner" aria-live="assertive"></div>
     <div id="touch-controls">
@@ -208,6 +356,8 @@
     </div>
   </div>
 
+  <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
   <script type="module">
     import * as THREE from './vendor/three.module.min.js';
 
@@ -233,6 +383,7 @@
     const OFF_TRACK_FRAC = 0.92;
     const OFF_TRACK_RESET_SEC = 1.5;
     const FINISH_LINE_T = 0.02;
+    const GAME_KEY = 'neon-circuit';
 
     const COLORS = {
       void: 0x050510,
@@ -259,6 +410,10 @@
     let prevT = FINISH_LINE_T;
     let offTrackTimer = 0;
     let bannerHideTimer = 0;
+    let screenShake = 0;
+    let countdownTimer = null;
+    let lastRaceTimeMs = 0;
+    let lastRaceScore = 0;
 
     const car = { t: FINISH_LINE_T, u: 0, v: 0 };
     const keys = Object.create(null);
@@ -266,10 +421,21 @@
     let frameInput = { steer: 0, gas: false, brake: false };
 
     const raceTimeEl = document.getElementById('race-time');
+    const speedDisplayEl = document.getElementById('speed-display');
     const lapDisplayEl = document.getElementById('lap-display');
     const statusBanner = document.getElementById('status-banner');
+    const startScreen = document.getElementById('start-screen');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNum = document.getElementById('countdown-num');
+    const resultsScreen = document.getElementById('results-screen');
+    const finalTimeEl = document.getElementById('final-time');
+    const finalScoreEl = document.getElementById('final-score');
+    const startBtn = document.getElementById('start-btn');
+    const retryBtn = document.getElementById('retry-btn');
+    const shareBtn = document.getElementById('share-btn');
 
     const chasePos = new THREE.Vector3();
+    const shakeOffset = new THREE.Vector3();
     const chaseLook = new THREE.Vector3();
     const scratchPos = new THREE.Vector3();
     const scratchTan = new THREE.Vector3();
@@ -284,6 +450,47 @@
       fallbackPanel.style.display = 'flex';
       document.getElementById('hud').style.display = 'none';
       document.getElementById('touch-controls').style.display = 'none';
+      startScreen.classList.remove('visible');
+      countdownOverlay.classList.remove('visible');
+      resultsScreen.classList.remove('visible');
+    }
+
+    let audioCtx = null;
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      } catch {
+        audioCtx = null;
+      }
+    }
+
+    function playBeep(freq, durationMs = 120, volume = 0.12) {
+      if (!audioCtx) return;
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + durationMs / 1000);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + durationMs / 1000);
+      } catch {
+        /* optional audio — ignore */
+      }
+    }
+
+    function addScreenShake(amount) {
+      screenShake = Math.max(screenShake, amount);
+    }
+
+    function computeScore(raceTimeMs) {
+      return Math.max(1, Math.floor(1_000_000 / Math.max(raceTimeMs, 1)));
     }
 
     function showBanner(text, durationSec = 2) {
@@ -300,8 +507,12 @@
     }
 
     function updateHud(now) {
-      if (gameState === 'WAITING') {
+      const speedKmh = Math.round(car.v * 1.45);
+      speedDisplayEl.textContent = `${speedKmh} KM/H`;
+
+      if (gameState === 'WAITING' || gameState === 'COUNTDOWN') {
         lapDisplayEl.textContent = 'LAP 0/3';
+        raceTimeEl.textContent = '0:00.0';
         return;
       }
       if (gameState === 'FINISHED') return;
@@ -533,10 +744,7 @@
         if (steerKeys.has(e.code)) e.preventDefault();
         keys[e.code] = true;
         if (gameState === 'WAITING' && (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp')) {
-          startRace();
-        }
-        if (gameState === 'FINISHED' && e.code === 'Space') {
-          resetRace();
+          requestRaceStart();
         }
       });
 
@@ -557,7 +765,7 @@
         const press = (e) => {
           e.preventDefault();
           touchInput[field] = true;
-          if (gameState === 'WAITING' && field === 'gas') startRace();
+          if (gameState === 'WAITING' && field === 'gas') requestRaceStart();
         };
         const release = () => { touchInput[field] = false; };
         el.addEventListener('pointerdown', press);
@@ -580,6 +788,48 @@
       frameInput = { steer, gas, brake };
     }
 
+    function beginCountdown() {
+      if (gameState !== 'WAITING') return;
+      initAudio();
+      gameState = 'COUNTDOWN';
+      startScreen.classList.remove('visible');
+      resultsScreen.classList.remove('visible');
+      statusBanner.classList.remove('visible');
+
+      let count = 3;
+      countdownNum.textContent = String(count);
+      countdownOverlay.classList.add('visible');
+      playBeep(440, 90);
+
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownTimer = setInterval(() => {
+        count -= 1;
+        if (count > 0) {
+          countdownNum.textContent = String(count);
+          countdownNum.style.animation = 'none';
+          countdownNum.offsetHeight;
+          countdownNum.style.animation = '';
+          playBeep(520, 90);
+        } else if (count === 0) {
+          countdownNum.textContent = 'GO!';
+          countdownNum.style.animation = 'none';
+          countdownNum.offsetHeight;
+          countdownNum.style.animation = '';
+          playBeep(880, 160, 0.16);
+        } else {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+          countdownOverlay.classList.remove('visible');
+          startRace();
+        }
+      }, 900);
+    }
+
+    function requestRaceStart() {
+      if (gameState !== 'WAITING') return;
+      beginCountdown();
+    }
+
     function startRace() {
       gameState = 'RACING';
       raceStartMs = performance.now();
@@ -590,29 +840,53 @@
       car.v = 0;
       prevT = car.t;
       showBanner('GO!', 1.2);
+      addScreenShake(4);
     }
 
     function resetRace() {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
       gameState = 'WAITING';
       raceStartMs = 0;
       completedLaps = 0;
       offTrackTimer = 0;
+      screenShake = 0;
       car.t = FINISH_LINE_T;
       car.u = 0;
       car.v = 0;
       prevT = car.t;
       raceTimeEl.textContent = '0:00.0';
       lapDisplayEl.textContent = 'LAP 0/3';
-      showBanner('SPACE / GAS TO START', 0);
-      statusBanner.classList.add('visible');
+      speedDisplayEl.textContent = '0 KM/H';
+      statusBanner.classList.remove('visible');
+      countdownOverlay.classList.remove('visible');
+      resultsScreen.classList.remove('visible');
+      startScreen.classList.add('visible');
     }
 
     function finishRace(now) {
       gameState = 'FINISHED';
       const totalMs = now - raceStartMs;
-      raceTimeEl.textContent = formatRaceTime(totalMs);
-      lapDisplayEl.textContent = `FINISHED — ${formatRaceTime(totalMs)}`;
-      showBanner(`RACE COMPLETE — ${formatRaceTime(totalMs)}`, 0);
+      lastRaceTimeMs = totalMs;
+      lastRaceScore = computeScore(totalMs);
+      const timeStr = formatRaceTime(totalMs);
+
+      raceTimeEl.textContent = timeStr;
+      lapDisplayEl.textContent = `FINISHED — ${timeStr}`;
+      finalTimeEl.textContent = timeStr;
+      finalScoreEl.textContent = `SCORE: ${lastRaceScore.toLocaleString()}`;
+      resultsScreen.classList.add('visible');
+      addScreenShake(8);
+      playBeep(660, 200, 0.14);
+      playBeep(990, 280, 0.1);
+
+      if (typeof Leaderboard !== 'undefined') {
+        Leaderboard.saveScore(GAME_KEY, lastRaceScore);
+        Leaderboard.renderWidget(GAME_KEY, 'lb-widget-results');
+        Leaderboard.renderWidget(GAME_KEY, 'lb-widget-start');
+      }
     }
 
     function resetLapProgress() {
@@ -622,15 +896,19 @@
       prevT = car.t;
       offTrackTimer = 0;
       showBanner('OFF TRACK — LAP RESET', 2);
+      addScreenShake(6);
+      playBeep(180, 220, 0.1);
     }
 
     function onLapCrossing() {
       completedLaps += 1;
+      playBeep(720, 100, 0.1);
       if (completedLaps >= TOTAL_LAPS) {
         finishRace(performance.now());
         return;
       }
       showBanner(`LAP ${completedLaps}/${TOTAL_LAPS}`, 1.5);
+      addScreenShake(3);
     }
 
     function detectLapCrossing() {
@@ -684,14 +962,24 @@
       chaseLook.copy(trackCurve.getPointAt(lookT)).add(lookLift);
       chaseLook.addScaledVector(trackNormal, car.u * 0.35);
 
-      camera.position.copy(chasePos);
+      if (screenShake > 0) {
+        shakeOffset.set(
+          (Math.random() * 2 - 1) * screenShake * 0.08,
+          (Math.random() * 2 - 1) * screenShake * 0.05,
+          (Math.random() * 2 - 1) * screenShake * 0.08,
+        );
+        camera.position.copy(chasePos).add(shakeOffset);
+        screenShake = Math.max(0, screenShake - dt * 14);
+      } else {
+        camera.position.copy(chasePos);
+      }
       camera.lookAt(chaseLook);
     }
 
     function update(dt, now) {
       if (bannerHideTimer > 0) {
         bannerHideTimer -= dt;
-        if (bannerHideTimer <= 0 && gameState !== 'WAITING') {
+        if (bannerHideTimer <= 0 && gameState === 'RACING') {
           statusBanner.classList.remove('visible');
         }
       }
@@ -742,10 +1030,39 @@
       resize();
       window.addEventListener('resize', resize);
 
+      startBtn.addEventListener('click', () => {
+        initAudio();
+        requestRaceStart();
+      });
+      retryBtn.addEventListener('click', () => {
+        initAudio();
+        resetRace();
+        requestRaceStart();
+      });
+      shareBtn.addEventListener('click', async () => {
+        const timeStr = formatRaceTime(lastRaceTimeMs);
+        const text = `I scored ${lastRaceScore.toLocaleString()} in Neon Circuit (${timeStr})! Can you beat my lap?`;
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: 'Neon Circuit', text, url: window.location.href });
+          } else if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(`${text} ${window.location.href}`);
+            shareBtn.textContent = 'COPIED!';
+            setTimeout(() => { shareBtn.textContent = 'SHARE'; }, 2000);
+          }
+        } catch {
+          /* user cancelled share */
+        }
+      });
+
       const testGl = renderer.getContext();
       if (!testGl || testGl.isContextLost()) {
         showWebGLFallback();
         return;
+      }
+
+      if (typeof Leaderboard !== 'undefined') {
+        Leaderboard.renderWidget(GAME_KEY, 'lb-widget-start');
       }
 
       resetRace();
