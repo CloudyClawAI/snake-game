@@ -215,8 +215,8 @@
     let gameState = 'START';
     let score = 0;
     let speed = 8;
-    let playerRotation = 0;
-    let targetRotation = 0;
+    let playerRotation = -Math.PI / 2;
+    let targetRotation = -Math.PI / 2;
     let obstacles = [];
     let particles = [];
     let frameCount = 0;
@@ -237,33 +237,35 @@
     let isTouching = false;
 
     function handleInput(x) {
-      const centerX = canvas.width / 2;
-      const normalizedX = (x - centerX) / (canvas.width / 2);
-      targetRotation = normalizedX * Math.PI;
+      const rect = canvas.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      // Clamp normalizedX to [-1, 1] to keep player within visible bounds
+      const normalizedX = Math.max(-1, Math.min(1, (x - centerX) / (rect.width / 2)));
+      // Limit rotation to top 180 degrees (plus a small margin) to keep ship visible
+      targetRotation = normalizedX * (Math.PI * 0.8) - Math.PI / 2;
     }
 
-    canvas.addEventListener('mousemove', (e) => {
+    window.addEventListener('mousemove', (e) => {
       if (gameState === 'PLAYING') {
-        const rect = canvas.getBoundingClientRect();
-        handleInput(e.clientX - rect.left);
+        handleInput(e.clientX);
       }
     });
 
-    canvas.addEventListener('touchstart', (e) => {
-      isTouching = true;
-      const rect = canvas.getBoundingClientRect();
-      handleInput(e.touches[0].clientX - rect.left);
+    window.addEventListener('touchstart', (e) => {
+      if (gameState === 'PLAYING') {
+        isTouching = true;
+        handleInput(e.touches[0].clientX);
+      }
     }, { passive: false });
 
-    canvas.addEventListener('touchmove', (e) => {
+    window.addEventListener('touchmove', (e) => {
       if (gameState === 'PLAYING') {
-        const rect = canvas.getBoundingClientRect();
-        handleInput(e.touches[0].clientX - rect.left);
+        handleInput(e.touches[0].clientX);
         e.preventDefault();
       }
     }, { passive: false });
 
-    canvas.addEventListener('touchend', () => {
+    window.addEventListener('touchend', () => {
       isTouching = false;
     });
 
@@ -387,8 +389,8 @@
     function initGame() {
       score = 0;
       speed = 10;
-      playerRotation = 0;
-      targetRotation = 0;
+      playerRotation = -Math.PI / 2;
+      targetRotation = -Math.PI / 2;
       obstacles = [];
       particles = [];
       tunnelRotation = 0;
