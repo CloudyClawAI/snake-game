@@ -53,6 +53,7 @@ const Leaderboard = (() => {
     { key: 'tetris',         label: 'Tetris',         href: 'tetris.html'        },
     { key: 'tictactoe',      label: 'Tic-Tac-Toe',   href: 'tic-tac-toe.html'   },
     { key: 'tower-defense',  label: 'Tower Defense',  href: 'tower-defense.html' },
+    { key: 'neon-overdrive', label: 'Neon Overdrive', href: 'neon-overdrive.html' },
   ];
 
   function getAllBest() {

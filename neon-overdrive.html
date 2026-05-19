@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Overdrive | CloudyClaw Games</title>
+  <meta name="description" content="High-speed neon tunnel runner. Dodge obstacles, survive the overdrive, and set the ultimate high score.">
+  <link rel="stylesheet" href="design-system.css">
+  <style>
+    :root {
+      --neon-blue: #00f2ff;
+      --neon-pink: #ff00ff;
+      --neon-purple: #bc13fe;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      touch-action: none;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 16/9;
+      background: #000;
+      box-shadow: 0 0 50px rgba(188, 19, 254, 0.2);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      color: #fff;
+      font-family: var(--font);
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-shadow: 0 0 10px var(--neon-blue);
+    }
+
+    #game-over {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      pointer-events: auto;
+      text-align: center;
+    }
+
+    #game-over h2 {
+      font-size: 3rem;
+      color: var(--neon-pink);
+      text-shadow: 0 0 20px var(--neon-pink);
+      margin-bottom: 10px;
+    }
+
+    .final-score {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+      pointer-events: auto;
+      margin: 5px;
+    }
+
+    .btn:hover {
+      background: #9b8fff;
+      transform: scale(1.05);
+    }
+
+    #start-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 110;
+      text-align: center;
+    }
+
+    #start-screen h1 {
+      font-size: 4rem;
+      color: var(--neon-blue);
+      text-shadow: 0 0 30px var(--neon-blue);
+      margin-bottom: 10px;
+    }
+
+    .instructions {
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+
+    .leaderboard-mini {
+      margin-top: 20px;
+      width: 250px;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M10 13l-5-5 5-5"/>
+    </svg>
+    Back to Hub
+  </a>
+
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-layer">
+      <div class="stats">
+        <div id="score-display">SCORE: 0</div>
+        <div id="speed-display">SPEED: 1.0x</div>
+      </div>
+    </div>
+
+    <div id="start-screen">
+      <h1>NEON OVERDRIVE</h1>
+      <p class="instructions">Use MOUSE or TOUCH to rotate.<br>Dodge the obstacles. Don't crash.</p>
+      <button class="btn" id="start-btn">START ENGINE</button>
+      <div class="leaderboard-mini" id="lb-widget"></div>
+    </div>
+
+    <div id="game-over">
+      <h2>CRASHED</h2>
+      <div class="final-score" id="final-score">SCORE: 0</div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn" id="restart-btn">RETRY</button>
+        <button class="btn" id="share-btn" style="background: var(--surface-2); border: 1px solid var(--border);">SHARE</button>
+      </div>
+      <div class="leaderboard-mini" id="lb-widget-over"></div>
+    </div>
+  </div>
+
+  <script src="leaderboard.js"></script>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score-display');
+    const speedDisplay = document.getElementById('speed-display');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const shareBtn = document.getElementById('share-btn');
+
+    // Game Constants
+    const GAME_KEY = 'neon-overdrive';
+    const TUNNEL_RADIUS = 300;
+    const PLAYER_RADIUS = 15;
+    const OBSTACLE_SPAWN_DIST = 2000;
+    const VANISHING_POINT_Z = 2000;
+    const FOV = 400;
+
+    // Cache colors
+    const COLORS = {
+      blue: '#00f2ff',
+      pink: '#ff00ff',
+      purple: '#bc13fe',
+      accent: '#7c6aff'
+    };
+
+    // Game State
+    let gameState = 'START';
+    let score = 0;
+    let speed = 8;
+    let playerRotation = 0;
+    let targetRotation = 0;
+    let obstacles = [];
+    let particles = [];
+    let frameCount = 0;
+    let lastTime = 0;
+    let tunnelRotation = 0;
+    let colorShift = 0;
+
+    function resize() {
+      const container = document.getElementById('game-container');
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Input Handling
+    let isTouching = false;
+
+    function handleInput(x) {
+      const centerX = canvas.width / 2;
+      const normalizedX = (x - centerX) / (canvas.width / 2);
+      targetRotation = normalizedX * Math.PI;
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (gameState === 'PLAYING') {
+        const rect = canvas.getBoundingClientRect();
+        handleInput(e.clientX - rect.left);
+      }
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      const rect = canvas.getBoundingClientRect();
+      handleInput(e.touches[0].clientX - rect.left);
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (gameState === 'PLAYING') {
+        const rect = canvas.getBoundingClientRect();
+        handleInput(e.touches[0].clientX - rect.left);
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => {
+      isTouching = false;
+    });
+
+    // Game Logic
+    class Obstacle {
+      constructor(z, type = 'arc') {
+        this.z = z;
+        this.type = type; // 'arc', 'ring', 'bars'
+        this.angle = Math.random() * Math.PI * 2;
+        this.width = Math.PI / 3 + Math.random() * Math.PI / 2;
+        this.color = Math.random() > 0.5 ? COLORS.blue : COLORS.pink;
+        this.passed = false;
+        this.gapAngle = Math.random() * Math.PI * 2; // For ring type
+      }
+
+      update(dt, currentSpeed) {
+        this.z -= currentSpeed * dt * 60;
+      }
+
+      draw() {
+        if (this.z <= 0 || this.z > VANISHING_POINT_Z) return;
+
+        const scale = FOV / (FOV + this.z);
+        const x = canvas.width / 2;
+        const y = canvas.height / 2;
+        const r = TUNNEL_RADIUS * scale;
+
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 15 * scale;
+        ctx.lineCap = 'round';
+        ctx.shadowBlur = 20 * scale;
+        ctx.shadowColor = this.color;
+
+        if (this.type === 'arc') {
+          ctx.beginPath();
+          ctx.arc(x, y, r, this.angle - tunnelRotation, this.angle + this.width - tunnelRotation);
+          ctx.stroke();
+        } else if (this.type === 'ring') {
+          ctx.beginPath();
+          ctx.arc(x, y, r, this.gapAngle - tunnelRotation + 0.5, this.gapAngle - tunnelRotation + Math.PI * 2 - 0.5);
+          ctx.stroke();
+        } else if (this.type === 'bars') {
+          for (let i = 0; i < 3; i++) {
+            const a = this.angle + i * (Math.PI * 2 / 3) - tunnelRotation;
+            ctx.beginPath();
+            ctx.arc(x, y, r, a, a + 0.4);
+            ctx.stroke();
+          }
+        }
+        
+        ctx.shadowBlur = 0;
+      }
+
+      checkCollision() {
+        if (this.z < 60 && this.z > 10 && !this.passed) {
+          const pAngle = (playerRotation + Math.PI * 10) % (Math.PI * 2);
+          let hit = false;
+
+          if (this.type === 'arc') {
+            const oStart = (this.angle - tunnelRotation + Math.PI * 10) % (Math.PI * 2);
+            const oEnd = (oStart + this.width) % (Math.PI * 2);
+            hit = oStart < oEnd ? (pAngle >= oStart && pAngle <= oEnd) : (pAngle >= oStart || pAngle <= oEnd);
+          } else if (this.type === 'ring') {
+            const gStart = (this.gapAngle - tunnelRotation + Math.PI * 10) % (Math.PI * 2);
+            const gEnd = (gStart + 0.5) % (Math.PI * 2); // Small gap
+            const inGap = gStart < gEnd ? (pAngle >= gStart && pAngle <= gEnd) : (pAngle >= gStart || pAngle <= gEnd);
+            hit = !inGap;
+          } else if (this.type === 'bars') {
+            for (let i = 0; i < 3; i++) {
+              const aStart = (this.angle + i * (Math.PI * 2 / 3) - tunnelRotation + Math.PI * 10) % (Math.PI * 2);
+              const aEnd = (aStart + 0.4) % (Math.PI * 2);
+              if (aStart < aEnd ? (pAngle >= aStart && pAngle <= aEnd) : (pAngle >= aStart || pAngle <= aEnd)) {
+                hit = true;
+                break;
+              }
+            }
+          }
+
+          if (hit) return true;
+        }
+        return false;
+      }
+    }
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10;
+        this.life = 1.0;
+        this.color = color;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.02;
+      }
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function spawnObstacle() {
+      const lastZ = obstacles.length > 0 ? obstacles[obstacles.length - 1].z : 0;
+      const newZ = Math.max(VANISHING_POINT_Z, lastZ + 500 + Math.random() * 400);
+      
+      let type = 'arc';
+      const r = Math.random();
+      if (r > 0.8) type = 'ring';
+      else if (r > 0.6) type = 'bars';
+      
+      obstacles.push(new Obstacle(newZ, type));
+    }
+
+    function initGame() {
+      score = 0;
+      speed = 10;
+      playerRotation = 0;
+      targetRotation = 0;
+      obstacles = [];
+      particles = [];
+      tunnelRotation = 0;
+      frameCount = 0;
+      for (let i = 0; i < 6; i++) {
+        obstacles.push(new Obstacle(1000 + i * 500, 'arc'));
+      }
+      updateUI();
+    }
+
+    function updateUI() {
+      scoreDisplay.innerText = `SCORE: ${Math.floor(score)}`;
+      speedDisplay.innerText = `SPEED: ${(speed / 10).toFixed(1)}x`;
+    }
+
+    function drawTunnel() {
+      const x = canvas.width / 2;
+      const y = canvas.height / 2;
+      
+      // Dynamic grid color
+      const hue = (frameCount / 2) % 360;
+      ctx.strokeStyle = `hsla(${hue}, 70%, 50%, 0.15)`;
+      ctx.lineWidth = 1;
+      
+      const numRings = 12;
+      for (let i = 0; i < numRings; i++) {
+        const z = ((frameCount * speed * 0.5) % (VANISHING_POINT_Z / numRings)) + (i * (VANISHING_POINT_Z / numRings));
+        const scale = FOV / (FOV + z);
+        const r = TUNNEL_RADIUS * scale;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const numLines = 16;
+      for (let i = 0; i < numLines; i++) {
+        const angle = (i / numLines) * Math.PI * 2 - tunnelRotation * 0.5;
+        const x1 = x + Math.cos(angle) * TUNNEL_RADIUS * (FOV / (FOV + VANISHING_POINT_Z));
+        const y1 = y + Math.sin(angle) * TUNNEL_RADIUS * (FOV / (FOV + VANISHING_POINT_Z));
+        const x2 = x + Math.cos(angle) * TUNNEL_RADIUS;
+        const y2 = y + Math.sin(angle) * TUNNEL_RADIUS;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    }
+
+    function drawPlayer() {
+      const x = canvas.width / 2 + Math.cos(playerRotation) * (TUNNEL_RADIUS - 25);
+      const y = canvas.height / 2 + Math.sin(playerRotation) * (TUNNEL_RADIUS - 25);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(playerRotation + Math.PI / 2);
+
+      // Ship body - Neon Blue Glow
+      ctx.fillStyle = '#fff';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = COLORS.blue;
+      ctx.beginPath();
+      ctx.moveTo(0, -18);
+      ctx.lineTo(12, 12);
+      ctx.lineTo(-12, 12);
+      ctx.closePath();
+      ctx.fill();
+
+      // Thruster - Neon Pink
+      ctx.fillStyle = COLORS.pink;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = COLORS.pink;
+      ctx.beginPath();
+      ctx.moveTo(-6, 12);
+      ctx.lineTo(6, 12);
+      ctx.lineTo(0, 12 + 5 + Math.random() * 15);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+      ctx.shadowBlur = 0;
+    }
+
+    function varColor(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function gameLoop(time) {
+      const dt = Math.min(0.1, (time - lastTime) / 1000);
+      lastTime = time;
+
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (gameState === 'PLAYING') {
+        frameCount++;
+        score += dt * speed * 2;
+        speed += dt * 0.05;
+        
+        // Smooth rotation
+        const rotationDiff = targetRotation - playerRotation;
+        playerRotation += rotationDiff * 0.15;
+        tunnelRotation += dt * 0.3;
+
+        if (frameCount % 60 === 0) updateUI();
+
+        drawTunnel();
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+          const obs = obstacles[i];
+          obs.update(dt, speed);
+          obs.draw();
+
+          if (obs.checkCollision()) {
+            endGame();
+          }
+
+          if (obs.z < -100) {
+            obstacles.splice(i, 1);
+            spawnObstacle();
+          }
+        }
+
+        drawPlayer();
+      } else if (gameState === 'GAMEOVER') {
+        drawTunnel();
+        obstacles.forEach(o => o.draw());
+        
+        particles.forEach((p, i) => {
+          p.update();
+          p.draw();
+          if (p.life <= 0) particles.splice(i, 1);
+        });
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      if (gameState === 'GAMEOVER') return;
+      gameState = 'GAMEOVER';
+      gameOverScreen.style.display = 'flex';
+      const finalScore = Math.floor(score);
+      finalScoreDisplay.innerText = `SCORE: ${finalScore}`;
+      
+      // Explosion particles
+      const px = canvas.width / 2 + Math.cos(playerRotation) * (TUNNEL_RADIUS - 25);
+      const py = canvas.height / 2 + Math.sin(playerRotation) * (TUNNEL_RADIUS - 25);
+      for (let i = 0; i < 60; i++) {
+        particles.push(new Particle(px, py, i % 2 === 0 ? COLORS.blue : COLORS.pink));
+      }
+
+      Leaderboard.saveScore(GAME_KEY, finalScore);
+      Leaderboard.renderWidget(GAME_KEY, 'lb-widget-over');
+    }
+
+    startBtn.addEventListener('click', () => {
+      startScreen.style.display = 'none';
+      gameState = 'PLAYING';
+      initGame();
+    });
+
+    restartBtn.addEventListener('click', () => {
+      gameOverScreen.style.display = 'none';
+      gameState = 'PLAYING';
+      initGame();
+    });
+
+    shareBtn.addEventListener('click', () => {
+      const text = `I just scored ${Math.floor(score)} in Neon Overdrive! Can you beat me?`;
+      if (navigator.share) {
+        navigator.share({ title: 'Neon Overdrive', text: text, url: window.location.href });
+      } else {
+        navigator.clipboard.writeText(`${text} ${window.location.href}`);
+        shareBtn.innerText = 'COPIED!';
+        setTimeout(() => shareBtn.innerText = 'SHARE', 2000);
+      }
+    });
+
+    // Initial Leaderboard Load
+    Leaderboard.renderWidget(GAME_KEY, 'lb-widget');
+    
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
