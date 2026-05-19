@@ -150,6 +150,69 @@ a:hover { text-decoration: underline; }
 .lb-hub-name { font-size: 0.88rem; }
 .lb-hub-score { font-size: 0.88rem; font-variant-numeric: tabular-nums; }
 
+/* ── Global Cloud Leaderboard ───────────────────────── */
+.lb-global-panel {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+.lb-global-title {
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.lb-game-picker select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+.lb-global-container { min-height: 2rem; }
+.lb-global-list { list-style: none; }
+.lb-global-list .lb-row {
+  display: grid;
+  grid-template-columns: 1.8rem 1fr auto;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.lb-global-list .lb-row:last-child { border-bottom: none; }
+.lb-global-list .lb-gold { color: var(--gold); font-weight: 600; }
+.lb-global-list .lb-me { background: rgba(124,106,255,0.08); border-radius: 4px; }
+.lb-nick { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+.lb-loading { color: var(--text-muted); font-size: 0.8rem; font-style: italic; }
+.lb-cloud-off { color: var(--text-muted); font-size: 0.8rem; }
+.lb-nick-area { margin-top: 0.75rem; }
+.lb-nick-form { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
+.lb-nick-label { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+.lb-nick-form input {
+  flex: 1; min-width: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 0.25rem 0.4rem;
+  font-size: 0.8rem;
+}
+.lb-nick-form button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lb-nick-form button:hover { opacity: 0.85; }
+
 /* ── Touch D-pad ────────────────────────────────────── */
 .dpad {
   display: none;
