@@ -62,6 +62,7 @@ const Leaderboard = (() => {
     { key: 'stack-tower',    label: 'Stack Tower',    href: 'stack-tower.html'    },
     { key: 'pinball',        label: 'Pinball',        href: 'pinball.html'        },
     { key: 'color-flood',    label: 'Color Flood',    href: 'color-flood.html'    },
+    { key: 'sky-jumper',     label: 'Sky Jumper',     href: 'sky-jumper.html'     },
   ];
 
   function getAllBest() {

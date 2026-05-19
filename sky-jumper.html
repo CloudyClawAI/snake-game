@@ -185,12 +185,20 @@
       width: 30,
       height: 30,
       color: '#FFD700',
-      facingRight: true
+      facingRight: true,
+      powerup: null,
+      powerupTimer: 0,
+      shielded: false
     };
     let platforms = [];
+    let enemies = [];
+    let bullets = [];
+    let powerups = [];
     let cameraY = 0;
     let keys = {};
     let touchX = null;
+    let lastShotTime = 0;
+    const SHOT_COOLDOWN = 250;
 
     function updateBestLine() {
       const best = Leaderboard.getBest(GAME_KEY);
@@ -199,13 +207,25 @@
     updateBestLine();
     Leaderboard.renderWidget(GAME_KEY, 'lb-widget-main');
 
-    // Platform types
+    // Types
     const PLATFORM_TYPES = {
       NORMAL: 'normal',
       MOVING: 'moving',
       SPRING: 'spring',
       CRUMBLING: 'crumbling',
       CLOUD: 'cloud'
+    };
+
+    const POWERUP_TYPES = {
+      ROCKET: { type: 'rocket', duration: 180, color: '#f44336', icon: '🚀' },
+      JETPACK: { type: 'jetpack', duration: 360, color: '#2196F3', icon: '🎒' },
+      SPRING_SHOES: { type: 'spring_shoes', duration: 1, color: '#9C27B0', icon: '👟' },
+      SHIELD: { type: 'shield', duration: Infinity, color: '#00BCD4', icon: '🛡️' }
+    };
+
+    const ENEMY_TYPES = {
+      MONSTER: { type: 'monster', color: '#E91E63', icon: '👾' },
+      UFO: { type: 'ufo', color: '#9E9E9E', icon: '🛸' }
     };
 
     class Platform {
@@ -262,6 +282,74 @@
       }
     }
 
+    class Enemy {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.width = 40;
+        this.height = 40;
+        this.type = type;
+        this.vx = type === ENEMY_TYPES.UFO ? 3 : 1;
+        this.direction = 1;
+        this.alive = true;
+      }
+
+      update() {
+        this.x += this.vx * this.direction;
+        if (this.x < 0 || this.x + this.width > CANVAS_WIDTH) {
+          this.direction *= -1;
+        }
+      }
+
+      draw(ctx, cameraOffset) {
+        if (!this.alive) return;
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.type.icon, this.x + this.width/2, this.y + cameraOffset + this.height/2);
+      }
+    }
+
+    class PowerUp {
+      constructor(x, y, config) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 30;
+        this.config = config;
+        this.collected = false;
+      }
+
+      draw(ctx, cameraOffset) {
+        if (this.collected) return;
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.config.icon, this.x + this.width/2, this.y + cameraOffset + this.height/2);
+      }
+    }
+
+    class Bullet {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vy = -10;
+        this.radius = 4;
+        this.active = true;
+      }
+
+      update() {
+        this.y += this.vy;
+      }
+
+      draw(ctx, cameraOffset) {
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y + cameraOffset, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     function initGame() {
       gameActive = false;
       score = 0;
@@ -275,10 +363,17 @@
         width: 30,
         height: 30,
         color: '#FFD700',
-        facingRight: true
+        facingRight: true,
+        powerup: null,
+        powerupTimer: 0,
+        shielded: false
       };
       
       platforms = [];
+      enemies = [];
+      bullets = [];
+      powerups = [];
+      
       // Starting platform
       platforms.push(new Platform(CANVAS_WIDTH / 2 - PLATFORM_WIDTH / 2, CANVAS_HEIGHT - 50));
       
@@ -300,12 +395,35 @@
       let type = PLATFORM_TYPES.NORMAL;
       
       const r = Math.random();
-      if (r > 0.9) type = PLATFORM_TYPES.SPRING;
-      else if (r > 0.8) type = PLATFORM_TYPES.MOVING;
-      else if (r > 0.7) type = PLATFORM_TYPES.CRUMBLING;
-      else if (r > 0.65) type = PLATFORM_TYPES.CLOUD;
+      if (r > 0.95) type = PLATFORM_TYPES.SPRING;
+      else if (r > 0.85) type = PLATFORM_TYPES.MOVING;
+      else if (r > 0.75) type = PLATFORM_TYPES.CRUMBLING;
+      else if (r > 0.7) type = PLATFORM_TYPES.CLOUD;
 
-      platforms.push(new Platform(x, y, type));
+      const p = new Platform(x, y, type);
+      platforms.push(p);
+
+      // Randomly add powerup on normal platforms
+      if (type === PLATFORM_TYPES.NORMAL && Math.random() > 0.9) {
+        const puTypes = Object.values(POWERUP_TYPES);
+        const puConfig = puTypes[Math.floor(Math.random() * puTypes.length)];
+        powerups.push(new PowerUp(x + PLATFORM_WIDTH/2 - 15, y - 35, puConfig));
+      }
+
+      // Randomly add enemy above platform
+      if (Math.random() > 0.92 && y < -500) {
+        const eTypes = Object.values(ENEMY_TYPES);
+        const eConfig = eTypes[Math.floor(Math.random() * eTypes.length)];
+        enemies.push(new Enemy(Math.random() * (CANVAS_WIDTH - 40), y - 100, eConfig));
+      }
+    }
+
+    function shoot() {
+      if (!gameActive) return;
+      const now = Date.now();
+      if (now - lastShotTime < SHOT_COOLDOWN) return;
+      lastShotTime = now;
+      bullets.push(new Bullet(player.x + player.width/2, player.y));
     }
 
     function startGame() {
@@ -330,12 +448,23 @@
       if (!gameActive) return;
 
       // Player Input
-      if (keys['ArrowLeft']) player.vx -= STEER_SPEED;
-      if (keys['ArrowRight']) player.vx += STEER_SPEED;
+      if (keys['ArrowLeft']) {
+        player.vx -= STEER_SPEED;
+        player.facingRight = false;
+      }
+      if (keys['ArrowRight']) {
+        player.vx += STEER_SPEED;
+        player.facingRight = true;
+      }
       
       if (touchX !== null) {
-        if (touchX < CANVAS_WIDTH / 2) player.vx -= STEER_SPEED;
-        else player.vx += STEER_SPEED;
+        if (touchX < CANVAS_WIDTH / 2) {
+          player.vx -= STEER_SPEED;
+          player.facingRight = false;
+        } else {
+          player.vx += STEER_SPEED;
+          player.facingRight = true;
+        }
       }
 
       player.vx *= FRICTION;
@@ -345,8 +474,24 @@
       if (player.x + player.width < 0) player.x = CANVAS_WIDTH;
       if (player.x > CANVAS_WIDTH) player.x = -player.width;
 
+      // Powerup Logic
+      if (player.powerup) {
+        player.powerupTimer--;
+        if (player.powerup === POWERUP_TYPES.ROCKET.type) {
+          player.vy = -15;
+        } else if (player.powerup === POWERUP_TYPES.JETPACK.type) {
+          player.vy = -10;
+        }
+        
+        if (player.powerupTimer <= 0) {
+          player.powerup = null;
+        }
+      }
+
       // Gravity and Movement
-      player.vy += GRAVITY;
+      if (!player.powerup || (player.powerup !== POWERUP_TYPES.ROCKET.type && player.powerup !== POWERUP_TYPES.JETPACK.type)) {
+        player.vy += GRAVITY;
+      }
       player.y += player.vy;
 
       // Camera Follow
@@ -367,23 +512,88 @@
             
             player.y = p.y - player.height;
             
+            let jumpMultiplier = 1;
+            if (player.powerup === POWERUP_TYPES.SPRING_SHOES.type) {
+              jumpMultiplier = 1.5;
+              player.powerup = null;
+            }
+
             if (p.type === PLATFORM_TYPES.SPRING) {
-              player.vy = JUMP_FORCE * 2;
+              player.vy = JUMP_FORCE * 2 * jumpMultiplier;
             } else if (p.type === PLATFORM_TYPES.CLOUD) {
-              player.vy = JUMP_FORCE;
+              player.vy = JUMP_FORCE * jumpMultiplier;
               p.broken = true;
             } else if (p.type === PLATFORM_TYPES.CRUMBLING) {
-              player.vy = JUMP_FORCE;
+              player.vy = JUMP_FORCE * jumpMultiplier;
               p.broken = true;
             } else {
-              player.vy = JUMP_FORCE;
+              player.vy = JUMP_FORCE * jumpMultiplier;
             }
           }
         }
       });
 
-      // Remove old platforms and generate new ones
+      // Update Powerups
+      powerups.forEach(pu => {
+        if (!pu.collected && 
+            player.x + player.width > pu.x && 
+            player.x < pu.x + pu.width &&
+            player.y + player.height > pu.y &&
+            player.y < pu.y + pu.height) {
+          
+          pu.collected = true;
+          if (pu.config.type === POWERUP_TYPES.SHIELD.type) {
+            player.shielded = true;
+          } else {
+            player.powerup = pu.config.type;
+            player.powerupTimer = pu.config.duration;
+          }
+        }
+      });
+
+      // Update Enemies
+      enemies.forEach(e => {
+        if (!e.alive) return;
+        e.update();
+        
+        // Collision with player
+        if (player.x + player.width > e.x && 
+            player.x < e.x + e.width &&
+            player.y + player.height > e.y &&
+            player.y < e.y + e.height) {
+          
+          if (player.shielded) {
+            player.shielded = false;
+            e.alive = false;
+          } else if (player.vy > 0 && player.y + player.height < e.y + 20) {
+            // Stomp enemy
+            player.vy = JUMP_FORCE;
+            e.alive = false;
+          } else {
+            endGame();
+          }
+        }
+
+        // Collision with bullets
+        bullets.forEach(b => {
+          if (b.active && 
+              b.x > e.x && b.x < e.x + e.width &&
+              b.y > e.y && b.y < e.y + e.height) {
+            b.active = false;
+            e.alive = false;
+          }
+        });
+      });
+
+      // Update Bullets
+      bullets.forEach(b => b.update());
+      bullets = bullets.filter(b => b.active && b.y > cameraY - 100);
+
+      // Remove old objects and generate new ones
       platforms = platforms.filter(p => p.y < cameraY + CANVAS_HEIGHT + 100);
+      enemies = enemies.filter(e => e.alive && e.y < cameraY + CANVAS_HEIGHT + 100);
+      powerups = powerups.filter(pu => !pu.collected && pu.y < cameraY + CANVAS_HEIGHT + 100);
+
       while (platforms.length < MAX_PLATFORMS) {
         const lowestY = Math.min(...platforms.map(p => p.y));
         generatePlatform(lowestY - (Math.random() * 40 + 60));
@@ -403,16 +613,15 @@
       }
 
       // Background Color based on height
-      const heightInKm = score / 100;
-      if (heightInKm < 10) {
-        // Sky to Clouds
-        document.body.style.background = '#87CEEB';
-      } else if (heightInKm < 30) {
-        // Clouds to Space
-        document.body.style.background = '#1e293b';
+      const heightInM = score;
+      if (heightInM < 1000) {
+        document.body.style.background = '#87CEEB'; // Sky
+      } else if (heightInM < 3000) {
+        document.body.style.background = '#4A90E2'; // High sky
+      } else if (heightInM < 6000) {
+        document.body.style.background = '#1e293b'; // Space edge
       } else {
-        // Alien dimension
-        document.body.style.background = '#0a0a14';
+        document.body.style.background = '#0a0a14'; // Deep space
       }
     }
 
@@ -421,8 +630,29 @@
       
       const cameraOffset = -cameraY;
 
+      // Draw Background Details (Stars/Clouds)
+      if (score > 5000) {
+        ctx.fillStyle = '#fff';
+        for (let i = 0; i < 20; i++) {
+          const x = (Math.sin(i * 123.45) * 0.5 + 0.5) * CANVAS_WIDTH;
+          const y = ((Math.cos(i * 678.90) * 0.5 + 0.5) * CANVAS_HEIGHT + cameraY * 0.2) % CANVAS_HEIGHT;
+          ctx.beginPath();
+          ctx.arc(x, y, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
       // Draw Platforms
       platforms.forEach(p => p.draw(ctx, cameraOffset));
+
+      // Draw Powerups
+      powerups.forEach(pu => pu.draw(ctx, cameraOffset));
+
+      // Draw Enemies
+      enemies.forEach(e => e.draw(ctx, cameraOffset));
+
+      // Draw Bullets
+      bullets.forEach(b => b.draw(ctx, cameraOffset));
 
       // Draw Player (Cartoonish Bouncy Character)
       ctx.save();
@@ -431,7 +661,7 @@
       // Squash and stretch based on velocity
       const stretch = 1 + Math.abs(player.vy) * 0.02;
       const squash = 1 / stretch;
-      ctx.scale(squash, stretch);
+      ctx.scale(squash * (player.facingRight ? 1 : -1), stretch);
 
       // Body
       ctx.fillStyle = player.color;
@@ -456,6 +686,26 @@
       ctx.arc(7, -5, 2, 0, Math.PI * 2);
       ctx.fill();
 
+      // Powerup visuals
+      if (player.powerup === POWERUP_TYPES.ROCKET.type) {
+        ctx.font = '20px Arial';
+        ctx.fillText('🚀', -10, 20);
+      } else if (player.powerup === POWERUP_TYPES.JETPACK.type) {
+        ctx.font = '20px Arial';
+        ctx.fillText('🎒', -10, 20);
+      } else if (player.powerup === POWERUP_TYPES.SPRING_SHOES.type) {
+        ctx.font = '16px Arial';
+        ctx.fillText('👟', -10, 20);
+      }
+
+      if (player.shielded) {
+        ctx.strokeStyle = '#00BCD4';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       ctx.restore();
     }
 
@@ -468,11 +718,16 @@
     }
 
     // Input
-    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if (e.code === 'Space') shoot();
+    });
     window.addEventListener('keyup', e => keys[e.code] = false);
     
     canvas.addEventListener('touchstart', e => {
       e.preventDefault();
+      if (!gameActive) return;
+      shoot();
       touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
     }, { passive: false });
     

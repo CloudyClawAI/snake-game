@@ -65,6 +65,7 @@ All games must pass this checklist before a task is marked **done** or the game 
 | Missile Command | missile-command.html | ✅ | ✅ | ✅ | N/A | ✅ | 6 cities; 3 bases; MIRVs; wave bonuses |
 
 || Color Flood | color-flood.html | ✅ | ✅ | ✅ | ✅ | ✅ | 3 board sizes; ripple animation; keyboard support |
+|| Sky Jumper | sky-jumper.html | ✅ | ✅ | ✅ | N/A | ✅ | Doodle Jump clone; power-ups; enemies; shooting |
 
 _Touch column "—" means no on-screen controls present; keyboard-only game._
 
