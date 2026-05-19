@@ -169,6 +169,7 @@ let hiScore = Leaderboard.getBest('pinball');
 let balls = 3;
 let multiplier = 1;
 let ballSaver = 0; // frames
+let jackpotTimer = 0;
 
 let ball = { x: 0, y: 0, vx: 0, vy: 0, active: false };
 let plunger = { y: 0, power: 0, charging: false };
@@ -181,6 +182,7 @@ let bumpers = [
   { x: 150, y: 180, r: 25, color: '#ff4d8a', pts: 100 },
   { x: 290, y: 180, r: 25, color: '#ff4d8a', pts: 100 },
   { x: 220, y: 280, r: 25, color: '#44aaff', pts: 100 },
+  { x: 220, y: 100, r: 20, color: '#ffcc44', pts: 10000, jackpot: true, active: false },
   { x: 100, y: 350, r: 15, color: '#44ee88', pts: 50, type: 'triangle', points: [{x:-15,y:-20},{x:25,y:0},{x:-15,y:20}] },
   { x: 340, y: 350, r: 15, color: '#44ee88', pts: 50, type: 'triangle', points: [{x:15,y:-20},{x:-25,y:0},{x:15,y:20}] }
 ];
@@ -207,6 +209,10 @@ let walls = [
 
 let particles = [];
 let scorePopups = [];
+
+let lanes = [
+  { x: 30, y: 150, w: 40, h: 20, active: false, color: '#7c6aff' }
+];
 
 // ── Input ────────────────────────────────────────────────────────────────────
 const keys = {};
@@ -296,6 +302,14 @@ function updateHUD() {
 function addScore(pts, x, y) {
   const gained = pts * multiplier;
   score += gained;
+  
+  // Jackpot activation every 5000 pts
+  if(Math.floor(score/5000) > Math.floor((score-gained)/5000)) {
+    jackpotTimer = 600; // 10 seconds
+    const jb = bumpers.find(b => b.jackpot);
+    if(jb) jb.active = true;
+  }
+
   if(score > hiScore) {
     hiScore = score;
     document.getElementById('hi-val').textContent = hiScore.toLocaleString();
@@ -360,6 +374,14 @@ function update() {
   // Flippers
   for(const f of flippers) {
     f.angle += (f.targetAngle - f.angle) * 0.35;
+  }
+
+  if(jackpotTimer > 0) {
+    jackpotTimer--;
+    if(jackpotTimer === 0) {
+      const jb = bumpers.find(b => b.jackpot);
+      if(jb) jb.active = false;
+    }
   }
 
   if(!ball.active) return;
@@ -432,7 +454,19 @@ function update() {
         ball.vy = ref.vy + n.y * 3;
         ball.x = b.x + n.x * (b.r + BALL_RADIUS);
         ball.y = b.y + n.y * (b.r + BALL_RADIUS);
-        addScore(b.pts, b.x, b.y);
+        
+        let pts = b.pts;
+        if(b.jackpot) {
+          if(b.active) {
+            pts = 10000;
+            b.active = false;
+            jackpotTimer = 0;
+          } else {
+            pts = 100;
+          }
+        }
+        
+        addScore(pts, b.x, b.y);
         addParticleBurst(b.x, b.y, b.color, 15);
         b._flash = 10;
       }
@@ -461,6 +495,18 @@ function update() {
       
       ball.x = cp.x + n.x * BALL_RADIUS;
       ball.y = cp.y + n.y * BALL_RADIUS;
+    }
+  }
+
+  // Lane detection
+  for(const l of lanes) {
+    if(ball.x > l.x && ball.x < l.x + l.w && ball.y > l.y && ball.y < l.y + l.h) {
+      if(!l.active) {
+        l.active = true;
+        addScore(500, l.x + l.w/2, l.y + l.h/2);
+        addParticleBurst(l.x + l.w/2, l.y + l.h/2, l.color, 20);
+        setTimeout(() => l.active = false, 2000); // Reset after 2s
+      }
     }
   }
 
@@ -528,11 +574,23 @@ function draw() {
     ctx.strokeStyle = '#333';
   }
 
+  // Lanes
+  for(const l of lanes) {
+    ctx.strokeStyle = l.active ? l.color : '#333';
+    ctx.lineWidth = 2;
+    if(l.active) {
+      ctx.shadowColor = l.color;
+      ctx.shadowBlur = 15;
+    }
+    ctx.strokeRect(l.x, l.y, l.w, l.h);
+    ctx.shadowBlur = 0;
+  }
+
   // Bumpers
   for(const b of bumpers) {
-    ctx.fillStyle = b.color;
+    ctx.fillStyle = b.jackpot && !b.active ? '#333' : b.color;
     ctx.shadowColor = b.color;
-    ctx.shadowBlur = b._flash ? 20 : 5;
+    ctx.shadowBlur = b._flash || b.active ? 20 : 5;
     if(b.type === 'triangle') {
       ctx.beginPath();
       ctx.moveTo(b.x + b.points[0].x, b.y + b.points[0].y);
