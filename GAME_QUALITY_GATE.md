@@ -38,6 +38,7 @@ All games must pass this checklist before a task is marked **done** or the game 
 
 | Game | File | Loads | Mechanic | Lose | Win | Touch | Notes |
 |------|------|-------|----------|------|-----|-------|-------|
+| Neon Overdrive | neon-overdrive.html | ✅ | ✅ | ✅ | N/A | ✅ | High-speed 3D tunnel runner |
 | Maze Muncher | maze.html | ✅ | ✅ | ✅ | ✅ | ✅ | Fixed movement bug (SYM-18) |
 | Snake | snake.html | ✅ | ✅ | ✅ | N/A | ✅ | |
 | Tetris | tetris.html | ✅ | ✅ | ✅ | N/A | ✅ | |
