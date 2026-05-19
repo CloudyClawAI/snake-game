@@ -67,13 +67,18 @@
     #hud span { color: var(--text); font-weight: 700; }
 
     #game-wrap {
-      position: relative;
       flex: 1;
       display: flex;
       align-items: flex-start;
       justify-content: center;
       width: 100%;
       padding: 0.75rem 0.5rem;
+    }
+
+    .game-stage {
+      position: relative;
+      display: inline-block;
+      line-height: 0;
     }
 
     canvas {
@@ -192,6 +197,7 @@
 </header>
 
 <div id="game-wrap">
+  <div class="game-stage">
   <canvas id="c"></canvas>
 
   <div class="overlay" id="start-screen">
@@ -209,6 +215,7 @@
     <div class="score-display" id="go-score">0</div>
     <p id="go-hi-msg"></p>
     <button class="btn" id="restart-btn">PLAY AGAIN</button>
+  </div>
   </div>
 </div>
 
