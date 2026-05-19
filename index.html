@@ -540,6 +540,15 @@
       <h2>🏆 Top Scores</h2>
       <div id="lb-hub" class="lb-hub-summary"></div>
 
+      <div id="lb-global-panel" class="lb-global-panel" style="display:none">
+        <h3 class="lb-global-title">🌐 Global Leaders</h3>
+        <div class="lb-game-picker">
+          <select id="lb-game-select" aria-label="Select game for global leaderboard"></select>
+        </div>
+        <div id="lb-global-list" class="lb-global-container"></div>
+        <div id="lb-nick-area" class="lb-nick-area"></div>
+      </div>
+
       <!-- Monetisation: Carbon Ads slot -->
       <!-- To activate: sign up at carbonads.com, replace YOUR_ZONE_ID below, -->
       <!-- then remove the script comment markers.                               -->
@@ -569,8 +578,33 @@
   </footer>
 
   <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
   <script>
     Leaderboard.renderHubSummary('lb-hub');
+
+    // Global leaderboard panel — only shown when Supabase is configured
+    (async () => {
+      if (!CloudLeaderboard.configured) return;
+      const panel = document.getElementById('lb-global-panel');
+      if (panel) panel.style.display = 'block';
+
+      const sel = document.getElementById('lb-game-select');
+      if (sel) {
+        Leaderboard.ALL_GAMES.forEach(g => {
+          const opt = document.createElement('option');
+          opt.value = g.key;
+          opt.textContent = g.label;
+          sel.appendChild(opt);
+        });
+        const loadGame = async () => {
+          await CloudLeaderboard.renderGlobalWidget(sel.value, 'lb-global-list', 10);
+        };
+        sel.addEventListener('change', loadGame);
+        await loadGame();
+      }
+
+      CloudLeaderboard.renderNicknameForm('lb-nick-area');
+    })();
 
     // PWA install prompt
     let deferredPrompt;

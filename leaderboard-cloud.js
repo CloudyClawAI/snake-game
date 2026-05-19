@@ -4,46 +4,37 @@
  * Drop-in companion to leaderboard.js. Syncs scores to Supabase in the
  * background while keeping localStorage as the offline source-of-truth.
  *
- * ACTIVATION (one-time setup):
- *   1. Create a free project at https://supabase.com
- *   2. Run the schema in supabase/schema.sql (or paste into Supabase SQL editor)
- *   3. Replace SUPABASE_URL and SUPABASE_ANON_KEY below with your project values
- *   4. Add <script src="leaderboard-cloud.js"></script> to any game page
- *      AFTER leaderboard.js — it wraps Leaderboard.saveScore automatically.
- *
- * Schema (supabase SQL editor):
- *   create table if not exists scores (
- *     id         uuid primary key default gen_random_uuid(),
- *     game       text not null,
- *     player_id  uuid not null,
- *     score      integer not null,
- *     meta       jsonb,
- *     created_at timestamptz default now()
- *   );
- *   create index on scores (game, score desc);
- *   -- Public read, anonymous insert (Row Level Security):
- *   alter table scores enable row level security;
- *   create policy "public read"   on scores for select using (true);
- *   create policy "anon insert"   on scores for insert with check (true);
+ * Schema: run supabase/schema.sql once in the Supabase SQL editor.
+ * Supabase publishable keys (sb_publishable_…) are safe to commit —
+ * Row Level Security controls what the key can do.
  */
 
 const CloudLeaderboard = (() => {
   // ── Configuration ───────────────────────────────────────────
-  // Replace these with your Supabase project values to activate.
-  const SUPABASE_URL      = 'https://YOUR_PROJECT.supabase.co';
-  const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+  // Runtime overrides: set window.CC_SUPABASE_URL / CC_SUPABASE_KEY before
+  // this script loads to swap credentials without editing this file.
+  const SUPABASE_URL = window.CC_SUPABASE_URL || 'https://ordbezlcybkcmiocomfz.supabase.co';
+  const SUPABASE_KEY = window.CC_SUPABASE_KEY || 'sb_publishable_R7kp2MczyF3h9ReA2Qei0g_1w0Me7Sq';
 
   const CONFIGURED = !SUPABASE_URL.includes('YOUR_PROJECT');
   const ENDPOINT   = SUPABASE_URL + '/rest/v1/scores';
   const HEADERS    = {
     'Content-Type':  'application/json',
-    'apikey':         SUPABASE_ANON_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'apikey':         SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
     'Prefer':        'return=minimal',
+  };
+  const READ_HEADERS = {
+    'apikey':        SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
   };
 
   // ── Anonymous player identity ────────────────────────────────
-  const PLAYER_KEY = 'cc_player_id';
+  const PLAYER_KEY    = 'cc_player_id';
+  const NICKNAME_KEY  = 'cc_player_nick';
+  const DEFAULT_NICKS = ['AcePlayer', 'StarGamer', 'PixelHero', 'NeonWolf',
+                          'CyberAce', 'VoidRunner', 'LaserPilot', 'GridMaster'];
+
   function getPlayerId() {
     let id = localStorage.getItem(PLAYER_KEY);
     if (!id) {
@@ -56,6 +47,22 @@ const CloudLeaderboard = (() => {
     return id;
   }
 
+  function getNickname() {
+    let nick = localStorage.getItem(NICKNAME_KEY);
+    if (!nick) {
+      nick = DEFAULT_NICKS[Math.floor(Math.random() * DEFAULT_NICKS.length)] +
+             Math.floor(Math.random() * 9000 + 1000);
+      localStorage.setItem(NICKNAME_KEY, nick);
+    }
+    return nick;
+  }
+
+  function setNickname(nick) {
+    const clean = String(nick).trim().slice(0, 24).replace(/[^a-zA-Z0-9_\- ]/g, '');
+    if (clean) localStorage.setItem(NICKNAME_KEY, clean);
+    return clean || getNickname();
+  }
+
   // ── Submit a score ───────────────────────────────────────────
   async function submit(game, score, meta) {
     if (!CONFIGURED) return;
@@ -65,7 +72,13 @@ const CloudLeaderboard = (() => {
       await fetch(ENDPOINT, {
         method: 'POST',
         headers: HEADERS,
-        body: JSON.stringify({ game, player_id: getPlayerId(), score: n, meta: meta || null }),
+        body: JSON.stringify({
+          game,
+          player_id: getPlayerId(),
+          nickname:  getNickname(),
+          score:     n,
+          meta:      meta || null,
+        }),
       });
     } catch (_) {
       // Offline or network error — silently drop; localStorage already saved it.
@@ -76,8 +89,10 @@ const CloudLeaderboard = (() => {
   async function getGlobalTop(game, limit = 10) {
     if (!CONFIGURED) return [];
     try {
-      const url = `${ENDPOINT}?game=eq.${encodeURIComponent(game)}&order=score.desc&limit=${limit}&select=score,player_id,created_at`;
-      const res = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+      const url = `${ENDPOINT}?game=eq.${encodeURIComponent(game)}` +
+                  `&order=score.desc&limit=${limit}` +
+                  `&select=score,nickname,player_id,created_at`;
+      const res = await fetch(url, { headers: READ_HEADERS });
       if (!res.ok) return [];
       return await res.json();
     } catch (_) {
@@ -85,9 +100,94 @@ const CloudLeaderboard = (() => {
     }
   }
 
+  // ── Fetch all-time best score per game (hub summary) ─────────
+  async function getGlobalHubSummary() {
+    if (!CONFIGURED) return {};
+    try {
+      // Use Supabase RPC or aggregate: group by game, pick max score.
+      const url = `${ENDPOINT}?select=game,score&order=game.asc,score.desc`;
+      const res = await fetch(url, { headers: READ_HEADERS });
+      if (!res.ok) return {};
+      const rows = await res.json();
+      const best = {};
+      for (const row of rows) {
+        if (!best[row.game] || row.score > best[row.game]) {
+          best[row.game] = row.score;
+        }
+      }
+      return best;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  // ── Render global leaderboard widget ─────────────────────────
+  // Populates `containerId` with a ranked list of global top scores.
+  // Shows a "loading…" state while fetching.
+  async function renderGlobalWidget(gameKey, containerId, limit = 10) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    if (!CONFIGURED) {
+      el.innerHTML = '<p class="lb-cloud-off">🌐 Global leaderboard not configured.</p>';
+      return;
+    }
+
+    el.innerHTML = '<p class="lb-loading">Loading global scores…</p>';
+    const rows = await getGlobalTop(gameKey, limit);
+
+    if (!rows.length) {
+      el.innerHTML = '<p class="lb-empty">No global scores yet — be the first!</p>';
+      return;
+    }
+
+    const myId  = getPlayerId();
+    const myNick = getNickname();
+    const medals = ['🥇', '🥈', '🥉'];
+
+    el.innerHTML = '<ol class="lb-list lb-global-list">' +
+      rows.map((r, i) => {
+        const isMe = r.player_id === myId;
+        const nick = r.nickname || ('Player ' + r.player_id.slice(0, 6));
+        const medal = medals[i] || `${i + 1}.`;
+        return `<li class="lb-row${i === 0 ? ' lb-gold' : ''}${isMe ? ' lb-me' : ''}">` +
+               `<span class="lb-rank">${medal}</span>` +
+               `<span class="lb-nick">${escHtml(nick)}${isMe ? ' (you)' : ''}</span>` +
+               `<span class="lb-score">${Number(r.score).toLocaleString()}</span>` +
+               `</li>`;
+      }).join('') +
+      '</ol>';
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Nickname prompt UI ───────────────────────────────────────
+  // Renders a small inline form in `containerId` to set/change nickname.
+  function renderNicknameForm(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const current = getNickname();
+    el.innerHTML =
+      `<div class="lb-nick-form">` +
+      `<span class="lb-nick-label">Your name: </span>` +
+      `<input id="cc-nick-input" type="text" maxlength="24" value="${escHtml(current)}" ` +
+      `placeholder="Enter nickname">` +
+      `<button id="cc-nick-save">Save</button>` +
+      `</div>`;
+    document.getElementById('cc-nick-save').addEventListener('click', () => {
+      const val = document.getElementById('cc-nick-input').value;
+      const saved = setNickname(val);
+      document.getElementById('cc-nick-input').value = saved;
+    });
+  }
+
   // ── Auto-wrap Leaderboard.saveScore ──────────────────────────
-  // When this script is loaded after leaderboard.js, it silently intercepts
-  // every saveScore call and mirrors it to Supabase.
+  // When loaded after leaderboard.js, silently intercepts every saveScore
+  // call and mirrors it to Supabase.
   if (typeof Leaderboard !== 'undefined') {
     const _orig = Leaderboard.saveScore.bind(Leaderboard);
     Leaderboard.saveScore = function (gameKey, score, meta) {
@@ -97,5 +197,15 @@ const CloudLeaderboard = (() => {
     };
   }
 
-  return { submit, getGlobalTop, getPlayerId, configured: CONFIGURED };
+  return {
+    submit,
+    getGlobalTop,
+    getGlobalHubSummary,
+    renderGlobalWidget,
+    renderNicknameForm,
+    getPlayerId,
+    getNickname,
+    setNickname,
+    configured: CONFIGURED,
+  };
 })();
