@@ -56,6 +56,5 @@ create or replace view scores_best as
 --   from scores_best
 --   where rank() over (partition by game order by score desc) <= 10;
 
--- Done! Now update leaderboard-cloud.js with:
---   SUPABASE_URL      = 'https://<your-project>.supabase.co'
---   SUPABASE_ANON_KEY = '<your-anon-key>'
+-- Done! Credentials are already set in leaderboard-cloud.js.
+-- Scores will sync automatically once the schema is applied.
