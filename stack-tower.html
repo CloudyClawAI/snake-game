@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stack Tower — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 0 0 80px;
+      overflow-x: hidden;
+      touch-action: none;
+      background: #0a0a14;
+      transition: background 0.5s ease;
+    }
+
+    #game-container {
+      position: relative;
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      width: min(400px, 100vw);
+      margin: 0 auto;
+      background: #1e293b;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .ui {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10,10,20,0.85);
+      z-index: 10;
+      gap: 0.8rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .hidden { display: none !important; }
+
+    .ui h1 {
+      color: var(--accent);
+      margin: 0;
+      font-size: clamp(1.6rem, 8vw, 2.6rem);
+      text-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .ui p { font-size: 1rem; color: var(--text-muted); margin: 0; }
+
+    .ui button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.8rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform 0.1s, background 0.15s;
+      margin-top: 0.4rem;
+    }
+    .ui button:active { transform: scale(0.95); }
+    .ui button:hover { background: #9b8fff; }
+
+    .score-display {
+      position: absolute;
+      top: 16px;
+      width: 100%;
+      text-align: center;
+      font-size: clamp(1.6rem, 8vw, 2.6rem);
+      font-weight: bold;
+      z-index: 5;
+      pointer-events: none;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+      color: #fff;
+    }
+
+    .perfect-text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      top: 40%;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px #fff, 0 0 40px var(--accent);
+      pointer-events: none;
+      z-index: 20;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .perfect-text.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .lb-panel {
+      width: min(400px, 100vw);
+      margin: 1rem auto 0;
+    }
+
+    #best-score-line {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 6px 0 2px;
+    }
+
+    .floors-display {
+      position: absolute;
+      top: 60px;
+      width: 100%;
+      text-align: center;
+      font-size: 1rem;
+      color: var(--text-muted);
+      z-index: 5;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="index.html">← Hub</a>
+
+  <div style="padding-top: 56px; width: 100%">
+    <div id="game-container">
+      <div class="score-display" id="score">0</div>
+      <div class="floors-display" id="floors">Floor 1</div>
+      <div id="perfect-msg" class="perfect-text">PERFECT!</div>
+      <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+      <div id="start-screen" class="ui">
+        <h1>Stack Tower</h1>
+        <p>Tap or Space to Stack</p>
+        <button id="start-btn">Start Game</button>
+      </div>
+
+      <div id="game-over-screen" class="ui hidden">
+        <h1>Tower Tumbled!</h1>
+        <p id="final-score">Score: 0</p>
+        <p id="final-floors">Floors: 0</p>
+        <div id="lb-widget"></div>
+        <button id="restart-btn">Try Again</button>
+      </div>
+    </div>
+
+    <div id="best-score-line"></div>
+    <div class="lb-panel">
+      <div class="lb-panel" id="lb-container">
+        <h3>Top Scores</h3>
+        <div id="lb-widget-main"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
+  <script>
+    const GAME_KEY = 'stack-tower';
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const floorsElement = document.getElementById('floors');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const finalScoreElement = document.getElementById('final-score');
+    const finalFloorsElement = document.getElementById('final-floors');
+    const bestLine = document.getElementById('best-score-line');
+    const perfectMsg = document.getElementById('perfect-msg');
+
+    // Game Constants
+    const BLOCK_HEIGHT = 40;
+    const INITIAL_WIDTH = 200;
+    const CANVAS_WIDTH = 400;
+    const CANVAS_HEIGHT = 600;
+    const BASE_SPEED = 2;
+    const SPEED_INCREMENT = 0.05;
+    const MAX_SPEED = 8;
+    const PERFECT_THRESHOLD = 2;
+
+    // Isometric Constants
+    const ISO_ANGLE = Math.PI / 6; // 30 degrees
+    const ISO_X_OFFSET = 100;
+    const ISO_Y_OFFSET = 450;
+
+    // Colors
+    const NEON_COLORS = [
+      '#FF00FF', // Magenta
+      '#00FFFF', // Cyan
+      '#FFFF00', // Yellow
+      '#00FF00', // Lime
+      '#FF0000', // Red
+      '#7C6AFF', // Purple
+      '#FF6A9B'  // Pink
+    ];
+
+    let gameActive = false;
+    let score = 0;
+    let floors = 0;
+    let combo = 0;
+    let currentWidth = INITIAL_WIDTH;
+    let currentX = 0;
+    let direction = 1;
+    let stack = [];
+    let speed = BASE_SPEED;
+    let cameraY = 0;
+    let targetCameraY = 0;
+    let sliceAnimation = null;
+
+    function updateBestLine() {
+      const best = Leaderboard.getBest(GAME_KEY);
+      bestLine.textContent = best ? `Best: ${best.toLocaleString()}` : '';
+    }
+    updateBestLine();
+    Leaderboard.renderWidget(GAME_KEY, 'lb-widget-main');
+
+    class Block {
+      constructor(x, y, width, colorIndex) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.colorIndex = colorIndex;
+        this.color = NEON_COLORS[colorIndex % NEON_COLORS.length];
+      }
+
+      draw(ctx, cameraY, isGhost = false) {
+        const drawX = ISO_X_OFFSET + this.x;
+        const drawY = ISO_Y_OFFSET - (this.y * BLOCK_HEIGHT) + cameraY;
+
+        ctx.save();
+        if (isGhost) ctx.globalAlpha = 0.5;
+
+        // Front face (darker)
+        ctx.fillStyle = this.getDarkerColor(0.7);
+        ctx.beginPath();
+        ctx.moveTo(drawX, drawY);
+        ctx.lineTo(drawX + this.width, drawY);
+        ctx.lineTo(drawX + this.width, drawY + BLOCK_HEIGHT);
+        ctx.lineTo(drawX, drawY + BLOCK_HEIGHT);
+        ctx.closePath();
+        ctx.fill();
+
+        // Top face (base color)
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(drawX, drawY);
+        ctx.lineTo(drawX + this.width, drawY);
+        ctx.lineTo(drawX + this.width + 20, drawY - 10);
+        ctx.lineTo(drawX + 20, drawY - 10);
+        ctx.closePath();
+        ctx.fill();
+
+        // Side face (even darker)
+        ctx.fillStyle = this.getDarkerColor(0.5);
+        ctx.beginPath();
+        ctx.moveTo(drawX + this.width, drawY);
+        ctx.lineTo(drawX + this.width + 20, drawY - 10);
+        ctx.lineTo(drawX + this.width + 20, drawY + BLOCK_HEIGHT - 10);
+        ctx.lineTo(drawX + this.width, drawY + BLOCK_HEIGHT);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      getDarkerColor(factor) {
+        const hex = this.color.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return `rgb(${r * factor}, ${g * factor}, ${b * factor})`;
+      }
+    }
+
+    function initGame() {
+      gameActive = false;
+      score = 0;
+      floors = 1;
+      combo = 0;
+      currentWidth = INITIAL_WIDTH;
+      currentX = 0;
+      direction = 1;
+      speed = BASE_SPEED;
+      cameraY = 0;
+      targetCameraY = 0;
+      stack = [new Block(0, 0, INITIAL_WIDTH, 0)];
+      sliceAnimation = null;
+      
+      scoreElement.innerText = '0';
+      floorsElement.innerText = 'Floor 1';
+      document.body.style.background = '#0a0a14';
+      
+      startScreen.classList.remove('hidden');
+      gameOverScreen.classList.add('hidden');
+      draw();
+    }
+
+    function startGame() {
+      gameActive = true;
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      gameActive = false;
+      // Final score = floors reached × remaining block width
+      const finalScore = Math.floor(floors * currentWidth);
+      Leaderboard.saveScore(GAME_KEY, finalScore);
+      finalScoreElement.innerText = `Score: ${finalScore.toLocaleString()}`;
+      finalFloorsElement.innerText = `Floors: ${floors}`;
+      Leaderboard.renderWidget(GAME_KEY, 'lb-widget');
+      Leaderboard.renderWidget(GAME_KEY, 'lb-widget-main');
+      updateBestLine();
+      gameOverScreen.classList.remove('hidden');
+    }
+
+    function drop() {
+      if (!gameActive) return;
+
+      const lastBlock = stack[stack.length - 1];
+      const diff = currentX - lastBlock.x;
+      const absDiff = Math.abs(diff);
+
+      if (absDiff >= currentWidth) {
+        // Missed completely
+        endGame();
+        return;
+      }
+
+      let isPerfect = absDiff <= PERFECT_THRESHOLD;
+      
+      if (isPerfect) {
+        currentX = lastBlock.x;
+        combo++;
+        const bonus = 50 * combo;
+        score += 100 + bonus;
+        showPerfect(combo > 1 ? `PERFECT! x${combo}` : 'PERFECT!');
+      } else {
+        combo = 0;
+        const overlap = currentWidth - absDiff;
+        
+        // Slice animation
+        const sliceX = diff > 0 ? currentX + overlap : currentX;
+        const sliceWidth = absDiff;
+        sliceAnimation = {
+          x: sliceX,
+          y: floors,
+          width: sliceWidth,
+          colorIndex: floors,
+          opacity: 1,
+          vx: diff > 0 ? 4 : -4,
+          vy: 2
+        };
+
+        currentX = diff > 0 ? currentX : lastBlock.x;
+        currentWidth = overlap;
+        score += 100;
+      }
+
+      stack.push(new Block(currentX, floors, currentWidth, floors));
+      floors++;
+      floorsElement.innerText = `Floor ${floors}`;
+      // Display cumulative score during game
+      scoreElement.innerText = Math.floor(score).toLocaleString();
+
+      // Increase difficulty
+      speed = Math.min(MAX_SPEED, BASE_SPEED + (floors * SPEED_INCREMENT));
+      
+      // Update background
+      const darkness = Math.min(80, floors * 0.5);
+      document.body.style.background = `hsl(240, 30%, ${10 - darkness * 0.1}%)`;
+
+      // Move camera
+      if (floors > 5) {
+        targetCameraY = (floors - 5) * BLOCK_HEIGHT;
+      }
+
+      // Reset current block for next level
+      direction = Math.random() > 0.5 ? 1 : -1;
+      currentX = direction === 1 ? -currentWidth : CANVAS_WIDTH - ISO_X_OFFSET;
+    }
+
+    function showPerfect(msg) {
+      perfectMsg.innerText = msg;
+      perfectMsg.classList.add('show');
+      setTimeout(() => perfectMsg.classList.remove('show'), 500);
+      
+      // Flash effect
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      ctx.restore();
+    }
+
+    function update() {
+      if (!gameActive) return;
+
+      currentX += direction * speed;
+
+      if (currentX + currentWidth > CANVAS_WIDTH - ISO_X_OFFSET || currentX < -ISO_X_OFFSET) {
+        direction *= -1;
+      }
+
+      // Smooth camera
+      cameraY += (targetCameraY - cameraY) * 0.1;
+
+      // Update slice animation
+      if (sliceAnimation) {
+        sliceAnimation.x += sliceAnimation.vx;
+        sliceAnimation.vy += 0.5; // gravity
+        sliceAnimation.y -= sliceAnimation.vy * 0.1;
+        sliceAnimation.opacity -= 0.02;
+        if (sliceAnimation.opacity <= 0) sliceAnimation = null;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // Draw background gradient
+      const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+      const skyHue = Math.max(200, 240 - floors);
+      grad.addColorStop(0, `hsl(${skyHue}, 30%, 15%)`);
+      grad.addColorStop(1, `hsl(${skyHue}, 30%, 5%)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // Draw stack
+      stack.forEach(block => block.draw(ctx, cameraY));
+
+      // Draw slice animation
+      if (sliceAnimation) {
+        ctx.save();
+        ctx.globalAlpha = sliceAnimation.opacity;
+        const sliceBlock = new Block(sliceAnimation.x, sliceAnimation.y, sliceAnimation.width, sliceAnimation.colorIndex);
+        sliceBlock.draw(ctx, cameraY);
+        ctx.restore();
+      }
+
+      // Draw current sliding block
+      if (gameActive) {
+        const currentBlock = new Block(currentX, floors, currentWidth, floors);
+        currentBlock.draw(ctx, cameraY);
+      }
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      if (gameActive || sliceAnimation) {
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // Input
+    function handleAction(e) {
+      if (e) e.preventDefault();
+      if (!gameActive) return;
+      drop();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'Enter') handleAction(e);
+    });
+    canvas.addEventListener('mousedown', handleAction);
+    canvas.addEventListener('touchstart', handleAction, { passive: false });
+    
+    document.getElementById('start-btn').onclick = startGame;
+    document.getElementById('restart-btn').onclick = initGame;
+
+    initGame();
+  </script>
+</body>
+</html>
