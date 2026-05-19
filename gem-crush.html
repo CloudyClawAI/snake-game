@@ -93,13 +93,18 @@
     }
 
     #game-wrap {
-      position: relative;
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
       padding: 1rem;
+    }
+
+    .game-stage {
+      position: relative;
+      display: inline-block;
+      line-height: 0;
     }
 
     canvas {
@@ -237,6 +242,7 @@
 </header>
 
 <div id="game-wrap">
+  <div class="game-stage">
   <canvas id="c"></canvas>
 
   <div class="overlay" id="start-screen">
@@ -263,6 +269,7 @@
     <p class="mode-detail" id="go-mode-detail"></p>
     <button class="btn" id="restart-btn">PLAY AGAIN</button>
     <button class="btn" id="share-btn">SHARE SCORE</button>
+  </div>
   </div>
 </div>
 
