@@ -950,7 +950,7 @@
       placeCarOnTrack();
     }
 
-    function updateChaseCamera() {
+    function updateChaseCamera(dt) {
       scratchPos.copy(trackCurve.getPointAt(car.t));
       scratchTan.copy(trackCurve.getTangentAt(car.t)).normalize();
       trackNormal.set(-scratchTan.z, 0, scratchTan.x).normalize();
@@ -991,7 +991,7 @@
       }
 
       placeCarOnTrack();
-      updateChaseCamera();
+      updateChaseCamera(dt);
       updateHud(now);
     }
 
@@ -1067,7 +1067,7 @@
 
       resetRace();
       placeCarOnTrack();
-      updateChaseCamera();
+      updateChaseCamera(0);
       requestAnimationFrame(gameLoop);
     }
 
