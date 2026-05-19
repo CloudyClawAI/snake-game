@@ -197,7 +197,7 @@
 
     // Game Constants
     const GAME_KEY = 'neon-overdrive';
-    const TUNNEL_RADIUS = 300;
+    let tunnelRadius = 200;
     const PLAYER_RADIUS = 15;
     const OBSTACLE_SPAWN_DIST = 2000;
     const VANISHING_POINT_Z = 2000;
@@ -228,6 +228,8 @@
       const container = document.getElementById('game-container');
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
+      // Ensure tunnel fits within canvas height with margin for ship
+      tunnelRadius = (canvas.height / 2) - 40;
     }
 
     window.addEventListener('resize', resize);
@@ -236,31 +238,29 @@
     // Input Handling
     let isTouching = false;
 
-    function handleInput(x) {
+    function handleInput(x, y) {
       const rect = canvas.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
-      // Clamp normalizedX to [-1, 1] to keep player within visible bounds
-      const normalizedX = Math.max(-1, Math.min(1, (x - centerX) / (rect.width / 2)));
-      // Limit rotation to top 180 degrees (plus a small margin) to keep ship visible
-      targetRotation = normalizedX * (Math.PI * 0.8) - Math.PI / 2;
+      const centerY = rect.top + rect.height / 2;
+      targetRotation = Math.atan2(y - centerY, x - centerX);
     }
 
     window.addEventListener('mousemove', (e) => {
       if (gameState === 'PLAYING') {
-        handleInput(e.clientX);
+        handleInput(e.clientX, e.clientY);
       }
     });
 
     window.addEventListener('touchstart', (e) => {
       if (gameState === 'PLAYING') {
         isTouching = true;
-        handleInput(e.touches[0].clientX);
+        handleInput(e.touches[0].clientX, e.touches[0].clientY);
       }
     }, { passive: false });
 
     window.addEventListener('touchmove', (e) => {
       if (gameState === 'PLAYING') {
-        handleInput(e.touches[0].clientX);
+        handleInput(e.touches[0].clientX, e.touches[0].clientY);
         e.preventDefault();
       }
     }, { passive: false });
@@ -291,7 +291,7 @@
         const scale = FOV / (FOV + this.z);
         const x = canvas.width / 2;
         const y = canvas.height / 2;
-        const r = TUNNEL_RADIUS * scale;
+        const r = tunnelRadius * scale;
 
         ctx.strokeStyle = this.color;
         ctx.lineWidth = 15 * scale;
@@ -419,7 +419,7 @@
       for (let i = 0; i < numRings; i++) {
         const z = ((frameCount * speed * 0.5) % (VANISHING_POINT_Z / numRings)) + (i * (VANISHING_POINT_Z / numRings));
         const scale = FOV / (FOV + z);
-        const r = TUNNEL_RADIUS * scale;
+        const r = tunnelRadius * scale;
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.stroke();
@@ -428,10 +428,10 @@
       const numLines = 16;
       for (let i = 0; i < numLines; i++) {
         const angle = (i / numLines) * Math.PI * 2 - tunnelRotation * 0.5;
-        const x1 = x + Math.cos(angle) * TUNNEL_RADIUS * (FOV / (FOV + VANISHING_POINT_Z));
-        const y1 = y + Math.sin(angle) * TUNNEL_RADIUS * (FOV / (FOV + VANISHING_POINT_Z));
-        const x2 = x + Math.cos(angle) * TUNNEL_RADIUS;
-        const y2 = y + Math.sin(angle) * TUNNEL_RADIUS;
+        const x1 = x + Math.cos(angle) * tunnelRadius * (FOV / (FOV + VANISHING_POINT_Z));
+        const y1 = y + Math.sin(angle) * tunnelRadius * (FOV / (FOV + VANISHING_POINT_Z));
+        const x2 = x + Math.cos(angle) * tunnelRadius;
+        const y2 = y + Math.sin(angle) * tunnelRadius;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
@@ -440,8 +440,8 @@
     }
 
     function drawPlayer() {
-      const x = canvas.width / 2 + Math.cos(playerRotation) * (TUNNEL_RADIUS - 25);
-      const y = canvas.height / 2 + Math.sin(playerRotation) * (TUNNEL_RADIUS - 25);
+      const x = canvas.width / 2 + Math.cos(playerRotation) * (tunnelRadius - 25);
+      const y = canvas.height / 2 + Math.sin(playerRotation) * (tunnelRadius - 25);
 
       ctx.save();
       ctx.translate(x, y);
@@ -536,8 +536,8 @@
       finalScoreDisplay.innerText = `SCORE: ${finalScore}`;
       
       // Explosion particles
-      const px = canvas.width / 2 + Math.cos(playerRotation) * (TUNNEL_RADIUS - 25);
-      const py = canvas.height / 2 + Math.sin(playerRotation) * (TUNNEL_RADIUS - 25);
+      const px = canvas.width / 2 + Math.cos(playerRotation) * (tunnelRadius - 25);
+      const py = canvas.height / 2 + Math.sin(playerRotation) * (tunnelRadius - 25);
       for (let i = 0; i < 60; i++) {
         particles.push(new Particle(px, py, i % 2 === 0 ? COLORS.blue : COLORS.pink));
       }
