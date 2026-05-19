@@ -616,7 +616,11 @@ function buildInviteUrl(peerId) {
 // ── PEER FACTORY ─────────────────────────────────────────────
 const ICE = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' }
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'turn:openrelay.metered.ca:80',   username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',  username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turns:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
 ]};
 
 function makePeer(customId) {
@@ -649,13 +653,19 @@ function createGame() {
     conn = incoming;
     myRole = P1;
     wireConn();
-    conn.on('open', () => {
+    const onOpen = () => {
       conn.send({ t: 'start', role: P2 });
       setConnStatus('connected', 'Connected');
       showScreen('game');
       updateNames();
       startGame();
-    });
+    };
+    // Guard against race: PeerJS may fire 'open' before listener is registered
+    if (conn.open) {
+      onOpen();
+    } else {
+      conn.on('open', onOpen);
+    }
   });
 
   peer.on('error', err => {
@@ -692,9 +702,14 @@ function joinGame(rawId) {
 
     // Timeout if host never responds
     const timeout = setTimeout(() => {
-      if (myRole === null) showJoinError('Room not found or timed out.');
-    }, 12000);
-    conn.on('open', () => clearTimeout(timeout));
+      if (myRole === null) {
+        showJoinError('Room not found or timed out. The host may have left, or your network may block peer connections.');
+      }
+    }, 15000);
+    conn.on('open', () => {
+      clearTimeout(timeout);
+      setConnStatus('waiting', 'Waiting for host…');
+    });
   });
 
   peer.on('error', err => {

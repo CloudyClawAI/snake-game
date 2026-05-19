@@ -170,6 +170,7 @@
   <button class="mob-btn" id="fire-btn">FIRE</button>
 </div>
 
+<script src="leaderboard.js"></script>
 <script>
 (function(){
 'use strict';
@@ -528,6 +529,9 @@ function nextWave(){
 
 function saveHi(){
   if(score > hiScore){ hiScore=score; localStorage.setItem('si_hi',hiScore); }
+  if (typeof Leaderboard !== 'undefined' && score > 0) {
+    Leaderboard.saveScore('space-invaders', score, { wave });
+  }
   document.getElementById('hi-val').textContent=hiScore;
 }
 
