@@ -170,6 +170,7 @@
   </div>
 </div>
 
+<script src="leaderboard.js"></script>
 <script>
 (function() {
   'use strict';
@@ -803,6 +804,9 @@
       document.getElementById('go-hi-msg').textContent = 'Best: ' + highScore;
     }
     document.getElementById('hi-display').textContent = highScore;
+    if (typeof Leaderboard !== 'undefined' && score > 0) {
+      Leaderboard.saveScore('bubble-shooter', score);
+    }
     document.getElementById('gameover-screen').style.display = 'flex';
   }
 
