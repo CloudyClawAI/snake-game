@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Circuit | CloudyClaw Games</title>
+  <meta name="description" content="Neon-lit 3D arcade racer on a floating circuit. Race for the fastest lap time.">
+  <link rel="stylesheet" href="design-system.css">
+  <style>
+    :root {
+      --neon-cyan: #00f2ff;
+      --neon-magenta: #ff00ff;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      touch-action: none;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+      min-height: 280px;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      box-shadow: 0 0 48px var(--accent-glow);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+    }
+
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #webgl-fallback {
+      display: none;
+      position: absolute;
+      inset: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+      background: var(--surface);
+      color: var(--text);
+      gap: 0.75rem;
+    }
+
+    #webgl-fallback h2 {
+      color: var(--neon-cyan);
+      font-size: 1.4rem;
+      letter-spacing: 0.06em;
+    }
+
+    #webgl-fallback p {
+      color: var(--text-muted);
+      max-width: 28ch;
+      font-size: 0.95rem;
+    }
+
+    .preview-badge {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 14px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.55);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      pointer-events: none;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M10 13l-5-5 5-5"/>
+    </svg>
+    Back to Hub
+  </a>
+
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="webgl-fallback" aria-live="polite">
+      <h2>WebGL required</h2>
+      <p>This game needs WebGL. Try a modern desktop or mobile browser with hardware acceleration enabled.</p>
+    </div>
+    <div class="preview-badge" id="preview-badge">TRACK PREVIEW — CAR COMING SOON</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from './vendor/three.module.min.js';
+
+    const canvas = document.getElementById('game-canvas');
+    const container = document.getElementById('game-container');
+    const fallbackPanel = document.getElementById('webgl-fallback');
+
+    const TRACK_HALF_WIDTH = 6;
+    const RAIL_W = 0.22;
+    const RAIL_H = 0.55;
+    const EXTRUDE_STEPS = 180;
+    const PREVIEW_SPEED = 0.045;
+    const CHASE_BACK = 16;
+    const CHASE_UP = 7;
+    const CHASE_LERP = 0.1;
+    const LOOK_AHEAD = 0.03;
+
+    const COLORS = {
+      void: 0x050510,
+      road: 0x101828,
+      roadEmissive: 0x00aacc,
+      railEmissive: 0xaa00aa,
+      lane: 0x00f2ff,
+      marker: 0xff00ff,
+    };
+
+    let renderer;
+    let scene;
+    let camera;
+    let trackCurve;
+    let previewT = 0;
+    let lastFrameTime = 0;
+    let width = 1;
+    let height = 1;
+
+    const chasePos = new THREE.Vector3();
+    const chaseLook = new THREE.Vector3();
+    const scratchPos = new THREE.Vector3();
+    const scratchTan = new THREE.Vector3();
+    const scratchCam = new THREE.Vector3();
+    const upOffset = new THREE.Vector3(0, CHASE_UP, 0);
+    const lookLift = new THREE.Vector3(0, 1.2, 0);
+
+    function showWebGLFallback() {
+      canvas.style.display = 'none';
+      fallbackPanel.style.display = 'flex';
+      document.getElementById('preview-badge').style.display = 'none';
+    }
+
+    function buildTrackCurve() {
+      const pts = [
+        new THREE.Vector3(0, 0, 95),
+        new THREE.Vector3(55, 0, 75),
+        new THREE.Vector3(88, 0, 20),
+        new THREE.Vector3(70, 0, -45),
+        new THREE.Vector3(20, 0, -82),
+        new THREE.Vector3(-45, 0, -78),
+        new THREE.Vector3(-82, 0, -30),
+        new THREE.Vector3(-75, 0, 35),
+        new THREE.Vector3(-35, 0, 80),
+      ];
+      return new THREE.CatmullRomCurve3(pts, true, 'catmullrom', 0.35);
+    }
+
+    function buildRoadProfile() {
+      const w = TRACK_HALF_WIDTH;
+      const shape = new THREE.Shape();
+      shape.moveTo(-w - RAIL_W, 0);
+      shape.lineTo(-w - RAIL_W, RAIL_H);
+      shape.lineTo(-w, RAIL_H);
+      shape.lineTo(-w, 0.08);
+      shape.lineTo(w, 0.08);
+      shape.lineTo(w, RAIL_H);
+      shape.lineTo(w + RAIL_W, RAIL_H);
+      shape.lineTo(w + RAIL_W, 0);
+      shape.closePath();
+      return shape;
+    }
+
+    function buildTrackMesh(curve) {
+      const profile = buildRoadProfile();
+      const geometry = new THREE.ExtrudeGeometry(profile, {
+        steps: EXTRUDE_STEPS,
+        bevelEnabled: false,
+        extrudePath: curve,
+      });
+      geometry.computeVertexNormals();
+
+      const material = new THREE.MeshStandardMaterial({
+        color: COLORS.road,
+        emissive: COLORS.roadEmissive,
+        emissiveIntensity: 0.85,
+        metalness: 0.35,
+        roughness: 0.55,
+        side: THREE.DoubleSide,
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.receiveShadow = false;
+      mesh.castShadow = false;
+      return mesh;
+    }
+
+    function buildLaneLines(curve) {
+      const group = new THREE.Group();
+      const lineMat = new THREE.LineBasicMaterial({
+        color: COLORS.lane,
+        transparent: true,
+        opacity: 0.55,
+      });
+
+      const offsets = [-TRACK_HALF_WIDTH * 0.45, TRACK_HALF_WIDTH * 0.45];
+      const normal = new THREE.Vector3();
+      const lanePt = new THREE.Vector3();
+      for (const lateral of offsets) {
+        const points = [];
+        const segments = 120;
+        for (let i = 0; i <= segments; i += 1) {
+          const t = i / segments;
+          scratchPos.copy(curve.getPointAt(t));
+          scratchTan.copy(curve.getTangentAt(t)).normalize();
+          normal.set(-scratchTan.z, 0, scratchTan.x).normalize();
+          lanePt.copy(scratchPos).addScaledVector(normal, lateral);
+          lanePt.y += 0.12;
+          points.push(lanePt.clone());
+        }
+        const geo = new THREE.BufferGeometry().setFromPoints(points);
+        group.add(new THREE.Line(geo, lineMat));
+      }
+      return group;
+    }
+
+    function buildCornerMarkers(curve, controlPoints) {
+      const coneGeo = new THREE.ConeGeometry(0.55, 1.6, 6);
+      const coneMat = new THREE.MeshStandardMaterial({
+        color: 0x220022,
+        emissive: COLORS.marker,
+        emissiveIntensity: 0.9,
+        metalness: 0.2,
+        roughness: 0.4,
+      });
+      const mesh = new THREE.InstancedMesh(coneGeo, coneMat, controlPoints.length);
+      const dummy = new THREE.Object3D();
+      controlPoints.forEach((pt, i) => {
+        const t = findClosestT(curve, pt);
+        dummy.position.copy(curve.getPointAt(t)).add(new THREE.Vector3(0, 0.9, 0));
+        dummy.rotation.set(0, 0, 0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      });
+
+      mesh.instanceMatrix.needsUpdate = true;
+      return mesh;
+    }
+
+    function findClosestT(curve, point) {
+      let bestT = 0;
+      let bestDist = Infinity;
+      const samples = 64;
+      for (let i = 0; i <= samples; i += 1) {
+        const t = i / samples;
+        scratchPos.copy(curve.getPointAt(t));
+        const d = scratchPos.distanceToSquared(point);
+        if (d < bestDist) {
+          bestDist = d;
+          bestT = t;
+        }
+      }
+      return bestT;
+    }
+
+    function buildScene(curve, controlPoints) {
+      const root = new THREE.Scene();
+      root.background = new THREE.Color(COLORS.void);
+      root.fog = new THREE.FogExp2(COLORS.void, 0.0016);
+
+      const hemi = new THREE.HemisphereLight(0x66ccff, 0x180828, 1.0);
+      const ambient = new THREE.AmbientLight(0x445577, 0.45);
+      const key = new THREE.DirectionalLight(0xccddff, 1.35);
+      key.position.set(40, 80, 30);
+      const rim = new THREE.DirectionalLight(0xff66ff, 0.65);
+      rim.position.set(-50, 30, -40);
+
+      root.add(hemi, ambient, key, rim);
+      root.add(buildTrackMesh(curve));
+      root.add(buildLaneLines(curve));
+      root.add(buildCornerMarkers(curve, controlPoints));
+
+      const grid = new THREE.GridHelper(400, 40, 0x111133, 0x080814);
+      grid.position.y = -6;
+      root.add(grid);
+
+      return root;
+    }
+
+    function initRenderer() {
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          antialias: true,
+          alpha: false,
+          powerPreference: 'high-performance',
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.05;
+        return true;
+      } catch (err) {
+        console.error('WebGLRenderer init failed:', err);
+        return false;
+      }
+    }
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      width = Math.max(1, Math.floor(rect.width));
+      height = Math.max(1, Math.floor(rect.height));
+      if (!renderer || !camera) return;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+
+    function updateChaseCamera(t) {
+      scratchPos.copy(trackCurve.getPointAt(t));
+      scratchTan.copy(trackCurve.getTangentAt(t)).normalize();
+      scratchCam.copy(scratchPos).addScaledVector(scratchTan, -CHASE_BACK).add(upOffset);
+
+      chasePos.lerp(scratchCam, CHASE_LERP);
+      const lookT = (t + LOOK_AHEAD) % 1;
+      scratchLook.copy(trackCurve.getPointAt(lookT)).add(lookLift);
+      chaseLook.lerp(scratchLook, CHASE_LERP);
+
+      camera.position.copy(chasePos);
+      camera.lookAt(chaseLook);
+    }
+
+    function update(dt) {
+      previewT = (previewT + PREVIEW_SPEED * dt) % 1;
+      updateChaseCamera(previewT);
+    }
+
+    function render() {
+      renderer.render(scene, camera);
+    }
+
+    function gameLoop(now) {
+      requestAnimationFrame(gameLoop);
+      if (width <= 1 || height <= 1) resize();
+      if (!lastFrameTime) lastFrameTime = now;
+      const dt = Math.min((now - lastFrameTime) / 1000, 0.033);
+      lastFrameTime = now;
+      update(dt);
+      render();
+    }
+
+    function init() {
+      if (!initRenderer()) {
+        showWebGLFallback();
+        return;
+      }
+
+      trackCurve = buildTrackCurve();
+      const controlPoints = trackCurve.points;
+
+      scene = buildScene(trackCurve, controlPoints);
+      camera = new THREE.PerspectiveCamera(58, 1, 0.5, 600);
+      camera.position.set(0, 12, 40);
+
+      resize();
+      window.addEventListener('resize', resize);
+
+      const testGl = renderer.getContext();
+      if (!testGl || testGl.isContextLost()) {
+        showWebGLFallback();
+        return;
+      }
+
+      previewT = 0;
+      updateChaseCamera(0);
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(() => {
+      resize();
+      init();
+    });
+  </script>
+</body>
+</html>
