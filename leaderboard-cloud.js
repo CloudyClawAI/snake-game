@@ -4,33 +4,29 @@
  * Drop-in companion to leaderboard.js. Syncs scores to Supabase in the
  * background while keeping localStorage as the offline source-of-truth.
  *
- * ACTIVATION (one-time setup):
- *   Replace SUPABASE_URL and SUPABASE_ANON_KEY below with your project values.
- *   The anon key is safe to commit — Supabase RLS controls what it can do.
- *
- * Schema (run in Supabase SQL editor — see supabase/schema.sql):
- *   Requires the `scores` table with RLS policies for public read + anon insert.
+ * Schema: run supabase/schema.sql once in the Supabase SQL editor.
+ * Supabase publishable keys (sb_publishable_…) are safe to commit —
+ * Row Level Security controls what the key can do.
  */
 
 const CloudLeaderboard = (() => {
   // ── Configuration ───────────────────────────────────────────
-  // Replace with your Supabase project values.
-  // These are read at startup; window.CC_SUPABASE_URL / CC_SUPABASE_ANON_KEY
-  // can override at runtime (useful for local dev/testing).
-  const SUPABASE_URL      = window.CC_SUPABASE_URL      || 'https://YOUR_PROJECT.supabase.co';
-  const SUPABASE_ANON_KEY = window.CC_SUPABASE_ANON_KEY || 'YOUR_ANON_KEY';
+  // Runtime overrides: set window.CC_SUPABASE_URL / CC_SUPABASE_KEY before
+  // this script loads to swap credentials without editing this file.
+  const SUPABASE_URL = window.CC_SUPABASE_URL || 'https://ordbezlcybkcmiocomfz.supabase.co';
+  const SUPABASE_KEY = window.CC_SUPABASE_KEY || 'sb_publishable_R7kp2MczyF3h9ReA2Qei0g_1w0Me7Sq';
 
   const CONFIGURED = !SUPABASE_URL.includes('YOUR_PROJECT');
   const ENDPOINT   = SUPABASE_URL + '/rest/v1/scores';
   const HEADERS    = {
     'Content-Type':  'application/json',
-    'apikey':         SUPABASE_ANON_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'apikey':         SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
     'Prefer':        'return=minimal',
   };
   const READ_HEADERS = {
-    'apikey':        SUPABASE_ANON_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'apikey':        SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
   };
 
   // ── Anonymous player identity ────────────────────────────────
