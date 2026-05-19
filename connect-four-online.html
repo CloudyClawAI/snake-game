@@ -88,12 +88,25 @@
     /* SCREENS */
     .screen {
       flex: 1;
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 2rem 1rem;
       gap: 1.5rem;
+    }
+    .screen:not([hidden]) {
+      display: flex;
+    }
+    /* Waiting, Joining, and Disconnected screens as overlays */
+    #screen-waiting:not([hidden]), 
+    #screen-joining:not([hidden]), 
+    #screen-disconnected:not([hidden]) {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 20, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 50;
     }
 
     .lobby-card {
@@ -224,11 +237,14 @@
     /* GAME SCREEN */
     #screen-game {
       flex: 1;
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       padding: 1.5rem 1rem 3rem;
       gap: 1.2rem;
+    }
+    #screen-game:not([hidden]) {
+      display: flex;
     }
 
     .scoreboard {
@@ -424,14 +440,14 @@
 <!-- ── LOBBY ─────────────────────────────────────────────── -->
 <div class="screen" id="screen-lobby">
   <div class="lobby-card">
-    <div class="lobby-icon">🔴</div>
     <div class="lobby-title">Connect Four Online</div>
-    <p class="lobby-desc">Challenge a friend anywhere in the world — no account needed.</p>
-    <button class="btn primary" id="btn-create">Create Game</button>
-    <div class="divider">or join with a code</div>
-    <div class="join-row">
-      <input type="text" id="join-input" placeholder="Room code or invite URL" autocomplete="off" spellcheck="false" />
-      <button class="btn" id="btn-join-code">Join</button>
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 1rem;">
+      <button class="btn primary" id="btn-create">Create New Game</button>
+      <div class="divider">or join existing</div>
+      <div class="join-row">
+        <input type="text" id="join-input" placeholder="Enter room code" autocomplete="off" spellcheck="false" />
+        <button class="btn" id="btn-join-code">Join</button>
+      </div>
     </div>
     <div class="error-msg" id="lobby-error" hidden></div>
   </div>
@@ -440,9 +456,8 @@
 <!-- ── WAITING (host) ─────────────────────────────────────── -->
 <div class="screen" id="screen-waiting" hidden>
   <div class="lobby-card">
-    <div class="lobby-icon">⏳</div>
-    <div class="lobby-title">Waiting for opponent…</div>
-    <div class="spinner"></div>
+    <div class="lobby-title" style="font-size: 1.2rem;">Waiting for opponent…</div>
+    <div class="spinner" style="width: 30px; height: 30px;"></div>
     <div class="invite-section">
       <p class="lobby-desc" style="font-size:0.82rem">Share this link with a friend:</p>
       <div class="join-row">
@@ -450,21 +465,20 @@
         <button class="btn" id="btn-copy">Copy</button>
       </div>
       <div class="divider">or share room code</div>
-      <div class="room-code-big" id="room-code-display">——</div>
+      <div class="room-code-big" id="room-code-display" style="font-size: 1.8rem;">——</div>
     </div>
-    <button class="btn danger" id="btn-cancel-wait">Cancel</button>
+    <button class="btn danger" id="btn-cancel-wait" style="width: 100%;">Cancel</button>
   </div>
 </div>
 
 <!-- ── JOINING (guest) ────────────────────────────────────── -->
 <div class="screen" id="screen-joining" hidden>
   <div class="lobby-card">
-    <div class="lobby-icon">🔌</div>
-    <div class="lobby-title">Connecting…</div>
-    <div class="spinner" id="joining-spinner"></div>
+    <div class="lobby-title" style="font-size: 1.2rem;">Connecting…</div>
+    <div class="spinner" id="joining-spinner" style="width: 30px; height: 30px;"></div>
     <p class="lobby-desc">Joining the game room, please wait.</p>
     <div class="error-msg" id="join-error" hidden></div>
-    <button class="btn" id="btn-cancel-join" style="margin-top:0.4rem">Cancel</button>
+    <button class="btn" id="btn-cancel-join" style="margin-top:0.4rem; width: 100%;">Cancel</button>
   </div>
 </div>
 
@@ -500,12 +514,11 @@
 <!-- ── DISCONNECTED ───────────────────────────────────────── -->
 <div class="screen" id="screen-disconnected" hidden>
   <div class="lobby-card">
-    <div class="lobby-icon">🔌</div>
-    <div class="lobby-title">Connection Lost</div>
+    <div class="lobby-title" style="font-size: 1.2rem;">Connection Lost</div>
     <p class="lobby-desc">Your opponent disconnected from the game.</p>
     <div class="overlay-btns" style="width:100%">
       <button class="btn primary" id="btn-rejoin" style="flex:1">New Game</button>
-      <a href="index.html" class="btn" style="flex:1;display:flex;align-items:center;justify-content:center">Back to Hub</a>
+      <a href="index.html" class="btn" style="flex:1;display:flex;align-items:center;justify-content:center;text-decoration:none;">Back to Hub</a>
     </div>
   </div>
 </div>
@@ -561,12 +574,14 @@ const connLabel    = $('conn-label');
 function showScreen(name) {
   screens.forEach(n => {
     const el = $('screen-' + n);
-    el.hidden = (n !== name);
+    if (el) el.hidden = (n !== name);
   });
-  // #screen-game is not screen-* pattern
-  if (name === 'game') {
+  // Show game board as background for waiting/joining/disconnected
+  if (name === 'waiting' || name === 'joining' || name === 'game' || name === 'disconnected') {
     $('screen-game').hidden = false;
   }
+  // Hide nav when in game or waiting/joining to keep it simple
+  document.querySelector('nav').style.display = (name === 'game' || name === 'waiting' || name === 'joining') ? 'none' : 'flex';
 }
 
 function setConnStatus(state, label) {
@@ -622,6 +637,7 @@ function createGame() {
   peer.on('open', id => {
     inviteUrlEl.value = buildInviteUrl(id);
     roomCodeEl.textContent = code;
+    resetBoard(); // Render empty board as background
     showScreen('waiting');
     setConnStatus('waiting', 'Waiting…');
     btn.disabled = false;
@@ -660,6 +676,7 @@ function joinGame(rawId) {
   if (!roomId) { showLobbyError('Please enter a room code.'); return; }
 
   showScreen('joining');
+  resetBoard(); // Render empty board as background
   setConnStatus('waiting', 'Connecting…');
 
   peer = makePeer();
