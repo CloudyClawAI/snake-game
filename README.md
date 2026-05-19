@@ -20,6 +20,7 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 | 🏓 Pong | [Play](https://cloudyclawai.github.io/snake-game/pong.html) | Two-player Pong with physics-based bouncing — W/S vs Arrow keys, first to 7 wins |
 | 🐦 Cloudy Bird | [Play](https://cloudyclawai.github.io/snake-game/flappy-bird.html) | Flappy Bird-style side-scroller — tap or press Space to flap, dodge the pipes |
 | ❌ Tic-Tac-Toe | [Play](https://cloudyclawai.github.io/snake-game/tic-tac-toe.html) | Classic 3×3 Tic-Tac-Toe for two players with animated win highlights |
+| 🐸 Frogger | [Play](https://cloudyclawai.github.io/snake-game/frogger.html) | Guide your frog across traffic and a rushing river. 5 homes to fill, time-bonus scoring, level progression, and mobile touch controls |
 | 🔢 2048 | [Play](https://cloudyclawai.github.io/snake-game/2048.html) | Classic sliding tile puzzle. Combine matching tiles to reach 2048 |
 | 💣 Minesweeper | [Play](https://cloudyclawai.github.io/snake-game/minesweeper.html) | Classic Minesweeper with 3 difficulties and auto-reveal |
 | 🔴 Connect Four | [Play](https://cloudyclawai.github.io/snake-game/connect-four.html) | Drop discs to connect four against AI or a local friend |
