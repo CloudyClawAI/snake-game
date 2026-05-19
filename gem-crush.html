@@ -484,6 +484,9 @@
     if (!matchGroups.length && rainbowColor === null) {
       gameState = 'playing';
       cascadeLevel = 1;
+      if (currentMode === 'moves' && movesLeft <= 0) {
+        gameOver();
+      }
       return;
     }
 
@@ -988,7 +991,13 @@
   }
 
   function gameOver() {
+    if (gameState === 'gameover') return;
     gameState = 'gameover';
+    let timeBonus = 0;
+    if (currentMode === 'timed') {
+      timeBonus = Math.floor(Math.max(0, timeLeft)) * TIME_BONUS_PER_SEC;
+      score += timeBonus;
+    }
     document.getElementById('go-score').textContent = Math.floor(score);
     if (score > highScore) {
       highScore = Math.floor(score);
@@ -997,10 +1006,22 @@
     } else {
       document.getElementById('go-hi-msg').textContent = `BEST: ${highScore}`;
     }
+    goTitleEl.textContent = currentMode === 'timed' ? "TIME'S UP!" : 'OUT OF MOVES!';
+    if (currentMode === 'timed') {
+      goModeDetailEl.textContent = `Timed mode bonus: +${timeBonus} pts (${Math.ceil(Math.max(0, timeLeft))}s remaining).`;
+    } else {
+      const goalText = score >= MOVE_GOAL ? 'Target reached!' : `Goal: ${MOVE_GOAL} pts`;
+      goModeDetailEl.textContent = `Moves mode — ${goalText} (${Math.max(0, movesLeft)} moves left).`;
+    }
+    updateHUD();
     document.getElementById('gameover-screen').style.display = 'flex';
-    
+
     if (typeof Leaderboard !== 'undefined' && score > 0) {
-      Leaderboard.saveScore('gem-crush', Math.floor(score));
+      Leaderboard.saveScore('gem-crush', Math.floor(score), {
+        mode: currentMode,
+        movesLeft: Math.max(0, movesLeft),
+        timeLeft: Math.ceil(Math.max(0, timeLeft))
+      });
     }
   }
 
@@ -1010,7 +1031,7 @@
     const dt = (now - lastTime) / 1000;
     lastTime = now;
 
-    if (gameState === 'playing' || gameState === 'animating') {
+    if ((gameState === 'playing' || gameState === 'animating') && currentMode === 'timed') {
       timeLeft -= dt;
       if (timeLeft <= 0) {
         timeLeft = 0;
@@ -1018,6 +1039,7 @@
       }
     }
 
+    updateHUD();
     draw();
     requestAnimationFrame(loop);
   }
@@ -1025,7 +1047,8 @@
   document.getElementById('start-btn').addEventListener('click', startGame);
   document.getElementById('restart-btn').addEventListener('click', startGame);
   document.getElementById('share-btn').addEventListener('click', () => {
-    const text = `I just scored ${Math.floor(score)} points in Gem Crush! Can you beat me?`;
+    const modeLabel = currentMode === 'timed' ? 'Timed' : 'Moves';
+    const text = `I just scored ${Math.floor(score)} points in Gem Crush (${modeLabel} mode)! Can you beat me?`;
     if (navigator.share) {
       navigator.share({ title: 'Gem Crush', text, url: window.location.href });
     } else {

@@ -55,6 +55,7 @@ const Leaderboard = (() => {
     { key: 'tower-defense',  label: 'Tower Defense',  href: 'tower-defense.html' },
     { key: 'neon-overdrive', label: 'Neon Overdrive', href: 'neon-overdrive.html' },
     { key: 'bubble-shooter', label: 'Bubble Shooter', href: 'bubble-shooter.html' },
+    { key: 'gem-crush',      label: 'Gem Crush',      href: 'gem-crush.html'     },
     { key: 'space-invaders', label: 'Space Invaders', href: 'space-invaders.html' },
     { key: 'asteroids',      label: 'Asteroids',      href: 'asteroids.html'     },
     { key: 'frogger',        label: 'Frogger',        href: 'frogger.html'        },
