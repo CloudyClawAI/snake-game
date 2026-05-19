@@ -175,6 +175,7 @@
   <button class="mob-btn" id="fire-btn">FIRE</button>
 </div>
 
+<script src="leaderboard.js"></script>
 <script src="leaderboard-cloud.js"></script>
 <script>
 (function() {
@@ -649,8 +650,8 @@
     if (score > hiScore) {
       hiScore = score;
       localStorage.setItem('galaga_hi', hiScore);
-      if (typeof LeaderboardCloud !== 'undefined') {
-        LeaderboardCloud.saveScore('galaga', score);
+      if (typeof Leaderboard !== 'undefined') {
+        Leaderboard.saveScore('galaga', score, { stage });
       }
     }
     updateHUD();

@@ -60,6 +60,7 @@ All games must pass this checklist before a task is marked **done** or the game 
 | Whack-a-Mole | whack-a-mole.html | ✅ | ✅ | ✅ | N/A | ✅ | 60s timer; golden moles; speed ramp |
 | Asteroids | asteroids.html | ✅ | ✅ | ✅ | N/A | ✅ | Hyperspace; particles; mobile buttons |
 | Bubble Shooter | bubble-shooter.html | ✅ | ✅ | ✅ | N/A | ✅ | Hex grid; combos; trajectory preview |
+| Gem Crush | gem-crush.html | ✅ | ✅ | ✅ | ✅ | ✅ | Match-3; swap animations; particles; timer |
 | Frogger | frogger.html | ✅ | ✅ | ✅ | ✅ | ✅ | Traffic + river; 5 homes; time bonus; level progression |
 | Stack Tower | stack-tower.html | ✅ | ✅ | ✅ | N/A | ✅ | Isometric 3D; perfect combo system; sky transition |
 

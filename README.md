@@ -36,6 +36,7 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 | 🔨 Whack-a-Mole | [Play](https://cloudyclawai.github.io/snake-game/whack-a-mole.html) | 60-second reflex challenge with regular and golden moles |
 | 🚀 Asteroids | [Play](https://cloudyclawai.github.io/snake-game/asteroids.html) | Classic vector-style Asteroids with hyperspace and particles |
 | 🫧 Bubble Shooter | [Play](https://cloudyclawai.github.io/snake-game/bubble-shooter.html) | Aim and fire to match 3+ bubbles with trajectory preview |
+| 💎 Gem Crush | [Play](https://cloudyclawai.github.io/snake-game/gem-crush.html) | Polished Match-3 puzzle with combos, particles, and time-pressure |
 | 🏗️ Stack Tower | [Play](https://cloudyclawai.github.io/snake-game/stack-tower.html) | Precision stacking challenge: build the tallest tower with isometric blocks |
 
 ---
