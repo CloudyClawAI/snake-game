@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Simon Says — CloudyClaw Games</title>
+  <link rel="stylesheet" href="design-system.css">
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --red: #ff4d4d;
+      --green: #4dff4d;
+      --blue: #4d4dff;
+      --yellow: #ffff4d;
+      --red-glow: rgba(255, 77, 77, 0.6);
+      --green-glow: rgba(77, 255, 77, 0.6);
+      --blue-glow: rgba(77, 77, 255, 0.6);
+      --yellow-glow: rgba(255, 255, 77, 0.6);
+    }
+
+    body {
+      background: var(--bg);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: var(--font);
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    #hud {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    #game-container {
+      position: relative;
+      width: 90vw;
+      max-width: 400px;
+      aspect-ratio: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 15px;
+      padding: 15px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 50%;
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+
+    .simon-btn {
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s, box-shadow 0.1s;
+      opacity: 0.6;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .simon-btn:active {
+      transform: scale(0.95);
+    }
+
+    .simon-btn.active {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+
+    #btn-0 { background: var(--green); border-top-left-radius: 100% 100%; }
+    #btn-1 { background: var(--red); border-top-right-radius: 100% 100%; }
+    #btn-2 { background: var(--yellow); border-bottom-left-radius: 100% 100%; }
+    #btn-3 { background: var(--blue); border-bottom-right-radius: 100% 100%; }
+
+    #btn-0.active { box-shadow: 0 0 30px var(--green-glow); }
+    #btn-1.active { box-shadow: 0 0 30px var(--red-glow); }
+    #btn-2.active { box-shadow: 0 0 30px var(--yellow-glow); }
+    #btn-3.active { box-shadow: 0 0 30px var(--blue-glow); }
+
+    #center-controls {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      background: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 8px solid rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+
+    #start-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    #start-btn:hover { background: #9b8fff; }
+
+    #mode-toggle {
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      text-align: center;
+    }
+
+    #overlay h2 { font-size: 3rem; color: var(--red); margin-bottom: 1rem; }
+    #overlay p { margin-bottom: 2rem; color: var(--text-muted); }
+    #overlay .btn-group { display: flex; gap: 1rem; }
+
+    .primary-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 99px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .secondary-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 1rem 2rem;
+      border-radius: 99px;
+      cursor: pointer;
+    }
+
+    .back-link {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-10px, 0); }
+      75% { transform: translate(10px, 0); }
+    }
+
+    .game-over-shake {
+      animation: shake 0.1s ease-in-out 3;
+    }
+
+    @media (max-width: 400px) {
+      #game-container { width: 95vw; }
+      #center-controls { width: 100px; height: 100px; }
+      #hud { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-link">← Hub</a>
+
+  <div id="hud">
+    <div class="stat-box">
+      <div class="stat-label">Round</div>
+      <div class="stat-value" id="round-val">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="score-val">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Best</div>
+      <div class="stat-value" id="best-val">0</div>
+    </div>
+  </div>
+
+  <div id="game-container">
+    <button class="simon-btn" id="btn-0" data-index="0"></button>
+    <button class="simon-btn" id="btn-1" data-index="1"></button>
+    <button class="simon-btn" id="btn-2" data-index="2"></button>
+    <button class="simon-btn" id="btn-3" data-index="3"></button>
+    
+    <div id="center-controls">
+      <button id="start-btn">START</button>
+      <div id="mode-toggle">Classic</div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <h2 id="overlay-title">GAME OVER</h2>
+    <p id="overlay-desc">You missed a beat!</p>
+    <div class="btn-group">
+      <button class="primary-btn" id="restart-btn">Try Again</button>
+      <button class="secondary-btn" onclick="location.href='index.html'">Exit</button>
+    </div>
+  </div>
+
+  <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
+  <script>
+    (function() {
+      'use strict';
+
+      // --- Constants & Config ---
+      const FREQS = [196, 264, 330, 396]; // G3, C4, E4, G4
+      const INPUT_TIMEOUT = 3000;
+      const SPEED_RUN_TIMEOUT = 2000;
+      
+      // --- State ---
+      let sequence = [];
+      let playerSequence = [];
+      let round = 0;
+      let score = 0;
+      let totalPresses = 0;
+      let bestScore = parseInt(localStorage.getItem('simon_best') || '0', 10);
+      let isStrict = false;
+      let isPlaying = false;
+      let isAcceptingInput = false;
+      let inputTimer = null;
+      let lastInputTime = 0;
+
+      // --- Audio ---
+      let audioCtx = null;
+      function initAudio() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+
+      function playTone(index, duration = 300) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.frequency.setValueAtTime(FREQS[index], audioCtx.currentTime);
+        osc.type = 'sine';
+        
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration / 1000);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration / 1000);
+      }
+
+      function playBuzzer() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+        osc.type = 'sawtooth';
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      }
+
+      function playVictory() {
+        if (!audioCtx) return;
+        [261.63, 329.63, 392.00, 523.25].forEach((f, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.1);
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1);
+          gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + i * 0.1 + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + i * 0.1 + 0.3);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + i * 0.1);
+          osc.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+        });
+      }
+
+      // --- UI Elements ---
+      const buttons = [
+        document.getElementById('btn-0'),
+        document.getElementById('btn-1'),
+        document.getElementById('btn-2'),
+        document.getElementById('btn-3')
+      ];
+      const roundEl = document.getElementById('round-val');
+      const scoreEl = document.getElementById('score-val');
+      const bestEl = document.getElementById('best-val');
+      const startBtn = document.getElementById('start-btn');
+      const modeToggle = document.getElementById('mode-toggle');
+      const overlay = document.getElementById('overlay');
+      const restartBtn = document.getElementById('restart-btn');
+      const gameContainer = document.getElementById('game-container');
+
+      // --- Game Logic ---
+      function updateHUD() {
+        roundEl.textContent = round;
+        scoreEl.textContent = score;
+        bestEl.textContent = bestScore;
+      }
+
+      function startGame() {
+        initAudio();
+        sequence = [];
+        round = 0;
+        score = 0;
+        totalPresses = 0;
+        isPlaying = true;
+        overlay.style.display = 'none';
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.5';
+        nextRound();
+      }
+
+      function nextRound() {
+        round++;
+        playerSequence = [];
+        sequence.push(Math.floor(Math.random() * 4));
+        updateHUD();
+        playSequence();
+      }
+
+      function getFlashSpeed() {
+        let baseSpeed = 600;
+        if (round >= 20) baseSpeed = 125;
+        else if (round >= 13) baseSpeed = 250;
+        else if (round >= 6) baseSpeed = 400;
+        
+        if (isStrict) baseSpeed *= 0.7; // Strict is faster
+        return baseSpeed;
+      }
+
+      async function playSequence() {
+        isAcceptingInput = false;
+        const speed = getFlashSpeed();
+        const gap = (round >= 20) ? speed / 4 : (isStrict ? speed / 4 : speed / 2);
+        
+        for (let i = 0; i < sequence.length; i++) {
+          await wait(gap);
+          flashButton(sequence[i], speed);
+          await wait(speed);
+        }
+        
+        isAcceptingInput = true;
+        lastInputTime = Date.now();
+        startInputTimer();
+      }
+
+      function flashButton(index, duration) {
+        buttons[index].classList.add('active');
+        playTone(index, duration);
+        setTimeout(() => {
+          buttons[index].classList.remove('active');
+        }, duration);
+      }
+
+      function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      function startInputTimer() {
+        clearTimeout(inputTimer);
+        const timeout = round >= 10 ? SPEED_RUN_TIMEOUT : INPUT_TIMEOUT;
+        inputTimer = setTimeout(() => {
+          if (isAcceptingInput) gameOver('Time out!');
+        }, timeout);
+      }
+
+      function handleInput(index) {
+        if (!isAcceptingInput) return;
+        
+        const now = Date.now();
+        const timeTaken = now - lastInputTime;
+        const timeout = round >= 10 ? SPEED_RUN_TIMEOUT : INPUT_TIMEOUT;
+        
+        flashButton(index, 200);
+        playerSequence.push(index);
+        
+        // Check correctness
+        if (playerSequence[playerSequence.length - 1] !== sequence[playerSequence.length - 1]) {
+          gameOver('Wrong button!');
+          return;
+        }
+
+        // Bonus points for speed
+        if (timeTaken < timeout / 2) {
+          score += 5;
+        }
+        totalPresses++;
+
+        if (playerSequence.length === sequence.length) {
+          score += round; // Add round number to score on completion
+          updateHUD();
+          isAcceptingInput = false;
+          clearTimeout(inputTimer);
+          setTimeout(nextRound, 1000);
+        } else {
+          updateHUD();
+          lastInputTime = now;
+          startInputTimer();
+        }
+      }
+
+      function gameOver(reason) {
+        isPlaying = false;
+        isAcceptingInput = false;
+        clearTimeout(inputTimer);
+        playBuzzer();
+        
+        gameContainer.classList.add('game-over-shake');
+        buttons.forEach(b => {
+          b.style.background = 'var(--red)';
+          b.classList.add('active');
+        });
+        setTimeout(() => {
+          gameContainer.classList.remove('game-over-shake');
+          buttons.forEach((b, i) => {
+            b.style.background = ''; // Reset to CSS variable
+            b.classList.remove('active');
+          });
+        }, 500);
+
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem('simon_best', bestScore);
+          playVictory();
+        }
+        
+        // Always save to leaderboard if score > 0
+        if (score > 0 && typeof Leaderboard !== 'undefined') {
+          Leaderboard.saveScore('simon-says', score, { 
+            maxRound: round, 
+            totalPresses: totalPresses,
+            mode: isStrict ? 'Strict' : 'Classic' 
+          });
+        }
+
+        document.getElementById('overlay-desc').textContent = `${reason} Final Score: ${score} (Round ${round})`;
+        overlay.style.display = 'flex';
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+      }
+
+      // --- Event Listeners ---
+      buttons.forEach((btn, i) => {
+        btn.addEventListener('click', () => handleInput(i));
+        btn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          handleInput(i);
+        }, {passive: false});
+      });
+
+      startBtn.addEventListener('click', startGame);
+      restartBtn.addEventListener('click', startGame);
+
+      modeToggle.addEventListener('click', () => {
+        if (isPlaying) return;
+        isStrict = !isStrict;
+        modeToggle.textContent = isStrict ? 'Strict' : 'Classic';
+        modeToggle.style.color = isStrict ? 'var(--red)' : 'var(--text-muted)';
+      });
+
+      updateHUD();
+
+    })();
+  </script>
+</body>
+</html>
