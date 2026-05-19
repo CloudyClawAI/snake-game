@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gem Crush — CloudyClaw Games</title>
   <meta name="description" content="A polished Match-3 puzzle game. Swap gems to create matches of 3 or more and score points!" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ff33cc" />
+  <meta property="og:title" content="Gem Crush — CloudyClaw Games" />
+  <meta property="og:description" content="A polished Match-3 puzzle game. Swap gems to create matches of 3 or more and score points!" />
+  <meta property="og:type" content="website" />
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/gem-crush.html" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -715,8 +721,8 @@
     }
     document.getElementById('gameover-screen').style.display = 'flex';
     
-    if (window.Leaderboard) {
-      window.Leaderboard.saveScore('gem-crush', Math.floor(score));
+    if (typeof Leaderboard !== 'undefined' && score > 0) {
+      Leaderboard.saveScore('gem-crush', Math.floor(score));
     }
   }
 
