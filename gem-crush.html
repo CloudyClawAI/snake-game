@@ -69,9 +69,28 @@
       gap: 1.5rem;
       font-size: 0.82rem;
       color: var(--muted);
+      align-items: center;
     }
 
     #hud span { color: var(--text); font-weight: 700; }
+
+    #hud-status {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    #hud-mode-label {
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    #hud-mode-value {
+      color: var(--text);
+      font-weight: 700;
+    }
 
     #game-wrap {
       position: relative;
@@ -102,12 +121,49 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1.5rem;
+      gap: 0.75rem;
       background: rgba(15,10,26,0.9);
       border-radius: 12px;
       z-index: 20;
       text-align: center;
       padding: 2rem;
+    }
+
+    .mode-selector {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem 0 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .mode-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .mode-detail {
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .mode-detail strong {
+      color: var(--text);
+      font-weight: 700;
     }
 
     .overlay h2 {
@@ -173,6 +229,10 @@
   <div id="hud">
     <div>SCORE <span id="score-display">0</span></div>
     <div>BEST <span id="hi-display">0</span></div>
+    <div id="hud-status">
+      <span id="hud-mode-label">TIME</span>
+      <span id="hud-mode-value">60s</span>
+    </div>
   </div>
 </header>
 
@@ -186,13 +246,21 @@
       Match 4 or 5 for bonus points!<br>
       Keep matching before the time runs out.
     </p>
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="timed">Timed: 60s</button>
+      <button class="mode-btn" data-mode="moves">Moves: 30 / Goal 1500</button>
+    </div>
+    <p class="mode-detail" id="mode-detail">
+      Timed mode gives you 60 seconds to rack up combos and beat your high score.
+    </p>
     <button class="btn" id="start-btn">START GAME</button>
   </div>
 
   <div class="overlay" id="gameover-screen" style="display:none">
-    <h2>TIME'S UP!</h2>
+    <h2 id="go-title">TIME'S UP!</h2>
     <div class="score-display" id="go-score">0</div>
     <p id="go-hi-msg"></p>
+    <p class="mode-detail" id="go-mode-detail"></p>
     <button class="btn" id="restart-btn">PLAY AGAIN</button>
     <button class="btn" id="share-btn">SHARE SCORE</button>
   </div>
@@ -223,19 +291,66 @@
     { main: '#ff8833', light: '#ffaa66', dark: '#cc5511', shape: 'pentagon' } // Orange
   ];
 
+  const TIME_LIMIT = 60;
+  const MOVE_LIMIT = 30;
+  const MOVE_GOAL = 1500;
+  const TIME_BONUS_PER_SEC = 5;
+  const MATCH_POINTS = { 3: 30, 4: 60, 5: 150 };
+
   // ── State ─────────────────────────────────────────────────────────────────
   let grid = [];
   let score = 0;
   let highScore = parseInt(localStorage.getItem('ccg_gem_hi') || '0', 10);
-  let timeLeft = 60; // Seconds
+  let timeLeft = TIME_LIMIT;
+  let movesLeft = MOVE_LIMIT;
+  let currentMode = 'timed';
+  let cascadeLevel = 1;
   let gameState = 'idle'; // idle, playing, animating, gameover
   let selectedGem = null; // { r, c }
   let animations = [];
   let particles = [];
   let lastTime = 0;
-  let combo = 1;
+  let pendingRainbowColor = null;
+  let pendingRainbowGem = null;
+
+  const hudModeLabel = document.getElementById('hud-mode-label');
+  const hudModeValue = document.getElementById('hud-mode-value');
+  const modeDetailEl = document.getElementById('mode-detail');
+  const goTitleEl = document.getElementById('go-title');
+  const goModeDetailEl = document.getElementById('go-mode-detail');
+  const modeButtons = document.querySelectorAll('.mode-btn');
 
   document.getElementById('hi-display').textContent = highScore;
+
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => setGameMode(btn.dataset.mode));
+  });
+
+  function setGameMode(newMode) {
+    if (!['timed', 'moves'].includes(newMode)) return;
+    currentMode = newMode;
+    modeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === currentMode));
+    if (currentMode === 'timed') {
+      modeDetailEl.textContent = 'Timed mode gives you 60 seconds to rack up combos and beat your high score.';
+    } else {
+      modeDetailEl.textContent = 'Moves mode gives you 30 chances to reach 1500 points before another burst.';
+    }
+    updateHUD();
+  }
+
+  function updateHUD() {
+    document.getElementById('score-display').textContent = Math.floor(score);
+    document.getElementById('hi-display').textContent = highScore;
+    if (currentMode === 'timed') {
+      hudModeLabel.textContent = 'TIME';
+      hudModeValue.textContent = `${Math.ceil(Math.max(0, timeLeft))}s`;
+    } else {
+      hudModeLabel.textContent = 'MOVES';
+      hudModeValue.textContent = `${Math.max(0, movesLeft)} left`;
+    }
+  }
+
+  setGameMode(currentMode);
 
   function resize() {
     const wrap = document.getElementById('game-wrap');
@@ -264,82 +379,226 @@
           (c >= 2 && grid[r][c-1].type === type && grid[r][c-2].type === type) ||
           (r >= 2 && grid[r-1][c].type === type && grid[r-2][c].type === type)
         );
-        grid[r][c] = { type, r, c, x: c * CELL_SIZE, y: r * CELL_SIZE, offset: 0, scale: 1, alpha: 1 };
+        grid[r][c] = {
+          type,
+          r,
+          c,
+          x: c * CELL_SIZE,
+          y: r * CELL_SIZE,
+          offset: 0,
+          scale: 1,
+          alpha: 1,
+          special: null
+        };
       }
     }
   }
 
-  function getMatches() {
-    let matches = new Set();
+  function collectMatchGroups() {
+    const groups = [];
 
-    // Horizontal
     for (let r = 0; r < GRID_SIZE; r++) {
-      let count = 1;
-      for (let c = 1; c <= GRID_SIZE; c++) {
-        if (c < GRID_SIZE && grid[r][c].type === grid[r][c-1].type) {
-          count++;
+      let runType = null;
+      let runLength = 0;
+      let runStart = 0;
+      for (let c = 0; c <= GRID_SIZE; c++) {
+        const gem = c < GRID_SIZE ? grid[r][c] : null;
+        const type = gem ? gem.type : null;
+        if (type !== null && type === runType) {
+          runLength++;
         } else {
-          if (count >= 3) {
-            for (let i = 1; i <= count; i++) matches.add(`${r},${c-i}`);
+          if (runLength >= 3) {
+            const positions = [];
+            for (let cc = runStart; cc < runStart + runLength; cc++) {
+              positions.push({ r, c: cc });
+            }
+            groups.push({ direction: 'horizontal', type: runType, length: runLength, positions });
           }
-          count = 1;
+          runType = type;
+          runLength = type !== null ? 1 : 0;
+          runStart = c;
         }
       }
     }
 
-    // Vertical
     for (let c = 0; c < GRID_SIZE; c++) {
-      let count = 1;
-      for (let r = 1; r <= GRID_SIZE; r++) {
-        if (r < GRID_SIZE && grid[r][c].type === grid[r-1][c].type) {
-          count++;
+      let runType = null;
+      let runLength = 0;
+      let runStart = 0;
+      for (let r = 0; r <= GRID_SIZE; r++) {
+        const gem = r < GRID_SIZE ? grid[r][c] : null;
+        const type = gem ? gem.type : null;
+        if (type !== null && type === runType) {
+          runLength++;
         } else {
-          if (count >= 3) {
-            for (let i = 1; i <= count; i++) matches.add(`${r-i},${c}`);
+          if (runLength >= 3) {
+            const positions = [];
+            for (let rr = runStart; rr < runStart + runLength; rr++) {
+              positions.push({ r: rr, c });
+            }
+            groups.push({ direction: 'vertical', type: runType, length: runLength, positions });
           }
-          count = 1;
+          runType = type;
+          runLength = type !== null ? 1 : 0;
+          runStart = r;
         }
       }
     }
 
-    return Array.from(matches).map(s => {
-      const [r, c] = s.split(',').map(Number);
-      return { r, c };
-    });
+    return groups;
   }
 
-  function resolveMatches() {
-    const matches = getMatches();
-    if (matches.length === 0) {
+  function getMatchScore(length) {
+    if (length >= 5) {
+      return MATCH_POINTS[5] + Math.max(0, length - 5) * 10;
+    }
+    return MATCH_POINTS[length] || 0;
+  }
+
+  function placeSpecialGem(r, c, kind, color, axis) {
+    if (r < 0 || c < 0 || r >= GRID_SIZE || c >= GRID_SIZE) return;
+    grid[r][c] = {
+      type: color,
+      r,
+      c,
+      x: c * CELL_SIZE,
+      y: r * CELL_SIZE,
+      offset: 0,
+      scale: 1,
+      alpha: 1,
+      special: {
+        type: kind,
+        color,
+        axis: axis || null
+      }
+    };
+  }
+
+  function resolveMatches({ triggeredByPlayer = false } = {}) {
+    const matchGroups = collectMatchGroups();
+    const rainbowColor = pendingRainbowColor;
+    const rainbowGem = pendingRainbowGem;
+    pendingRainbowColor = null;
+    pendingRainbowGem = null;
+
+    if (!matchGroups.length && rainbowColor === null) {
       gameState = 'playing';
-      combo = 1;
+      cascadeLevel = 1;
       return;
     }
 
-    gameState = 'animating';
-    
-    // Calculate score
-    const points = matches.length * 10 * combo;
-    score += points;
-    timeLeft = Math.min(60, timeLeft + matches.length * 0.2);
-    combo++;
-    updateHUD();
+    if (triggeredByPlayer && currentMode === 'moves') {
+      movesLeft = Math.max(0, movesLeft - 1);
+    }
 
-    // Create particles and fade out gems
-    matches.forEach(m => {
-      const gem = grid[m.r][m.c];
-      createExplosion(gem.c * CELL_SIZE + CELL_SIZE/2 + PADDING, gem.r * CELL_SIZE + CELL_SIZE/2 + PADDING, COLORS[gem.type].main);
-      
+    gameState = 'animating';
+
+    const cellsToClear = new Map();
+    const cellsQueue = [];
+    const enqueueCell = (r, c) => {
+      if (r < 0 || c < 0 || r >= GRID_SIZE || c >= GRID_SIZE) return;
+      const key = `${r},${c}`;
+      if (cellsToClear.has(key)) return;
+      const entry = { r, c };
+      cellsToClear.set(key, entry);
+      cellsQueue.push(entry);
+    };
+
+    const specialMap = new Map();
+    let roundScore = 0;
+
+    matchGroups.forEach(group => {
+      roundScore += getMatchScore(group.length);
+      if (group.length >= 4) {
+        const center = group.positions[Math.floor(group.positions.length / 2)];
+        const gem = grid[center.r][center.c];
+        const baseType = gem ? gem.type : group.type;
+        const key = `${center.r},${center.c}`;
+        if (group.length >= 5) {
+          specialMap.set(key, { r: center.r, c: center.c, kind: 'rainbow', color: baseType });
+        } else {
+          specialMap.set(key, {
+            r: center.r,
+            c: center.c,
+            kind: 'power',
+            color: baseType,
+            axis: group.direction === 'horizontal' ? 'row' : 'column'
+          });
+        }
+      }
+
+      group.positions.forEach(pos => {
+        const key = `${pos.r},${pos.c}`;
+        if (specialMap.has(key)) return;
+        enqueueCell(pos.r, pos.c);
+      });
+    });
+
+    if (rainbowColor !== null) {
+      if (rainbowGem) enqueueCell(rainbowGem.r, rainbowGem.c);
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          const gem = grid[r][c];
+          if (gem && gem.type === rainbowColor) {
+            enqueueCell(r, c);
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < cellsQueue.length; i++) {
+      const cell = cellsQueue[i];
+      const gem = grid[cell.r][cell.c];
+      if (!gem || !gem.special) continue;
+      if (gem.special.type === 'power') {
+        if (gem.special.axis === 'row') {
+          for (let col = 0; col < GRID_SIZE; col++) enqueueCell(cell.r, col);
+        } else {
+          for (let row = 0; row < GRID_SIZE; row++) enqueueCell(row, cell.c);
+        }
+      } else if (gem.special.type === 'rainbow') {
+        const targetColor = gem.special.color ?? gem.type;
+        for (let rr = 0; rr < GRID_SIZE; rr++) {
+          for (let cc = 0; cc < GRID_SIZE; cc++) {
+            const other = grid[rr][cc];
+            if (other && other.type === targetColor) {
+              enqueueCell(rr, cc);
+            }
+          }
+        }
+      }
+    }
+
+    const cells = Array.from(cellsToClear.values());
+    if (!cells.length && specialMap.size === 0) {
+      cascadeLevel = 1;
+      gameState = 'playing';
+      return;
+    }
+
+    cells.forEach(cell => {
+      const gem = grid[cell.r][cell.c];
+      if (!gem) return;
+      createExplosion(gem.c * CELL_SIZE + CELL_SIZE / 2 + PADDING, gem.r * CELL_SIZE + CELL_SIZE / 2 + PADDING, COLORS[gem.type].main);
       animations.push({
         type: 'fade',
-        gem: gem,
+        gem,
         duration: 300,
         start: performance.now(),
         onComplete: () => {
-          grid[m.r][m.c] = null;
+          grid[cell.r][cell.c] = null;
         }
       });
     });
+
+    specialMap.forEach(spec => {
+      placeSpecialGem(spec.r, spec.c, spec.kind, spec.color, spec.axis);
+    });
+
+    score += Math.max(0, roundScore) * cascadeLevel;
+    cascadeLevel++;
+    updateHUD();
+    timeLeft = Math.min(TIME_LIMIT, timeLeft + cells.length * 0.2);
 
     setTimeout(() => {
       fillGaps();
@@ -380,10 +639,15 @@
         const type = Math.floor(Math.random() * COLORS.length);
         const r = gaps - i;
         const gem = { 
-          type, r, c, 
+          type,
+          r,
+          c, 
           x: c * CELL_SIZE, 
           y: -i * CELL_SIZE, 
-          offset: 0, scale: 1, alpha: 1 
+          offset: 0,
+          scale: 1,
+          alpha: 1,
+          special: null
         };
         grid[r][c] = gem;
         
@@ -399,11 +663,25 @@
     }
 
     setTimeout(() => {
-      resolveMatches();
+      resolveMatches({ triggeredByPlayer: false });
     }, 600);
   }
 
   function swapGems(g1, g2, isRevert = false) {
+    if (!isRevert) {
+      const rainbowGem = g1.special?.type === 'rainbow' ? g1
+        : g2.special?.type === 'rainbow' ? g2
+        : null;
+      if (rainbowGem) {
+        const otherGem = rainbowGem === g1 ? g2 : g1;
+        pendingRainbowColor = otherGem.type;
+        pendingRainbowGem = rainbowGem;
+      }
+    } else {
+      pendingRainbowColor = null;
+      pendingRainbowGem = null;
+    }
+
     gameState = 'animating';
     
     const tempType = g1.type;
@@ -412,16 +690,18 @@
 
     animations.push({
       type: 'swap',
-      g1: g1,
-      g2: g2,
+      g1,
+      g2,
       duration: 300,
       start: performance.now(),
       onComplete: () => {
         if (!isRevert) {
-          const matches = getMatches();
-          if (matches.length > 0) {
-            resolveMatches();
+          const matches = collectMatchGroups();
+          if (matches.length > 0 || pendingRainbowColor !== null) {
+            resolveMatches({ triggeredByPlayer: true });
           } else {
+            pendingRainbowColor = null;
+            pendingRainbowGem = null;
             swapGems(g1, g2, true);
           }
         } else {
@@ -688,15 +968,13 @@
   }, { passive: false });
 
   // ── Game Flow ─────────────────────────────────────────────────────────────
-  function updateHUD() {
-    document.getElementById('score-display').textContent = Math.floor(score);
-    document.getElementById('hi-display').textContent = highScore;
-  }
-
   function startGame() {
     score = 0;
-    timeLeft = 60;
-    combo = 1;
+    timeLeft = TIME_LIMIT;
+    movesLeft = MOVE_LIMIT;
+    cascadeLevel = 1;
+    pendingRainbowColor = null;
+    pendingRainbowGem = null;
     gameState = 'playing';
     selectedGem = null;
     animations = [];
