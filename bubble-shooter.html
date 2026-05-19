@@ -272,16 +272,48 @@
   }
 
   function addRow() {
-    // prepend a new row at top
     const newRow = [];
-    const cols = colsForRow(0); // will be row 0 after insertion
-    // shift parities
-    for (let col = 0; col < cols; col++) {
+    for (let col = 0; col < colsForRow(0); col++) {
       newRow.push(Math.floor(Math.random() * COLORS.length));
     }
     grid.unshift(newRow);
-    // After insertion, each existing row index increases by 1
-    // Parity of existing rows flips — we don't need to recalc storage, just re-read
+    // Row indices shift: even↔odd column counts must be remapped or bubbles vanish / misalign.
+    realignGridParity();
+  }
+
+  function realignGridParity() {
+    for (let row = 1; row < grid.length; row++) {
+      const need = colsForRow(row);
+      const old = grid[row];
+      const newRow = new Array(need).fill(-1);
+      if (row % 2 === 1) {
+        for (let c = 0; c < need; c++) newRow[c] = old[c] !== undefined ? old[c] : -1;
+      } else {
+        for (let c = 0; c < old.length; c++) {
+          if (c + 1 < need) newRow[c + 1] = old[c];
+        }
+      }
+      grid[row] = newRow;
+    }
+  }
+
+  function ensureGridRow(row) {
+    while (grid.length <= row) {
+      grid.push(new Array(colsForRow(grid.length)).fill(-1));
+    }
+    const need = colsForRow(row);
+    if (!grid[row] || grid[row].length < need) {
+      const old = grid[row] || [];
+      grid[row] = new Array(need).fill(-1);
+      for (let c = 0; c < old.length && c < need; c++) grid[row][c] = old[c];
+    }
+  }
+
+  function isVacantCell(row, col) {
+    if (row < 0 || col < 0 || col >= colsForRow(row)) return false;
+    if (row >= grid.length) return true;
+    const v = grid[row][col];
+    return v === -1 || v === undefined;
   }
 
   // ── Neighbor helper ────────────────────────────────────────────────────────
@@ -513,14 +545,7 @@
         const p = bubblePos(row, col);
         if (Math.hypot(projectile.x - p.x, projectile.y - p.y) < DIAM - 2) {
           // Find nearest empty neighbor
-          const emptyNeighbor = findEmptyNeighbor(row, col, projectile.x, projectile.y);
-          if (emptyNeighbor) {
-            placeBubble(emptyNeighbor.row, emptyNeighbor.col, projectile.color);
-          } else {
-            // All neighbors occupied — snap to nearest empty cell anywhere in grid
-            // snapAndPlace will extend the grid if completely full
-            snapAndPlace(projectile.x, projectile.y, projectile.color);
-          }
+          attachBubble(row, col, projectile.x, projectile.y, projectile.color);
           projectile = null;
           return;
         }
@@ -545,18 +570,40 @@
 
   function findEmptyNeighbor(hitRow, hitCol, px, py) {
     const ns = neighbors(hitRow, hitCol);
-    // Also check the hit cell itself if empty (shouldn't happen but safety)
     let best = null, bestD = Infinity;
     for (const [nr, nc] of ns) {
-      if (nr < 0) continue;
-      if (nc < 0 || nc >= colsForRow(nr)) continue;
-      if (grid[nr] === undefined || grid[nr][nc] === -1 || grid[nr][nc] === undefined) {
-        const p = bubblePos(nr, nc);
-        const d = Math.hypot(px - p.x, py - p.y);
-        if (d < bestD) { bestD = d; best = { row: nr, col: nc }; }
-      }
+      if (!isVacantCell(nr, nc)) continue;
+      const p = bubblePos(nr, nc);
+      const d = Math.hypot(px - p.x, py - p.y);
+      if (d < bestD) { bestD = d; best = { row: nr, col: nc }; }
     }
     return best;
+  }
+
+  function attachBubble(hitRow, hitCol, px, py, color) {
+    const empty = findEmptyNeighbor(hitRow, hitCol, px, py);
+    if (empty) {
+      ensureGridRow(empty.row);
+      placeBubble(empty.row, empty.col, color);
+      return;
+    }
+    // Cluster surface is full at the hit — extend the next row toward the shooter.
+    let attachRow = hitRow + 1;
+    while (true) {
+      ensureGridRow(attachRow);
+      let bestCol = null, bestD = Infinity;
+      for (let col = 0; col < colsForRow(attachRow); col++) {
+        if (!isVacantCell(attachRow, col)) continue;
+        const p = bubblePos(attachRow, col);
+        const d = Math.hypot(px - p.x, py - p.y);
+        if (d < bestD) { bestD = d; bestCol = col; }
+      }
+      if (bestCol !== null) {
+        placeBubble(attachRow, bestCol, color);
+        return;
+      }
+      attachRow++;
+    }
   }
 
   function snapAndPlace(px, py, color) {
