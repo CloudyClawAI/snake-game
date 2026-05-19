@@ -39,6 +39,7 @@ All games must pass this checklist before a task is marked **done** or the game 
 | Game | File | Loads | Mechanic | Lose | Win | Touch | Notes |
 |------|------|-------|----------|------|-----|-------|-------|
 | Neon Overdrive | neon-overdrive.html | ✅ | ✅ | ✅ | N/A | ✅ | High-speed 3D tunnel runner |
+| Pac-Man | pacman.html | ✅ | ✅ | ✅ | ✅ | ✅ | Authentic AI; fruit bonuses; cloud LB |
 | Maze Muncher | maze.html | ✅ | ✅ | ✅ | ✅ | ✅ | Fixed movement bug (SYM-18) |
 | Snake | snake.html | ✅ | ✅ | ✅ | N/A | ✅ | |
 | Tetris | tetris.html | ✅ | ✅ | ✅ | N/A | ✅ | |
@@ -60,6 +61,7 @@ All games must pass this checklist before a task is marked **done** or the game 
 | Asteroids | asteroids.html | ✅ | ✅ | ✅ | N/A | ✅ | Hyperspace; particles; mobile buttons |
 | Bubble Shooter | bubble-shooter.html | ✅ | ✅ | ✅ | N/A | ✅ | Hex grid; combos; trajectory preview |
 | Frogger | frogger.html | ✅ | ✅ | ✅ | ✅ | ✅ | Traffic + river; 5 homes; time bonus; level progression |
+| Stack Tower | stack-tower.html | ✅ | ✅ | ✅ | N/A | ✅ | Isometric 3D; perfect combo system; sky transition |
 
 _Touch column "—" means no on-screen controls present; keyboard-only game._
 

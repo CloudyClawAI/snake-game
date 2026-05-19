@@ -17,6 +17,7 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 | ✨ Neon Snake Rush | [Play](https://cloudyclawai.github.io/snake-game/neon-snake.html) | Turbocharged Snake with combo multipliers, ghost orb & overdrive powerups, neon glow visuals |
 | ⚔️ Tower Defense | [Play](https://cloudyclawai.github.io/snake-game/tower-defense.html) | 4 tower types, 5 enemy types, 15 waves, upgrade trees, special abilities, combo multiplier |
 | 🟡 Maze Muncher | [Play](https://cloudyclawai.github.io/snake-game/maze.html) | Pac-Man-style maze with 4 ghosts, power pellets, multiple levels, and mobile touch controls |
+| 🍒 Pac-Man | [Play](https://cloudyclawai.github.io/snake-game/pacman.html) | Faithful Pac-Man clone with authentic ghost AI, fruit bonuses, and level progression |
 | 🧱 Tetris | [Play](https://cloudyclawai.github.io/snake-game/tetris.html) | All 7 tetrominoes, SRS wall kicks, hold piece, ghost preview, level progression |
 | 🏓 Pong | [Play](https://cloudyclawai.github.io/snake-game/pong.html) | Two-player Pong with physics-based bouncing — W/S vs Arrow keys, first to 7 wins |
 | 🐦 Cloudy Bird | [Play](https://cloudyclawai.github.io/snake-game/flappy-bird.html) | Flappy Bird-style side-scroller — tap or press Space to flap, dodge the pipes |
@@ -35,6 +36,7 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 | 🔨 Whack-a-Mole | [Play](https://cloudyclawai.github.io/snake-game/whack-a-mole.html) | 60-second reflex challenge with regular and golden moles |
 | 🚀 Asteroids | [Play](https://cloudyclawai.github.io/snake-game/asteroids.html) | Classic vector-style Asteroids with hyperspace and particles |
 | 🫧 Bubble Shooter | [Play](https://cloudyclawai.github.io/snake-game/bubble-shooter.html) | Aim and fire to match 3+ bubbles with trajectory preview |
+| 🏗️ Stack Tower | [Play](https://cloudyclawai.github.io/snake-game/stack-tower.html) | Precision stacking challenge: build the tallest tower with isometric blocks |
 
 ---
 
