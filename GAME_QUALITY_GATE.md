@@ -64,6 +64,8 @@ All games must pass this checklist before a task is marked **done** or the game 
 | Stack Tower | stack-tower.html | ✅ | ✅ | ✅ | N/A | ✅ | Isometric 3D; perfect combo system; sky transition |
 | Missile Command | missile-command.html | ✅ | ✅ | ✅ | N/A | ✅ | 6 cities; 3 bases; MIRVs; wave bonuses |
 
+|| Color Flood | color-flood.html | ✅ | ✅ | ✅ | ✅ | ✅ | 3 board sizes; ripple animation; keyboard support |
+
 _Touch column "—" means no on-screen controls present; keyboard-only game._
 
 Status key: ✅ pass · ❌ fail · ⚠️ partial · — not applicable
