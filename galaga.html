@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Galaga — CloudyClaw Games</title>
+  <link rel="stylesheet" href="design-system.css">
+  <style>
+    :root {
+      --bg: #000005;
+      --accent: #ff0044;
+      --accent-glow: rgba(255, 0, 68, 0.3);
+    }
+
+    body {
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #hud {
+      display: flex;
+      width: 100%;
+      max-width: 800px;
+      justify-content: space-between;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      color: #fff;
+      z-index: 5;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    #canvas-wrap {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 3/4;
+      background: #000;
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    #mobile-controls {
+      display: none;
+      width: 100%;
+      max-width: 800px;
+      padding: 1rem;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .mob-row { display: flex; gap: 0.5rem; }
+
+    .mob-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #fff;
+      width: 70px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      touch-action: none;
+    }
+
+    .mob-btn:active {
+      background: var(--surface-2);
+      border-color: var(--accent);
+    }
+
+    #fire-btn {
+      width: 100px;
+      background: rgba(255, 0, 68, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 600px), (pointer: coarse) {
+      #mobile-controls { display: flex; }
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    #overlay h2 { font-size: 3rem; margin-bottom: 1rem; color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); }
+    #overlay p { margin-bottom: 2rem; color: var(--text-muted); }
+    #overlay button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 99px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">← Hub</a>
+
+<div id="hud">
+  <div class="stat-box">
+    <div class="stat-label">1UP</div>
+    <div class="stat-value" id="score-val">00</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">High Score</div>
+    <div class="stat-value" id="hi-val">00</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-label">Stage</div>
+    <div class="stat-value" id="stage-val">1</div>
+  </div>
+</div>
+
+<div id="canvas-wrap">
+  <canvas id="gameCanvas"></canvas>
+  <div id="overlay">
+    <h2 id="overlay-title">GALAGA</h2>
+    <p id="overlay-desc">Press Start to Play</p>
+    <button id="start-btn">START</button>
+  </div>
+</div>
+
+<div id="mobile-controls">
+  <div class="mob-row">
+    <button class="mob-btn" id="btn-left">◀</button>
+    <button class="mob-btn" id="btn-right">▶</button>
+  </div>
+  <button class="mob-btn" id="fire-btn">FIRE</button>
+</div>
+
+<script src="leaderboard-cloud.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const startBtn = document.getElementById('start-btn');
+  
+  const WIDTH = 450;
+  const HEIGHT = 600;
+  
+  let scale = 1;
+  function resize() {
+    const wrap = document.getElementById('canvas-wrap');
+    const availableW = wrap.clientWidth;
+    const availableH = wrap.clientHeight;
+    scale = Math.min(availableW / WIDTH, availableH / HEIGHT);
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    canvas.style.width = (WIDTH * scale) + 'px';
+    canvas.style.height = (HEIGHT * scale) + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // --- Game Constants ---
+  const PLAYER_SPEED = 4;
+  const BULLET_SPEED = 8;
+  const MAX_PLAYER_BULLETS = 2;
+
+  const ENEMY_TYPES = {
+    BEE: { pts: 50, color: '#0f0' },
+    BUTTERFLY: { pts: 80, color: '#f0f' },
+    BOSS: { pts: 150, color: '#0af' }
+  };
+
+  const FORMATION_COLS = 10;
+  const FORMATION_ROWS = 5; // 1 Boss, 2 Butterfly, 2 Bee
+  const ENEMY_W = 24;
+  const ENEMY_H = 24;
+  const ENEMY_SPACING_X = 32;
+  const ENEMY_SPACING_Y = 32;
+  const FORMATION_OFFSET_Y = 80;
+
+  // --- Game State ---
+  let state = 'menu'; // menu, playing, gameover, stage_clear
+  let score = 0;
+  let hiScore = parseInt(localStorage.getItem('galaga_hi') || '0', 10);
+  let stage = 1;
+  let lives = 3;
+  let waveTimer = 0;
+  let isBonusStage = false;
+  let bonusHits = 0;
+  
+  let player = {
+    x: WIDTH / 2,
+    y: HEIGHT - 50,
+    w: 30,
+    h: 30,
+    vx: 0,
+    bullets: [],
+    captured: false,
+    recaptured: false, // for double firepower
+    hit: false,
+    hitTimer: 0
+  };
+
+  let enemies = [];
+  let enemyBullets = [];
+  let stars = [];
+  let explosions = [];
+  let tractorBeam = null; // { x, y, w, h, boss, state: 'firing' | 'capturing' }
+
+  // --- Input ---
+  const keys = {};
+  window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Space') fireBullet();
+    if (e.code === 'Enter' && state !== 'playing') startGame();
+  });
+  window.addEventListener('keyup', e => keys[e.code] = false);
+
+  // Mobile controls
+  function setupMobileBtn(id, key) {
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true; }, {passive:false});
+    btn.addEventListener('touchend', e => { e.preventDefault(); keys[key] = false; }, {passive:false});
+    btn.addEventListener('mousedown', () => keys[key] = true);
+    btn.addEventListener('mouseup', () => keys[key] = false);
+  }
+  setupMobileBtn('btn-left', 'ArrowLeft');
+  setupMobileBtn('btn-right', 'ArrowRight');
+  document.getElementById('fire-btn').addEventListener('touchstart', e => { e.preventDefault(); fireBullet(); }, {passive:false});
+  document.getElementById('fire-btn').addEventListener('mousedown', fireBullet);
+  startBtn.addEventListener('click', startGame);
+
+  function fireBullet() {
+    if (state !== 'playing' || player.hit) return;
+    const maxBullets = player.recaptured ? MAX_PLAYER_BULLETS * 2 : MAX_PLAYER_BULLETS;
+    if (player.bullets.length < maxBullets) {
+      if (player.recaptured) {
+        player.bullets.push({ x: player.x - 8, y: player.y - 10 });
+        player.bullets.push({ x: player.x + 8, y: player.y - 10 });
+      } else {
+        player.bullets.push({ x: player.x, y: player.y - 10 });
+      }
+    }
+  }
+
+  function startGame() {
+    state = 'playing';
+    overlay.style.display = 'none';
+    score = 0;
+    stage = 1;
+    lives = 3;
+    initStage();
+    updateHUD();
+  }
+
+  function initStage() {
+    player.x = WIDTH / 2;
+    player.bullets = [];
+    enemies = [];
+    enemyBullets = [];
+    explosions = [];
+    waveTimer = 0;
+    isBonusStage = (stage % 4 === 0);
+    bonusHits = 0;
+    
+    if (isBonusStage) {
+      flash('BONUS STAGE!');
+    }
+    
+    // Create formation placeholders
+    for (let r = 0; r < FORMATION_ROWS; r++) {
+      for (let c = 0; c < FORMATION_COLS; c++) {
+        let type = ENEMY_TYPES.BEE;
+        if (r === 0) type = ENEMY_TYPES.BOSS;
+        else if (r <= 2) type = ENEMY_TYPES.BUTTERFLY;
+        
+        // Only 4 Bosses in the middle
+        if (r === 0 && (c < 3 || c > 6)) continue;
+
+        enemies.push({
+          type: type,
+          gridX: c,
+          gridY: r,
+          targetX: (WIDTH / 2) - ((FORMATION_COLS-1) * ENEMY_SPACING_X / 2) + c * ENEMY_SPACING_X,
+          targetY: FORMATION_OFFSET_Y + r * ENEMY_SPACING_Y,
+          x: -100, y: -100,
+          state: 'entering', // entering, formation, diving, returning
+          path: null,
+          pathT: 0,
+          angle: 0,
+          alive: true,
+          enteringDelay: (r * FORMATION_COLS + c) * 5
+        });
+      }
+    }
+  }
+
+  // --- Paths ---
+  // Simple Bezier path helper
+  function getBezierPoint(t, p0, p1, p2, p3) {
+    const cX = 3 * (p1.x - p0.x),
+          bX = 3 * (p2.x - p1.x) - cX,
+          aX = p3.x - p0.x - cX - bX;
+    const cY = 3 * (p1.y - p0.y),
+          bY = 3 * (p2.y - p1.y) - cY,
+          aY = p3.y - p0.y - cY - bY;
+    const x = (aX * Math.pow(t, 3)) + (bX * Math.pow(t, 2)) + (cX * t) + p0.x;
+    const y = (aY * Math.pow(t, 3)) + (bY * Math.pow(t, 2)) + (cY * t) + p0.y;
+    return {x, y};
+  }
+
+  const PATHS = [
+    // Entry from top-left
+    [ {x:-50, y:100}, {x:100, y:200}, {x:300, y:100}, {x:200, y:400} ],
+    // Entry from top-right
+    [ {x:WIDTH+50, y:100}, {x:WIDTH-100, y:200}, {x:WIDTH-300, y:100}, {x:WIDTH-200, y:400} ],
+    // Entry from bottom-left
+    [ {x:-50, y:HEIGHT-100}, {x:100, y:HEIGHT-200}, {x:300, y:HEIGHT-300}, {x:200, y:200} ],
+    // Entry from bottom-right
+    [ {x:WIDTH+50, y:HEIGHT-100}, {x:WIDTH-100, y:HEIGHT-200}, {x:WIDTH-300, y:HEIGHT-300}, {x:WIDTH-200, y:200} ]
+  ];
+
+  function updateEnemies() {
+    waveTimer++;
+    
+    enemies.forEach(e => {
+      if (!e.alive) return;
+
+      if (e.state === 'entering') {
+        if (waveTimer > e.enteringDelay) {
+          if (!e.path) {
+            e.path = PATHS[e.gridX % PATHS.length];
+            e.pathT = 0;
+          }
+          e.pathT += 0.01;
+          if (e.pathT >= 1) {
+            e.state = 'formation';
+          } else {
+            const p = getBezierPoint(e.pathT, e.path[0], e.path[1], e.path[2], e.path[3]);
+            e.x = p.x;
+            e.y = p.y;
+            // Angle towards movement
+            const nextP = getBezierPoint(e.pathT + 0.01, e.path[0], e.path[1], e.path[2], e.path[3]);
+            e.angle = Math.atan2(nextP.y - p.y, nextP.x - p.x);
+          }
+        }
+      } else if (e.state === 'formation') {
+        // Subtle swaying in formation
+        const sway = Math.sin(Date.now() / 500) * 10;
+        e.x = e.targetX + sway;
+        e.y = e.targetY;
+        e.angle = 0;
+        
+        // Randomly start diving
+        if (Math.random() < 0.001 * stage && waveTimer > 500) {
+          e.state = 'diving';
+          e.diveT = 0;
+        }
+      } else if (e.state === 'diving') {
+        e.y += 3 + stage * 0.5;
+        e.x += Math.sin(e.y / 30) * 4;
+        e.angle = Math.atan2(1, Math.sin(e.y / 30) * 4 / (3 + stage * 0.5));
+        
+        // Boss Galaga tractor beam
+        if (e.type === ENEMY_TYPES.BOSS && !tractorBeam && e.y > 150 && e.y < 200 && Math.random() < 0.05) {
+          tractorBeam = { x: e.x, y: e.y + 20, boss: e, timer: 200, state: 'firing' };
+        }
+
+        if (e.y > HEIGHT + 50) {
+          e.y = -50;
+          if (isBonusStage) e.alive = false; // Bonus enemies don't return
+          else e.state = 'returning';
+        }
+        
+        // Fire at player
+        if (!isBonusStage && Math.random() < 0.01 && enemyBullets.length < 5) {
+          enemyBullets.push({ x: e.x, y: e.y, vx: (player.x - e.x) / 50, vy: 5 });
+        }
+      } else if (e.state === 'capturing') {
+        // Boss is capturing the player
+        e.y -= 2;
+        player.x = e.x;
+        player.y = e.y + 40;
+        if (e.y <= e.targetY) {
+          e.state = 'formation';
+          e.capturedShip = true;
+          player.captured = true;
+          player.hit = true;
+          player.hitTimer = 1; // Trigger life loss immediately
+        }
+      } else if (e.state === 'returning') {
+        e.y += 3;
+        if (e.y >= e.targetY) {
+          e.state = 'formation';
+        }
+      }
+    });
+
+    // Update enemy bullets
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      enemyBullets[i].x += enemyBullets[i].vx;
+      enemyBullets[i].y += enemyBullets[i].vy;
+      if (enemyBullets[i].y > HEIGHT) enemyBullets.splice(i, 1);
+    }
+
+    // Update tractor beam
+    if (tractorBeam) {
+      tractorBeam.timer--;
+      if (tractorBeam.state === 'firing') {
+        tractorBeam.x = tractorBeam.boss.x;
+        tractorBeam.y = tractorBeam.boss.y + 20;
+        
+        // Check if player caught
+        if (Math.abs(player.x - tractorBeam.x) < 40 && player.y > tractorBeam.y) {
+          tractorBeam.state = 'capturing';
+          tractorBeam.boss.state = 'capturing';
+        }
+      }
+      if (tractorBeam.timer <= 0 || !tractorBeam.boss.alive || tractorBeam.boss.state !== 'capturing' && tractorBeam.boss.state !== 'diving') {
+        tractorBeam = null;
+      }
+    }
+  }
+
+  function drawEnemies() {
+    // Draw tractor beam
+    if (tractorBeam) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+      ctx.beginPath();
+      ctx.moveTo(tractorBeam.x, tractorBeam.y);
+      ctx.lineTo(tractorBeam.x - 50, HEIGHT);
+      ctx.lineTo(tractorBeam.x + 50, HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    enemies.forEach(e => {
+      if (!e.alive || (e.state === 'entering' && waveTimer <= e.enteringDelay)) return;
+      
+      ctx.save();
+      ctx.translate(e.x, e.y);
+      ctx.rotate(e.angle);
+      
+      ctx.fillStyle = e.type.color;
+      // Simple bug shape
+      ctx.beginPath();
+      ctx.moveTo(-10, -10);
+      ctx.lineTo(10, -10);
+      ctx.lineTo(12, 0);
+      ctx.lineTo(10, 10);
+      ctx.lineTo(-10, 10);
+      ctx.lineTo(-12, 0);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Eyes
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(-6, -6, 3, 3);
+      ctx.fillRect(3, -6, 3, 3);
+      
+      if (e.capturedShip) {
+        // Draw captured ship below boss
+        ctx.translate(0, 30);
+        ctx.fillStyle = '#f00';
+        ctx.fillRect(-10, 0, 20, 10);
+        ctx.fillRect(-4, -10, 8, 10);
+      }
+      
+      ctx.restore();
+    });
+
+    // Draw enemy bullets
+    ctx.fillStyle = '#f00';
+    enemyBullets.forEach(b => {
+      ctx.fillRect(b.x - 2, b.y - 2, 4, 4);
+    });
+  }
+
+  function updateHUD() {
+    document.getElementById('score-val').textContent = score.toString().padStart(2, '0');
+    document.getElementById('hi-val').textContent = hiScore.toString().padStart(2, '0');
+    document.getElementById('stage-val').textContent = stage;
+  }
+
+  // --- Stars ---
+  for (let i = 0; i < 100; i++) {
+    stars.push({
+      x: Math.random() * WIDTH,
+      y: Math.random() * HEIGHT,
+      s: Math.random() * 2 + 1,
+      v: Math.random() * 2 + 1
+    });
+  }
+
+  function updateStars() {
+    stars.forEach(s => {
+      s.y += s.v;
+      if (s.y > HEIGHT) {
+        s.y = 0;
+        s.x = Math.random() * WIDTH;
+      }
+    });
+  }
+
+  function drawStars() {
+    ctx.fillStyle = '#fff';
+    stars.forEach(s => {
+      ctx.globalAlpha = Math.random() * 0.5 + 0.5;
+      ctx.fillRect(s.x, s.y, s.s, s.s);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  // --- Player ---
+  function updatePlayer() {
+    if (player.hit) {
+      player.hitTimer--;
+      if (player.hitTimer <= 0) {
+        player.hit = false;
+        lives--;
+        if (lives < 0) {
+          gameOver();
+        } else {
+          player.x = WIDTH / 2;
+          player.bullets = [];
+        }
+      }
+      return;
+    }
+
+    if (keys['ArrowLeft']) player.x -= PLAYER_SPEED;
+    if (keys['ArrowRight']) player.x += PLAYER_SPEED;
+    
+    player.x = Math.max(player.w / 2, Math.min(WIDTH - player.w / 2, player.x));
+
+    // Update bullets
+    for (let i = player.bullets.length - 1; i >= 0; i--) {
+      player.bullets[i].y -= BULLET_SPEED;
+      if (player.bullets[i].y < 0) player.bullets.splice(i, 1);
+    }
+  }
+
+  function drawPlayer() {
+    if (player.hit && Math.floor(Date.now() / 100) % 2 === 0) return;
+    
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    
+    // Simple pixel-art ship
+    ctx.fillStyle = '#fff';
+    // Body
+    ctx.fillRect(-10, 0, 20, 10);
+    ctx.fillRect(-4, -10, 8, 10);
+    // Wings
+    ctx.fillStyle = '#f00';
+    ctx.fillRect(-15, 5, 5, 10);
+    ctx.fillRect(10, 5, 5, 10);
+    // Tip
+    ctx.fillStyle = '#0af';
+    ctx.fillRect(-2, -14, 4, 4);
+    
+    if (player.recaptured) {
+       // Draw second ship next to it
+       ctx.translate(30, 0);
+       ctx.fillStyle = '#fff';
+       ctx.fillRect(-10, 0, 20, 10);
+       ctx.fillRect(-4, -10, 8, 10);
+       ctx.fillStyle = '#f00';
+       ctx.fillRect(-15, 5, 5, 10);
+       ctx.fillRect(10, 5, 5, 10);
+       ctx.fillStyle = '#0af';
+       ctx.fillRect(-2, -14, 4, 4);
+    }
+    
+    ctx.restore();
+
+    // Draw bullets
+    ctx.fillStyle = '#ff0';
+    player.bullets.forEach(b => {
+      ctx.fillRect(b.x - 2, b.y, 4, 10);
+    });
+  }
+
+  function flash(msg) {
+    // We'll use a simple overlay or just log for now, but let's add a proper flash
+    const f = document.createElement('div');
+    f.style.position = 'absolute';
+    f.style.top = '50%';
+    f.style.left = '50%';
+    f.style.transform = 'translate(-50%, -50%)';
+    f.style.color = '#ff0';
+    f.style.fontSize = '2rem';
+    f.style.fontWeight = 'bold';
+    f.style.zIndex = '20';
+    f.textContent = msg;
+    document.getElementById('canvas-wrap').appendChild(f);
+    setTimeout(() => f.remove(), 2000);
+  }
+
+  function gameOver() {
+    state = 'gameover';
+    overlay.style.display = 'flex';
+    document.getElementById('overlay-title').textContent = 'GAME OVER';
+    document.getElementById('overlay-desc').textContent = 'Final Score: ' + score;
+    if (score > hiScore) {
+      hiScore = score;
+      localStorage.setItem('galaga_hi', hiScore);
+      if (typeof LeaderboardCloud !== 'undefined') {
+        LeaderboardCloud.saveScore('galaga', score);
+      }
+    }
+    updateHUD();
+  }
+
+  function checkCollisions() {
+    // Player bullets vs Enemies
+    for (let i = player.bullets.length - 1; i >= 0; i--) {
+      const b = player.bullets[i];
+      let hit = false;
+      for (let j = 0; j < enemies.length; j++) {
+        const e = enemies[j];
+        if (!e.alive || (e.state === 'entering' && waveTimer <= e.enteringDelay)) continue;
+        
+        const dist = Math.hypot(b.x - e.x, b.y - e.y);
+        if (dist < 20) {
+          if (isBonusStage) bonusHits++;
+          // If boss had a captured ship, release it
+          if (e.capturedShip) {
+            e.capturedShip = false;
+            explosions.push({ x: e.x, y: e.y + 30, r: 0, max: 30, color: '#f00' });
+            // The ship becomes a "falling" ship that can be recaptured
+            enemies.push({
+              type: { pts: 0, color: '#f00' },
+              x: e.x, y: e.y + 30,
+              state: 'falling_ship',
+              alive: true,
+              angle: 0
+            });
+          }
+          
+          e.alive = false;
+          score += e.type.pts;
+          explosions.push({ x: e.x, y: e.y, r: 0, max: 20, color: e.type.color });
+          player.bullets.splice(i, 1);
+          hit = true;
+          updateHUD();
+          break;
+        }
+      }
+      if (hit) continue;
+    }
+
+    // Enemy bullets vs Player
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const b = enemyBullets[i];
+      const dist = Math.hypot(b.x - player.x, b.y - player.y);
+      if (dist < 20 && !player.hit) {
+        player.hit = true;
+        player.hitTimer = 100;
+        explosions.push({ x: player.x, y: player.y, r: 0, max: 40, color: '#fff' });
+        enemyBullets.splice(i, 1);
+        break;
+      }
+    }
+
+    // Enemies vs Player (collision)
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      const e = enemies[j];
+      if (!e.alive) continue;
+
+      if (e.state === 'falling_ship') {
+        e.y += 2;
+        const dist = Math.hypot(e.x - player.x, e.y - player.y);
+        if (dist < 30) {
+          e.alive = false;
+          player.recaptured = true;
+          flash('RECAPTURED!');
+        }
+        if (e.y > HEIGHT) e.alive = false;
+        continue;
+      }
+
+      if (e.state === 'diving') {
+        const dist = Math.hypot(e.x - player.x, e.y - player.y);
+        if (dist < 25 && !player.hit) {
+          player.hit = true;
+          player.hitTimer = 100;
+          e.alive = false;
+          explosions.push({ x: player.x, y: player.y, r: 0, max: 40, color: '#fff' });
+          explosions.push({ x: e.x, y: e.y, r: 0, max: 20, color: e.type.color });
+        }
+      }
+    }
+
+    // Check if stage clear
+    if (enemies.length > 0 && enemies.every(e => !e.alive)) {
+      nextStage();
+    }
+  }
+
+  function nextStage() {
+    if (isBonusStage) {
+      const totalEnemies = FORMATION_ROWS * FORMATION_COLS - 6; // Adjusted for missing bosses
+      const ratio = Math.floor((bonusHits / totalEnemies) * 100);
+      flash(`BONUS: ${bonusHits} HITS! ${ratio}%`);
+      score += bonusHits * 100;
+    }
+    stage++;
+    state = 'stage_clear';
+    setTimeout(() => {
+      state = 'playing';
+      initStage();
+      updateHUD();
+    }, 3000);
+  }
+
+  function updateExplosions() {
+    for (let i = explosions.length - 1; i >= 0; i--) {
+      explosions[i].r += 1;
+      if (explosions[i].r >= explosions[i].max) explosions.splice(i, 1);
+    }
+  }
+
+  function drawExplosions() {
+    explosions.forEach(ex => {
+      ctx.beginPath();
+      ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI * 2);
+      ctx.strokeStyle = ex.color;
+      ctx.globalAlpha = 1 - (ex.r / ex.max);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  // --- Main Loop ---
+  function loop() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    
+    updateStars();
+    drawStars();
+
+    if (state === 'playing') {
+      updatePlayer();
+      updateEnemies();
+      checkCollisions();
+      updateExplosions();
+    }
+
+    drawPlayer();
+    drawEnemies();
+    drawExplosions();
+
+    if (state === 'stage_clear') {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 30px var(--font-mono)';
+      ctx.textAlign = 'center';
+      ctx.fillText('STAGE CLEAR', WIDTH / 2, HEIGHT / 2);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+  updateHUD();
+
+})();
+</script>
+</body>
+</html>

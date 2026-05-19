@@ -58,7 +58,9 @@ const Leaderboard = (() => {
     { key: 'space-invaders', label: 'Space Invaders', href: 'space-invaders.html' },
     { key: 'asteroids',      label: 'Asteroids',      href: 'asteroids.html'     },
     { key: 'frogger',        label: 'Frogger',        href: 'frogger.html'        },
+    { key: 'pacman',         label: 'Pac-Man',        href: 'pacman.html'         },
     { key: 'stack-tower',    label: 'Stack Tower',    href: 'stack-tower.html'    },
+    { key: 'pinball',        label: 'Pinball',        href: 'pinball.html'        },
   ];
 
   function getAllBest() {
