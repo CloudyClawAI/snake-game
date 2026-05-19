@@ -806,6 +806,65 @@
     ctx.restore();
   }
 
+  function drawSpecialIndicator(ctx, kind, x, y, scale = 1, alpha = 1) {
+    const cx = x + CELL_SIZE / 2;
+    const cy = y + CELL_SIZE / 2;
+    const r = CELL_SIZE * 0.38 * scale;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx, cy);
+
+    if (kind === 'power') {
+      // Glowing cross for power gems
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 8 * scale;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3 * scale;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.lineTo(0, r);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r, 0);
+      ctx.lineTo(r, 0);
+      ctx.stroke();
+    } else if (kind === 'rainbow') {
+      // Spinning rainbow ring
+      const now = performance.now() / 300;
+      const segments = 6;
+      const segLen = (Math.PI * 2) / segments;
+      for (let i = 0; i < segments; i++) {
+        const start = now + i * segLen;
+        const hue = (i / segments) * 360;
+        ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
+        ctx.shadowBlur = 6 * scale;
+        ctx.strokeStyle = `hsl(${hue}, 100%, 65%)`;
+        ctx.lineWidth = 3.5 * scale;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, start, start + segLen * 0.75);
+        ctx.stroke();
+      }
+      // Star in center
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = alpha * 0.9;
+      const sr = r * 0.28;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const outer = (i * 2 * Math.PI / 5) - Math.PI / 2;
+        const inner = outer + Math.PI / 5;
+        if (i === 0) ctx.moveTo(sr * Math.cos(outer), sr * Math.sin(outer));
+        else ctx.lineTo(sr * Math.cos(outer), sr * Math.sin(outer));
+        ctx.lineTo(sr * 0.4 * Math.cos(inner), sr * 0.4 * Math.sin(inner));
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   function draw() {
     ctx.clearRect(0, 0, W, H);
 
@@ -848,7 +907,6 @@
                 const endY = ani.endR * CELL_SIZE;
                 drawY = PADDING + startY + (endY - startY) * ease;
               } else if (ani.type === 'swap') {
-                const other = ani.g1 === gem ? ani.g2 : ani.g1;
                 const startX = (ani.g1 === gem ? ani.g1.c : ani.g2.c) * CELL_SIZE;
                 const startY = (ani.g1 === gem ? ani.g1.r : ani.g2.r) * CELL_SIZE;
                 const endX = (ani.g1 === gem ? ani.g2.c : ani.g1.c) * CELL_SIZE;
@@ -863,6 +921,11 @@
           });
 
           drawGem(ctx, gem.type, drawX, drawY, gem.scale, gem.alpha);
+
+          // Draw special gem indicator on top
+          if (gem.special && gem.alpha > 0.05) {
+            drawSpecialIndicator(ctx, gem.special.type, drawX, drawY, gem.scale, gem.alpha);
+          }
         }
       }
     }
@@ -881,8 +944,9 @@
       ctx.setLineDash([]);
     }
 
-    // Particles
-    particles.forEach((p, i) => {
+    // Particles (iterate in reverse to safely splice)
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
       ctx.globalAlpha = p.life;
       ctx.fillStyle = p.color;
       ctx.beginPath();
@@ -892,10 +956,10 @@
       p.y += p.vy;
       p.life -= p.decay;
       if (p.life <= 0) particles.splice(i, 1);
-    });
+    }
     ctx.globalAlpha = 1;
 
-    // Timer bar
+    // Progress bar (time countdown in timed mode; moves remaining in moves mode)
     const barW = BOARD_SIZE;
     const barH = 10;
     const barX = PADDING;
@@ -905,11 +969,19 @@
     ctx.roundRect(barX, barY, barW, barH, 5);
     ctx.fill();
 
-    const progress = timeLeft / 60;
-    const barColor = timeLeft < 10 ? '#ff4444' : varColor('--accent');
-    ctx.fillStyle = barColor;
-    ctx.roundRect(barX, barY, barW * progress, barH, 5);
-    ctx.fill();
+    let progress, barColor;
+    if (currentMode === 'timed') {
+      progress = timeLeft / TIME_LIMIT;
+      barColor = timeLeft < 10 ? '#ff4444' : varColor('--accent');
+    } else {
+      progress = movesLeft / MOVE_LIMIT;
+      barColor = movesLeft <= 5 ? '#ff4444' : '#33cc66';
+    }
+    if (progress > 0) {
+      ctx.fillStyle = barColor;
+      ctx.roundRect(barX, barY, barW * progress, barH, 5);
+      ctx.fill();
+    }
 
     // Cleanup finished animations
     const now = performance.now();
