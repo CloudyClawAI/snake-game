@@ -192,6 +192,7 @@
         <div class="stats">
           <div class="stat"><span>Distance</span><strong id="distance">0m</strong></div>
           <div class="stat"><span>Best</span><strong id="best">0m</strong></div>
+          <div class="stat"><span>Multiplier</span><strong id="multiplier">1.0x</strong></div>
           <div class="stat"><span>Speed</span><strong id="speed">1.0x</strong></div>
         </div>
       </div>
@@ -231,6 +232,7 @@
     const ctx = canvas.getContext('2d');
     const distanceEl = document.getElementById('distance');
     const bestEl = document.getElementById('best');
+    const multiplierEl = document.getElementById('multiplier');
     const speedEl = document.getElementById('speed');
     const overlay = document.getElementById('overlay');
     const startBtn = document.getElementById('start-btn');
@@ -247,6 +249,10 @@
       distance: 0,
       best: parseInt(localStorage.getItem('neon-dash-best') || 0),
       speed: 1,
+      multiplier: 1,
+      streak: 0,
+      checkpoint: 0,
+      lastCheckpointDistance: 0,
       player: {
         x: 100,
         y: 0,
@@ -258,8 +264,17 @@
       obstacles: [],
       particles: [],
       lastTime: 0,
-      seed: Math.random().toString(36).substring(7)
+      seed: Math.random().toString(36).substring(7),
+      nextObstacleX: 600,
+      message: '',
+      messageTimer: 0
     };
+
+    // Simple seeded PRNG
+    function seededRandom(seed) {
+      let x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    }
 
     function resize() {
       const wrap = canvas.parentElement;
@@ -271,9 +286,18 @@
     window.addEventListener('resize', resize);
     resize();
 
-    function init() {
-      state.distance = 0;
-      state.speed = 1;
+    function init(fromCheckpoint = false) {
+      if (!fromCheckpoint) {
+        state.distance = 0;
+        state.checkpoint = 0;
+        state.lastCheckpointDistance = 0;
+      } else {
+        state.distance = state.lastCheckpointDistance;
+      }
+      
+      state.speed = 1 + Math.floor(state.distance / 200) * 0.2;
+      state.multiplier = 1 + Math.floor(state.distance / 100) * 0.1;
+      state.streak = 0;
       state.player.y = canvas.height - GROUND_HEIGHT - PLAYER_SIZE;
       state.player.vy = 0;
       state.player.jumps = 0;
@@ -281,12 +305,15 @@
       state.player.rotation = 0;
       state.obstacles = [];
       state.particles = [];
+      state.nextObstacleX = canvas.width + 200;
+      state.seed = Math.random().toString(36).substring(7);
       updateHud();
     }
 
     function updateHud() {
       distanceEl.textContent = Math.floor(state.distance) + 'm';
       bestEl.textContent = Math.floor(state.best) + 'm';
+      multiplierEl.textContent = state.multiplier.toFixed(1) + 'x';
       speedEl.textContent = state.speed.toFixed(1) + 'x';
     }
 
@@ -312,15 +339,112 @@
       }
     }
 
+    function spawnObstacle() {
+      const types = ['spike', 'block', 'portal'];
+      const r = seededRandom(state.distance + state.obstacles.length);
+      const type = types[Math.floor(r * types.length)];
+      
+      let obs = {
+        x: state.nextObstacleX,
+        type: type,
+        w: 30,
+        h: 30
+      };
+
+      if (type === 'spike') {
+        obs.y = state.player.gravityDir === 1 ? canvas.height - GROUND_HEIGHT - 30 : GROUND_HEIGHT;
+      } else if (type === 'block') {
+        obs.y = state.player.gravityDir === 1 ? canvas.height - GROUND_HEIGHT - 80 : GROUND_HEIGHT + 50;
+        obs.w = 60;
+        obs.h = 20;
+      } else if (type === 'portal') {
+        obs.y = canvas.height / 2 - 40;
+        obs.w = 20;
+        obs.h = 80;
+      }
+
+      state.obstacles.push(obs);
+      state.nextObstacleX += 300 + seededRandom(state.distance) * (400 / state.speed);
+    }
+
+    function gameOver() {
+      state.running = false;
+      if (state.distance > state.best) {
+        state.best = state.distance;
+        localStorage.setItem('neon-dash-best', state.best);
+        if (typeof Leaderboard !== 'undefined') {
+          Leaderboard.saveScore('neon-dash', Math.floor(state.best));
+        }
+      }
+      
+      createParticles(state.player.x + PLAYER_SIZE/2, state.player.y + PLAYER_SIZE/2, '#ff5c8a', 50);
+      
+      document.getElementById('overlay-title').textContent = 'Game Over';
+      document.getElementById('overlay-desc').textContent = `You traveled ${Math.floor(state.distance)}m!`;
+      
+      const restartBtn = document.getElementById('start-btn');
+      if (state.lastCheckpointDistance > 0) {
+        restartBtn.textContent = 'Restart from Checkpoint';
+        restartBtn.onclick = () => {
+          init(true);
+          state.running = true;
+          overlay.classList.add('hidden');
+        };
+        
+        // Add a "Restart from Beginning" button if it doesn't exist
+        if (!document.getElementById('restart-beginning')) {
+          const btn = document.createElement('button');
+          btn.id = 'restart-beginning';
+          btn.textContent = 'Restart from Beginning';
+          btn.style.marginTop = '10px';
+          btn.style.background = 'var(--surface-2)';
+          btn.style.border = '1px solid var(--border)';
+          btn.onclick = () => {
+            init(false);
+            state.running = true;
+            overlay.classList.add('hidden');
+            btn.remove();
+          };
+          restartBtn.parentElement.appendChild(btn);
+        }
+      } else {
+        restartBtn.textContent = 'Start Game';
+        restartBtn.onclick = () => {
+          init(false);
+          state.running = true;
+          overlay.classList.add('hidden');
+        };
+      }
+      
+      overlay.classList.remove('hidden');
+    }
+
+    function showMessage(text) {
+      state.message = text;
+      state.messageTimer = 120;
+    }
+
     function update(dt) {
       if (!state.running) return;
 
       const currentSpeed = INITIAL_SPEED * state.speed;
-      state.distance += (currentSpeed * dt) / 100;
+      const moveDist = (currentSpeed * dt) / 16;
+      state.distance += (moveDist / 10) * state.multiplier;
 
       // Speed ramp
       state.speed = 1 + Math.floor(state.distance / 200) * 0.2;
       if (state.speed > 3) state.speed = 3;
+
+      // Multiplier bonus (no-hit streak)
+      state.multiplier = 1 + Math.floor(state.distance / 100) * 0.1;
+
+      // Checkpoints every 500m
+      if (Math.floor(state.distance / 500) > state.checkpoint) {
+        state.checkpoint = Math.floor(state.distance / 500);
+        state.lastCheckpointDistance = state.checkpoint * 500;
+        showMessage(`Checkpoint: ${state.lastCheckpointDistance}m`);
+        createParticles(state.player.x, state.player.y, '#ffd86b', 30);
+      }
 
       // Player Physics
       state.player.vy += GRAVITY * state.player.gravityDir;
@@ -351,6 +475,48 @@
         state.player.rotation = 0;
       }
 
+      // Particle Trail
+      if (state.running) {
+        state.particles.push({
+          x: state.player.x + Math.random() * PLAYER_SIZE,
+          y: state.player.y + (state.player.gravityDir === 1 ? PLAYER_SIZE : 0),
+          vx: -2 - Math.random() * 2,
+          vy: (Math.random() - 0.5) * 2,
+          life: 0.5 + Math.random() * 0.5,
+          color: '#7c6aff'
+        });
+      }
+
+      // Obstacles
+      if (state.nextObstacleX < state.player.x + canvas.width) {
+        spawnObstacle();
+      }
+
+      state.obstacles.forEach(obs => {
+        obs.x -= moveDist;
+        
+        // Collision detection
+        if (
+          state.player.x < obs.x + obs.w &&
+          state.player.x + PLAYER_SIZE > obs.x &&
+          state.player.y < obs.y + obs.h &&
+          state.player.y + PLAYER_SIZE > obs.y
+        ) {
+          if (obs.type === 'portal') {
+            if (!obs.used) {
+              state.player.gravityDir *= -1;
+              obs.used = true;
+              createParticles(obs.x + obs.w/2, obs.y + obs.h/2, '#ff6a9b', 20);
+              showMessage('Gravity Flipped!');
+            }
+          } else {
+            gameOver();
+          }
+        }
+      });
+
+      state.obstacles = state.obstacles.filter(obs => obs.x + obs.w > 0);
+
       // Particles
       state.particles.forEach(p => {
         p.x += p.vx;
@@ -359,14 +525,26 @@
       });
       state.particles = state.particles.filter(p => p.life > 0);
 
+      if (state.messageTimer > 0) state.messageTimer--;
+
       updateHud();
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Draw Parallax Stars
+      ctx.fillStyle = '#fff';
+      for (let i = 0; i < 50; i++) {
+        const x = (seededRandom(i) * canvas.width * 2 - (state.distance * 2 * (i % 5 + 1))) % (canvas.width * 2);
+        const y = seededRandom(i + 100) * canvas.height;
+        ctx.globalAlpha = 0.2 + (i % 5) * 0.1;
+        ctx.fillRect(x < 0 ? x + canvas.width * 2 : x, y, 2, 2);
+      }
+      ctx.globalAlpha = 1;
+
       // Draw Grid (Background)
-      ctx.strokeStyle = 'rgba(124, 106, 255, 0.1)';
+      ctx.strokeStyle = 'rgba(124, 106, 255, 0.05)';
       ctx.lineWidth = 1;
       const gridSize = 40;
       const offset = (state.distance * 10) % gridSize;
@@ -399,6 +577,63 @@
       ctx.lineTo(canvas.width, GROUND_HEIGHT);
       ctx.stroke();
 
+      // Draw Obstacles
+      state.obstacles.forEach(obs => {
+        ctx.save();
+        ctx.shadowBlur = 15;
+        if (obs.type === 'spike') {
+          ctx.shadowColor = '#ff5c8a';
+          ctx.fillStyle = '#ff5c8a';
+          ctx.beginPath();
+          if (obs.y > canvas.height / 2) {
+            ctx.moveTo(obs.x, obs.y + obs.h);
+            ctx.lineTo(obs.x + obs.w / 2, obs.y);
+            ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+          } else {
+            ctx.moveTo(obs.x, obs.y);
+            ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
+            ctx.lineTo(obs.x + obs.w, obs.y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          
+          // Inner glow
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        } else if (obs.type === 'block') {
+          ctx.shadowColor = '#ffd86b';
+          ctx.fillStyle = '#ffd86b';
+          ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+          
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h - 4);
+        } else if (obs.type === 'portal') {
+          const pulse = Math.sin(state.distance / 5) * 5;
+          ctx.shadowBlur = 20 + pulse;
+          ctx.shadowColor = '#ff6a9b';
+          ctx.strokeStyle = '#ff6a9b';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+          
+          ctx.fillStyle = 'rgba(255, 106, 155, 0.3)';
+          ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+          
+          // Portal "energy" lines
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 3; i++) {
+            const ly = obs.y + ((state.distance * 5 + i * 20) % obs.h);
+            ctx.beginPath();
+            ctx.moveTo(obs.x, ly);
+            ctx.lineTo(obs.x + obs.w, ly);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      });
+
       // Draw Player
       ctx.save();
       ctx.translate(state.player.x + PLAYER_SIZE / 2, state.player.y + PLAYER_SIZE / 2);
@@ -421,6 +656,19 @@
         ctx.fillRect(p.x, p.y, 4, 4);
       });
       ctx.globalAlpha = 1;
+
+      // Draw Message
+      if (state.messageTimer > 0) {
+        ctx.save();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 24px Segoe UI';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#000';
+        ctx.globalAlpha = Math.min(1, state.messageTimer / 20);
+        ctx.fillText(state.message, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+      }
     }
 
     function loop(time) {
