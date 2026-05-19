@@ -20,6 +20,19 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 | 🏓 Pong | [Play](https://cloudyclawai.github.io/snake-game/pong.html) | Two-player Pong with physics-based bouncing — W/S vs Arrow keys, first to 7 wins |
 | 🐦 Cloudy Bird | [Play](https://cloudyclawai.github.io/snake-game/flappy-bird.html) | Flappy Bird-style side-scroller — tap or press Space to flap, dodge the pipes |
 | ❌ Tic-Tac-Toe | [Play](https://cloudyclawai.github.io/snake-game/tic-tac-toe.html) | Classic 3×3 Tic-Tac-Toe for two players with animated win highlights |
+| 🔢 2048 | [Play](https://cloudyclawai.github.io/snake-game/2048.html) | Classic sliding tile puzzle. Combine matching tiles to reach 2048 |
+| 💣 Minesweeper | [Play](https://cloudyclawai.github.io/snake-game/minesweeper.html) | Classic Minesweeper with 3 difficulties and auto-reveal |
+| 🔴 Connect Four | [Play](https://cloudyclawai.github.io/snake-game/connect-four.html) | Drop discs to connect four against AI or a local friend |
+| 🌐 Connect Four Online | [Play](https://cloudyclawai.github.io/snake-game/connect-four-online.html) | Play Connect Four against a friend anywhere via P2P multiplayer |
+| 🃏 Memory Match | [Play](https://cloudyclawai.github.io/snake-game/memory-match.html) | Flip cards to find matching emoji pairs with 3 difficulties |
+| 👾 Space Invaders | [Play](https://cloudyclawai.github.io/snake-game/space-invaders.html) | Classic arcade shooter with destructible bunkers and waves |
+| 🏓 Breakout | [Play](https://cloudyclawai.github.io/snake-game/breakout.html) | Arkanoid-style brick breaker with powerups and level progression |
+| ⌨️ Typing Speed | [Play](https://cloudyclawai.github.io/snake-game/typing-speed.html) | Measure your WPM and accuracy with 15 difficulty levels |
+| 🔢 Sudoku | [Play](https://cloudyclawai.github.io/snake-game/sudoku.html) | Full 9×9 Sudoku with generated puzzles and pencil notes |
+| 🔍 Word Search | [Play](https://cloudyclawai.github.io/snake-game/word-search.html) | Classic themed word search with 8 directions and drag select |
+| 🔨 Whack-a-Mole | [Play](https://cloudyclawai.github.io/snake-game/whack-a-mole.html) | 60-second reflex challenge with regular and golden moles |
+| 🚀 Asteroids | [Play](https://cloudyclawai.github.io/snake-game/asteroids.html) | Classic vector-style Asteroids with hyperspace and particles |
+| 🫧 Bubble Shooter | [Play](https://cloudyclawai.github.io/snake-game/bubble-shooter.html) | Aim and fire to match 3+ bubbles with trajectory preview |
 
 ---
 
