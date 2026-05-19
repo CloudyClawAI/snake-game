@@ -160,6 +160,10 @@ window.addEventListener('resize', resize);
 resize();
 
 // ── constants ─────────────────────────────────────────────────────────────────
+const CITY_COLOR    = '#44dd88';
+const BATTERY_COLOR = '#ffcc44';
+const ACCENT_COLOR  = '#ff3e3e';
+
 const CITY_W = 40, CITY_H = 25;
 const BATTERY_W = 50, BATTERY_H = 30;
 const GROUND_Y = NATIVE_H - 40;
@@ -505,8 +509,8 @@ function draw() {
   // Cities
   for (let city of cities) {
     if (city.alive) {
-      ctx.fillStyle = 'var(--city-color)';
-      ctx.shadowColor = 'var(--city-color)';
+      ctx.fillStyle = CITY_COLOR;
+      ctx.shadowColor = CITY_COLOR;
       ctx.shadowBlur = 10;
       ctx.fillRect(city.x, city.y, CITY_W, CITY_H);
       ctx.shadowBlur = 0;
@@ -521,8 +525,8 @@ function draw() {
   // Batteries
   for (let bat of batteries) {
     if (bat.alive) {
-      ctx.fillStyle = 'var(--battery-color)';
-      ctx.shadowColor = 'var(--battery-color)';
+      ctx.fillStyle = BATTERY_COLOR;
+      ctx.shadowColor = BATTERY_COLOR;
       ctx.shadowBlur = 10;
       ctx.beginPath();
       ctx.moveTo(bat.x, bat.y + BATTERY_H);
@@ -602,7 +606,7 @@ function drawOverlay() {
   ctx.fillStyle = '#fff';
   if (state === 'start') {
     ctx.font = 'bold 48px Segoe UI';
-    ctx.shadowColor = 'var(--accent)';
+    ctx.shadowColor = ACCENT_COLOR;
     ctx.shadowBlur = 20;
     ctx.fillText('MISSILE COMMAND', NATIVE_W/2, NATIVE_H/2 - 60);
     ctx.shadowBlur = 0;
@@ -611,29 +615,35 @@ function drawOverlay() {
     ctx.fillText('Protect the cities from the missile rain!', NATIVE_W/2, NATIVE_H/2 - 10);
     ctx.font = '18px Segoe UI';
     ctx.fillText('Click/Tap to launch interceptors', NATIVE_W/2, NATIVE_H/2 + 30);
-    ctx.fillStyle = 'var(--accent)';
+    ctx.fillStyle = ACCENT_COLOR;
     ctx.font = 'bold 24px Segoe UI';
     ctx.fillText('PRESS ANYWHERE TO START', NATIVE_W/2, NATIVE_H/2 + 90);
   } else if (state === 'gameover') {
     ctx.font = 'bold 60px Segoe UI';
-    ctx.fillStyle = '#ff3e3e';
-    ctx.shadowColor = '#ff3e3e';
+    ctx.fillStyle = ACCENT_COLOR;
+    ctx.shadowColor = ACCENT_COLOR;
     ctx.shadowBlur = 20;
     ctx.fillText('GAME OVER', NATIVE_W/2, NATIVE_H/2 - 60);
     ctx.shadowBlur = 0;
     ctx.font = '32px Segoe UI';
     ctx.fillStyle = '#fff';
     ctx.fillText('Final Score: ' + score, NATIVE_W/2, NATIVE_H/2);
-    ctx.fillStyle = 'var(--accent)';
+    ctx.fillStyle = ACCENT_COLOR;
     ctx.font = 'bold 24px Segoe UI';
     ctx.fillText('PRESS ANYWHERE TO RESTART', NATIVE_W/2, NATIVE_H/2 + 80);
   } else if (state === 'wave-end') {
     ctx.font = 'bold 48px Segoe UI';
-    ctx.fillStyle = 'var(--city-color)';
-    ctx.fillText('WAVE ' + wave + ' COMPLETE', NATIVE_W/2, NATIVE_H/2 - 40);
-    ctx.font = '24px Segoe UI';
+    ctx.fillStyle = CITY_COLOR;
+    ctx.fillText('WAVE ' + wave + ' COMPLETE', NATIVE_W/2, NATIVE_H/2 - 60);
+    ctx.font = '22px Segoe UI';
     ctx.fillStyle = '#fff';
-    ctx.fillText('Bonus points calculated...', NATIVE_W/2, NATIVE_H/2 + 20);
+    const ammoLeft = batteries.reduce((s, b) => s + (b.alive ? b.ammo : 0), 0);
+    const citiesLeft = cities.filter(c => c.alive).length;
+    ctx.fillText('Ammo bonus: ' + ammoLeft + ' × 5 = ' + (ammoLeft * 5), NATIVE_W/2, NATIVE_H/2);
+    ctx.fillText('City bonus: ' + citiesLeft + ' × 100 = ' + (citiesLeft * 100), NATIVE_W/2, NATIVE_H/2 + 34);
+    ctx.fillStyle = BATTERY_COLOR;
+    ctx.font = 'bold 26px Segoe UI';
+    ctx.fillText('Total bonus: +' + (ammoLeft * 5 + citiesLeft * 100), NATIVE_W/2, NATIVE_H/2 + 78);
   }
 }
 
