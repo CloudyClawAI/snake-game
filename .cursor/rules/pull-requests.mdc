@@ -1,0 +1,41 @@
+---
+description: Ensure a Pull Request is created after any code change
+globs: **/*
+alwaysApply: true
+---
+
+# Pull Request Requirement
+
+After making any code changes, you MUST create a Pull Request on GitHub.
+
+## Workflow
+
+1. **Commit Changes**: Create logical commits for your changes.
+2. **Push Branch**: Push your branch to the remote repository.
+3. **Create PR**: Use `gh pr create` to create a Pull Request.
+
+## PR Format
+
+Use the following format for the PR body:
+
+### Summary
+- <1-3 bullet points summarizing changes>
+
+### Test plan
+- [ ] <List of testing steps>
+
+## Example
+
+```bash
+git push -u origin HEAD
+gh pr create --title "feat: add new game" --body "$(cat <<'EOF'
+## Summary
+- Added a new game 'Snake'
+- Implemented basic movement and scoring
+
+## Test plan
+- [ ] Run index.html and verify game loads
+- [ ] Play game and check for errors
+EOF
+)"
+```
