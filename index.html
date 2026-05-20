@@ -21,378 +21,32 @@
     </div>
   </nav>
 
-  <header style="text-align: center; padding: 4rem 1rem 3rem;">
-    <h1 style="font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 900; letter-spacing: 0.05em; margin-bottom: 0.5rem; text-shadow: 0 0 40px var(--accent-glow);">
-      Cloudy<span style="color: var(--accent);">Claw</span> Games
-    </h1>
-    <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
-      The ultimate browser arcade. No downloads, no installs, just pure play.
-    </p>
+  <header class="hub-header">
+    <div class="hub-hero">
+      <h1 class="hub-title">Cloudy<span>Claw</span> Games</h1>
+      <p class="hub-subtitle">The ultimate browser arcade. No downloads, no installs, just pure play.</p>
+    </div>
+    
+    <div class="hub-controls">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="hub-search" placeholder="Search games, genres, or tags..." aria-label="Search games" />
+      </div>
+      <div class="category-filters">
+        <button class="category-chip active" data-category="All">All</button>
+        <button class="category-chip" data-category="Featured">Featured</button>
+        <button class="category-chip" data-category="Arcade">Arcade</button>
+        <button class="category-chip" data-category="Puzzle">Puzzle</button>
+        <button class="category-chip" data-category="Classic">Classic</button>
+        <button class="category-chip" data-category="Strategy">Strategy</button>
+        <button class="category-chip" data-category="Multiplayer">Multiplayer</button>
+      </div>
+    </div>
   </header>
 
-  <div class="game-shell" style="max-width: 1100px;">
+  <div class="game-shell">
     <main class="hub-grid">
-
-      <div class="card">
-        <div class="card-icon">⚡</div>
-        <h3 class="card-title">Neon Overdrive</h3>
-        <p class="card-desc">High-speed 3D tunnel runner. Dodge neon obstacles in a procedurally generated tunnel. How long can you survive the overdrive?</p>
-        <div class="card-meta">
-          <span class="chip">3D Arcade</span><span class="chip">High Speed</span><span class="chip">Infinite</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="neon-overdrive.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🔷</div>
-        <h3 class="card-title">Prism Courier</h3>
-        <p class="card-desc">Pilot a light-skiff through a shifting stained-glass city. Collect fading prisms, deliver to matching towers, and protect your combo.</p>
-        <div class="card-meta">
-          <span class="chip">Route Action</span><span class="chip">Combos</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="prism-courier.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🌸</div>
-        <h3 class="card-title">Echo Bloom</h3>
-        <p class="card-desc">Memorize echo tones, plant matching seeds on a hex garden, and trigger luminous bloom chains for high-score runs.</p>
-        <div class="card-meta">
-          <span class="chip">Rhythm Puzzle</span><span class="chip">Memory</span><span class="chip">Web Audio</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="echo-bloom.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🏎️</div>
-        <h3 class="card-title">Neon Circuit</h3>
-        <p class="card-desc">High-octane 3D arcade racer! Drift through a neon-lit floating circuit with elevation changes, engine roars, and a pulse-pounding beat.</p>
-        <div class="card-meta">
-          <span class="chip">3D Racing</span><span class="chip">Lap Time</span><span class="chip">WebGL</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="neon-circuit.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🐍</div>
-        <h3 class="card-title">Snake</h3>
-        <p class="card-desc">Classic snake with particle effects, golden bonus food, progressive difficulty, and full mobile swipe support.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">High Score</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="snake.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">✨</div>
-        <h3 class="card-title">Neon Snake Rush</h3>
-        <p class="card-desc">Turbocharged snake with combo multipliers, ghost orb and overdrive powerups, and neon glow visuals.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Combos</span><span class="chip">Powerups</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="neon-snake.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">⚔️</div>
-        <h3 class="card-title">Tower Defense</h3>
-        <p class="card-desc">4 tower types, 5 enemy types, 15 waves, upgrade trees, special abilities, combo multiplier, and particle effects.</p>
-        <div class="card-meta">
-          <span class="chip">Strategy</span><span class="chip">Waves</span><span class="chip">Upgrades</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="tower-defense.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🟡</div>
-        <h3 class="card-title">Maze Muncher</h3>
-        <p class="card-desc">Pac-Man style maze game with 4 ghosts, power pellets, lives system, and full mobile touch controls.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Ghosts</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="maze.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🍒</div>
-        <h3 class="card-title">Pac-Man</h3>
-        <p class="card-desc">The ultimate arcade classic! Guide Pac-Man through the maze, eat dots and fruit, and avoid Blinky, Pinky, Inky, and Clyde.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Classic</span><span class="chip">Fruit</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="pacman.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🧱</div>
-        <h3 class="card-title">Tetris</h3>
-        <p class="card-desc">Classic Tetris with all 7 tetrominoes, hold piece, ghost piece preview, level progression, and touch controls.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">Classic</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="tetris.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🏓</div>
-        <h3 class="card-title">Pong</h3>
-        <p class="card-desc">Classic Pong with physics-based paddle bouncing. Touch-draggable paddles on mobile. First to 7 wins!</p>
-        <div class="card-meta">
-          <span class="chip">2 Player</span><span class="chip">Classic</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="pong.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🐦</div>
-        <h3 class="card-title">Cloudy Bird</h3>
-        <p class="card-desc">Flappy Bird-style side-scroller: tap or press Space to flap, dodge the pipes, and beat your high score.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">One-Button</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="flappy-bird.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">❌</div>
-        <h3 class="card-title">Tic-Tac-Toe</h3>
-        <p class="card-desc">Classic 3×3 Tic-Tac-Toe for two players. Tap any cell to play. Winning cells animate on victory.</p>
-        <div class="card-meta">
-          <span class="chip">2 Player</span><span class="chip">Puzzle</span><span class="chip">Classic</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="tic-tac-toe.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🔢</div>
-        <h3 class="card-title">2048</h3>
-        <p class="card-desc">Classic sliding tile puzzle. Combine matching tiles to reach 2048. Arrow keys, WASD, or swipe to slide. Tracks your best score.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">High Score</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="2048.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">💣</div>
-        <h3 class="card-title">Minesweeper</h3>
-        <p class="card-desc">Classic Minesweeper with Easy, Medium, and Hard modes. First click is always safe. Auto-reveal empty areas, flag mines to win.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">Classic</span><span class="chip">Best Time</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="minesweeper.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🔴</div>
-        <h3 class="card-title">Connect Four</h3>
-        <p class="card-desc">Drop discs to connect four in a row. Play against a minimax AI with alpha-beta pruning (depth 5) or a friend in local 2-player mode.</p>
-        <div class="card-meta">
-          <span class="chip">vs AI</span><span class="chip">2 Player</span><span class="chip">Strategy</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="connect-four.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🃏</div>
-        <h3 class="card-title">Memory Match</h3>
-        <p class="card-desc">Flip cards to find matching emoji pairs. Three difficulty levels, move counter, timer, and best-score tracking per difficulty.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">High Score</span><span class="chip">3 Difficulties</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="memory-match.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🔍</div>
-        <h3 class="card-title">Word Search</h3>
-        <p class="card-desc">Classic 12×12 word search with 6 themed categories, all 8 directions, click-and-drag selection, and best-time tracking per category.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">Words</span><span class="chip">Best Time</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="word-search.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🔨</div>
-        <h3 class="card-title">Whack-a-Mole</h3>
-        <p class="card-desc">60-second reflex challenge: whack regular moles for +10 or rare golden moles for +50. Speed ramps up over time. Beat your high score!</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Reflex</span><span class="chip">High Score</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="whack-a-mole.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🚀</div>
-        <h3 class="card-title">Asteroids</h3>
-        <p class="card-desc">Classic vector-style Asteroids: rotate, thrust, and blast rocks into pieces. Hyperspace jump, particle explosions, waves, and mobile controls.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Action</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="asteroids.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🫧</div>
-        <h3 class="card-title">Bubble Shooter</h3>
-        <p class="card-desc">Bust-a-Move style bubble shooter: aim and fire to match 3+ same-color bubbles. Combo scoring, trajectory preview, and touch support.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">High Score</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="bubble-shooter.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">💎</div>
-        <h3 class="card-title">Gem Crush</h3>
-        <p class="card-desc">Polished Match-3 puzzle: swap adjacent gems to create matches of 3 or more. Combo multipliers, particle effects, and time-pressure gameplay.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">Match-3</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="gem-crush.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">👾</div>
-        <h3 class="card-title">Space Invaders</h3>
-        <p class="card-desc">Classic arcade: 5×11 alien grid, 3 invader types, destructible bunkers, mystery UFO, wave progression, and mobile fire controls.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Shooter</span><span class="chip">High Score</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="space-invaders.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🚀</div>
-        <h3 class="card-title">Missile Command</h3>
-        <p class="card-desc">Defend your cities from a rain of incoming missiles. Manage limited ammo across 3 bases, intercept MIRVs, and survive escalating waves.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Defense</span><span class="chip">High Score</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="missile-command.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🏓</div>
-        <h3 class="card-title">Breakout</h3>
-        <p class="card-desc">Arkanoid-style brick breaker with powerups (wide paddle, extra ball, slow, laser), multi-hit bricks, level progression, and touch support.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Powerups</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="breakout.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">⌨️</div>
-        <h3 class="card-title">Typing Speed Test</h3>
-        <p class="card-desc">Measure your WPM and accuracy. 15 difficulty levels, 100+ word lists, 30/60/120s modes, real-time per-character feedback.</p>
-        <div class="card-meta">
-          <span class="chip">Skill</span><span class="chip">WPM</span><span class="chip">Accuracy</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="typing-speed.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🔢</div>
-        <h3 class="card-title">Sudoku</h3>
-        <p class="card-desc">Full 9×9 Sudoku with generated puzzles, 3 difficulties, pencil notes mode, conflict highlighting, hints, and best-time tracking.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">Logic</span><span class="chip">Best Time</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="sudoku.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🌐</div>
-        <h3 class="card-title">Connect Four Online</h3>
-        <p class="card-desc">Play Connect Four against a friend anywhere in the world. Create a room, share the link, and battle in real-time over a P2P connection.</p>
-        <div class="card-meta">
-          <span class="chip">Online Multiplayer</span><span class="chip">P2P</span><span class="chip">Strategy</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="connect-four-online.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🐸</div>
-        <h3 class="card-title">Frogger</h3>
-        <p class="card-desc">Guide your frog across five lanes of traffic and a rushing river to reach home. 5 lives, level progression, time-bonus scoring, and mobile touch controls.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Classic</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="frogger.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🛸</div>
-        <h3 class="card-title">Galaga</h3>
-        <p class="card-desc">Arcade shooter: enemy formations, dive-bombing insects, and the Boss Galaga tractor beam. Recapture your ship for double firepower!</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Shooter</span><span class="chip">High Score</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="galaga.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🧠</div>
-        <h3 class="card-title">Simon Says</h3>
-        <p class="card-desc">Test your memory and reflexes in this classic electronic game. Repeat the sequence of lights and tones. Speed ramps up as you progress!</p>
-        <div class="card-meta">
-          <span class="chip">Memory</span><span class="chip">Reflex</span><span class="chip">High Score</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="simon-says.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🏗️</div>
-        <h3 class="card-title">Stack Tower</h3>
-        <p class="card-desc">Precision stacking challenge: drop blocks to build the tallest tower. Perfect drops keep your width; misses shrink it. How high can you go?</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Precision</span><span class="chip">High Score</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="stack-tower.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🟦</div>
-        <h3 class="card-title">Neon Dash</h3>
-        <p class="card-desc">Geometry Dash-style auto-runner: jump, double-jump, and flip gravity to survive a procedurally generated neon course. Speed increases every 200m!</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Runner</span><span class="chip">High Score</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="neon-dash.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🎨</div>
-        <h3 class="card-title">Color Flood</h3>
-        <p class="card-desc">Classic Flood-It puzzle: start from the top-left and flood the entire board with a single color in limited moves. Features 3 difficulty sizes and ripple animations.</p>
-        <div class="card-meta">
-          <span class="chip">Puzzle</span><span class="chip">Strategy</span><span class="chip">High Score</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="color-flood.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">🎱</div>
-        <h3 class="card-title">Pinball</h3>
-        <p class="card-desc">Classic arcade Pinball with realistic physics, bumpers, ramps, and multiball. Pull the plunger and keep the ball in play!</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">Physics</span><span class="chip">High Score</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="pinball.html">▶ Play</a>
-      </div>
-
-      <div class="card">
-        <div class="card-icon">☁️</div>
-        <h3 class="card-title">Sky Jumper</h3>
-        <p class="card-desc">Endless vertical platformer: bounce on platforms, collect power-ups, and avoid monsters as you climb to the edge of space.</p>
-        <div class="card-meta">
-          <span class="chip">Arcade</span><span class="chip">High Score</span><span class="chip">Touch</span>
-        </div>
-        <a class="btn btn-primary mt-4" href="sky-jumper.html">▶ Play</a>
-      </div>
-
+      <!-- Games will be rendered here by Hub.init() -->
     </main>
 
     <aside class="game-sidebar">
@@ -429,9 +83,128 @@
     CloudyClaw Games &mdash; vanilla HTML5 &bull; no dependencies
   </footer>
 
+  <script src="games.js"></script>
   <script src="leaderboard.js"></script>
   <script src="leaderboard-cloud.js"></script>
   <script>
+    // Hub rendering and search/filter logic
+    const Hub = (() => {
+      const state = {
+        search: '',
+        category: 'All',
+        games: GAMES
+      };
+
+      function render() {
+        const main = document.querySelector('.hub-grid');
+        if (!main) return;
+
+        // Filter games
+        const filtered = state.games.filter(g => {
+          const matchesSearch = g.title.toLowerCase().includes(state.search.toLowerCase()) || 
+                               g.description.toLowerCase().includes(state.search.toLowerCase()) ||
+                               g.tags.some(t => t.toLowerCase().includes(state.search.toLowerCase()));
+          const matchesCategory = state.category === 'All' || g.categories.includes(state.category);
+          return matchesSearch && matchesCategory;
+        });
+
+        if (state.category === 'All' && state.search === '') {
+          // Render featured row + categorized shelves
+          renderFullHub(main);
+        } else {
+          // Render search/filter results
+          renderSearchResults(main, filtered);
+        }
+      }
+
+      function renderFullHub(container) {
+        const featured = state.games.filter(g => g.categories.includes('Featured'));
+        const arcade = state.games.filter(g => g.categories.includes('Arcade') && !g.categories.includes('Featured'));
+        const puzzle = state.games.filter(g => g.categories.includes('Puzzle') && !g.categories.includes('Featured'));
+        const classic = state.games.filter(g => g.categories.includes('Classic') && !g.categories.includes('Featured'));
+
+        container.style.display = 'block';
+        container.innerHTML = `
+          <section class="hub-section">
+            <h2 class="section-title">✨ Featured Games</h2>
+            <div class="shelf featured-shelf">
+              ${featured.map(renderCard).join('')}
+            </div>
+          </section>
+
+          <section class="hub-section mt-8">
+            <h2 class="section-title">🕹️ Arcade Classics</h2>
+            <div class="shelf">
+              ${arcade.map(renderCard).join('')}
+            </div>
+          </section>
+
+          <section class="hub-section mt-8">
+            <h2 class="section-title">🧩 Puzzles & Logic</h2>
+            <div class="shelf">
+              ${puzzle.map(renderCard).join('')}
+            </div>
+          </section>
+
+          <section class="hub-section mt-8">
+            <h2 class="section-title">🏛️ Retro Vault</h2>
+            <div class="shelf">
+              ${classic.map(renderCard).join('')}
+            </div>
+          </section>
+        `;
+      }
+
+      function renderSearchResults(container, games) {
+        container.style.display = 'grid';
+        if (games.length === 0) {
+          container.innerHTML = `<div class="empty-state">No games found matching "${state.search}" in ${state.category}</div>`;
+          return;
+        }
+        container.innerHTML = games.map(renderCard).join('');
+      }
+
+      function renderCard(g) {
+        const best = Leaderboard.getBest(g.key);
+        return `
+          <div class="card">
+            <div class="card-icon">${g.icon}</div>
+            <h3 class="card-title">${g.title}</h3>
+            <p class="card-desc">${g.description}</p>
+            ${best ? `<div class="card-score">Best: <span>${best.toLocaleString()}</span></div>` : ''}
+            <div class="card-meta">
+              ${g.tags.map(t => `<span class="chip">${t}</span>`).join('')}
+            </div>
+            <a class="btn btn-primary mt-4" href="${g.href}">▶ Play</a>
+          </div>
+        `;
+      }
+
+      function init() {
+        const searchInput = document.getElementById('hub-search');
+        const categoryChips = document.querySelectorAll('.category-chip');
+
+        searchInput?.addEventListener('input', (e) => {
+          state.search = e.target.value;
+          render();
+        });
+
+        categoryChips.forEach(chip => {
+          chip.addEventListener('click', () => {
+            categoryChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            state.category = chip.dataset.category;
+            render();
+          });
+        });
+
+        render();
+      }
+
+      return { init };
+    })();
+
+    Hub.init();
     Leaderboard.renderHubSummary('lb-hub');
 
     // Global leaderboard panel — only shown when Supabase is configured
@@ -442,7 +215,7 @@
 
       const sel = document.getElementById('lb-game-select');
       if (sel) {
-        Leaderboard.ALL_GAMES.forEach(g => {
+        Leaderboard.getActiveGames().forEach(g => {
           const opt = document.createElement('option');
           opt.value = g.key;
           opt.textContent = g.label;

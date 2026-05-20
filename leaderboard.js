@@ -66,11 +66,32 @@ const Leaderboard = (() => {
     { key: 'color-flood',      label: 'Color Flood',     href: 'color-flood.html'     },
     { key: 'sky-jumper',       label: 'Sky Jumper',      href: 'sky-jumper.html'      },
     { key: 'missile-command',  label: 'Missile Command', href: 'missile-command.html' },
+    { key: '2048',             label: '2048',            href: '2048.html'            },
+    { key: 'minesweeper',      label: 'Minesweeper',     href: 'minesweeper.html'     },
+    { key: 'connect-four',     label: 'Connect Four',    href: 'connect-four.html'    },
+    { key: 'memory-match',     label: 'Memory Match',    href: 'memory-match.html'    },
+    { key: 'word-search',      label: 'Word Search',     href: 'word-search.html'     },
+    { key: 'whack-a-mole',     label: 'Whack-a-Mole',    href: 'whack-a-mole.html'    },
+    { key: 'typing-speed',     label: 'Typing Speed',    href: 'typing-speed.html'    },
+    { key: 'sudoku',           label: 'Sudoku',          href: 'sudoku.html'          },
+    { key: 'connect-four-online', label: 'Connect Four Online', href: 'connect-four-online.html' },
+    { key: 'galaga',           label: 'Galaga',          href: 'galaga.html'          },
+    { key: 'simon-says',       label: 'Simon Says',      href: 'simon-says.html'      },
+    { key: 'neon-dash',        label: 'Neon Dash',       href: 'neon-dash.html'       },
+    { key: 'prism-courier',    label: 'Prism Courier',   href: 'prism-courier.html'   },
+    { key: 'echo-bloom',       label: 'Echo Bloom',      href: 'echo-bloom.html'      }
   ];
+
+  function getActiveGames() {
+    if (typeof GAMES !== 'undefined') {
+      return GAMES.map(g => ({ key: g.key, label: g.title, href: g.href }));
+    }
+    return ALL_GAMES;
+  }
 
   function getAllBest() {
     const result = {};
-    for (const g of ALL_GAMES) result[g.key] = getBest(g.key);
+    for (const g of getActiveGames()) result[g.key] = getBest(g.key);
     return result;
   }
 
@@ -104,7 +125,8 @@ const Leaderboard = (() => {
   function renderHubSummary(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const rows = ALL_GAMES.map(g => {
+    const games = getActiveGames();
+    const rows = games.map(g => {
       const best = getBest(g.key);
       return `<a class="lb-hub-row${best ? ' lb-hub-played' : ''}" href="${g.href}">` +
         `<span class="lb-hub-name">${g.label}</span>` +
