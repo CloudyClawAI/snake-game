@@ -447,9 +447,9 @@
     const scratchPos = new THREE.Vector3();
     const scratchTan = new THREE.Vector3();
     const scratchCam = new THREE.Vector3();
-    const trackNormal = new THREE.Vector3();
-    const upOffset = new THREE.Vector3(0, CHASE_UP, 0);
-    const lookLift = new THREE.Vector3(0, 1.2, 0);
+    const scratchBinormal = new THREE.Vector3();
+    const scratchNormal = new THREE.Vector3();
+    const PREVIEW_FOCUS_T = 0.1;
     const carLookTarget = new THREE.Vector3();
 
     function showWebGLFallback() {
@@ -1019,6 +1019,8 @@
       car.u = 0;
       car.v = 0;
       prevT = car.t;
+      updateChaseCamera(0);
+      chasePos.copy(scratchCam);
       showBanner('GO!', 1.2);
       addScreenShake(4);
     }
@@ -1129,20 +1131,52 @@
       detectLapCrossing();
     }
 
-    function updateChaseCamera(dt) {
-      const p = trackCurve.getPointAt(car.t);
-      const tan = trackCurve.getTangentAt(car.t).normalize();
+    function trackFrameAt(t, lateralU, out) {
+      const p = trackCurve.getPointAt(t);
+      const tan = trackCurve.getTangentAt(t).normalize();
       const up = new THREE.Vector3(0, 1, 0);
-      const binormal = new THREE.Vector3().crossVectors(tan, up).normalize();
-      
-      scratchPos.copy(p).addScaledVector(binormal, car.u);
-      scratchCam.copy(scratchPos).addScaledVector(tan, -CHASE_BACK).add(upOffset);
+      scratchBinormal.crossVectors(tan, up).normalize();
+      scratchNormal.crossVectors(scratchBinormal, tan).normalize();
+      out.point.copy(p).addScaledVector(scratchBinormal, lateralU);
+      out.tangent.copy(tan);
+      out.binormal.copy(scratchBinormal);
+      out.normal.copy(scratchNormal);
+      return out;
+    }
+
+    const trackFrameScratch = {
+      point: new THREE.Vector3(),
+      tangent: new THREE.Vector3(),
+      binormal: new THREE.Vector3(),
+      normal: new THREE.Vector3(),
+    };
+
+    function updatePreviewCamera() {
+      const frame = trackFrameAt(PREVIEW_FOCUS_T, 0, trackFrameScratch);
+      scratchCam.copy(frame.point)
+        .addScaledVector(frame.normal, 42)
+        .addScaledVector(frame.binormal, 28)
+        .addScaledVector(frame.tangent, -55);
+      camera.position.copy(scratchCam);
+      chaseLook.copy(frame.point)
+        .addScaledVector(frame.tangent, 45)
+        .addScaledVector(frame.normal, 3);
+      camera.lookAt(chaseLook);
+      chasePos.copy(scratchCam);
+    }
+
+    function updateChaseCamera(dt) {
+      const frame = trackFrameAt(car.t, car.u, trackFrameScratch);
+      scratchPos.copy(frame.point);
+      scratchCam.copy(scratchPos)
+        .addScaledVector(frame.tangent, -CHASE_BACK)
+        .addScaledVector(frame.normal, CHASE_UP);
 
       chasePos.lerp(scratchCam, CHASE_LERP);
-      
+
       const lookT = (car.t + LOOK_AHEAD) % 1;
-      chaseLook.copy(trackCurve.getPointAt(lookT)).add(lookLift);
-      chaseLook.addScaledVector(binormal, car.u * 0.35);
+      const lookFrame = trackFrameAt(lookT, car.u * 0.35, trackFrameScratch);
+      chaseLook.copy(lookFrame.point).addScaledVector(lookFrame.normal, 1.2);
 
       if (screenShake > 0) {
         shakeOffset.set(
@@ -1221,7 +1255,11 @@
       carGroup.rotation.z = THREE.MathUtils.lerp(carGroup.rotation.z, -steerForTilt * 0.25, 0.1);
       carGroup.rotation.x = THREE.MathUtils.lerp(carGroup.rotation.x, (frameInput.gas ? -0.05 : (frameInput.brake ? 0.05 : 0)), 0.1);
 
-      updateChaseCamera(dt);
+      if (gameState === 'WAITING' || gameState === 'COUNTDOWN') {
+        updatePreviewCamera();
+      } else {
+        updateChaseCamera(dt);
+      }
       updateTrail();
       updateAudio();
       updateHud(now);
@@ -1270,7 +1308,6 @@
       scene.add(trailMesh);
 
       camera = new THREE.PerspectiveCamera(58, 1, 0.5, 600);
-      camera.position.set(0, 12, 40);
 
       bindInput();
       resize();
@@ -1313,7 +1350,7 @@
 
       resetRace();
       placeCarOnTrack();
-      updateChaseCamera(0);
+      updatePreviewCamera();
       requestAnimationFrame(gameLoop);
     }
 
