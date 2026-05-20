@@ -8,254 +8,116 @@
   <meta name="theme-color" content="#7c6aff" />
   <link rel="stylesheet" href="design-system.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #0f0f1a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      color: #e0e0e0;
-      padding: 64px 0.5rem 2rem;
-      overflow-x: hidden;
+    /* Game-specific overrides */
+    :root {
+      --accent: #4afa7e;
+      --accent-glow: rgba(74, 250, 126, 0.25);
     }
-
-    h1 {
-      font-size: 2.4rem;
-      letter-spacing: 0.15em;
-      color: #4afa7e;
-      text-shadow: 0 0 16px #4afa7e88;
-      margin-bottom: 0.8rem;
-    }
-
-    #game-wrapper {
-      display: flex;
-      gap: 1.2rem;
-      align-items: flex-start;
-    }
-
-    #board-container {
-      position: relative;
-      line-height: 0;
-    }
-
     canvas#board {
-      border: 2px solid #4afa7e44;
-      border-radius: 6px;
-      box-shadow: 0 0 40px #4afa7e22;
-      display: block;
-      touch-action: none;
+      border: 2px solid var(--accent-glow);
+      box-shadow: 0 0 40px rgba(74, 250, 126, 0.1);
     }
-
-    #side-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-      min-width: 110px;
-    }
-
-    .panel-box {
-      background: #1a1a2e;
-      border: 1px solid #4afa7e33;
-      border-radius: 6px;
-      padding: 0.6rem 0.9rem;
-    }
-
-    .panel-box h3 {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #4afa7e;
-      margin-bottom: 0.3rem;
-    }
-
-    .panel-box .value {
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    canvas#next {
-      display: block;
-    }
-
-    #overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      background: rgba(15,15,26,0.88);
-      border-radius: 4px;
-    }
-
-    #overlay.hidden { display: none; }
-
-    #overlay p {
-      font-size: 1.7rem;
-      font-weight: bold;
-      color: #4afa7e;
-      text-shadow: 0 0 12px #4afa7eaa;
-    }
-
-    #overlay small {
-      font-size: 0.9rem;
-      color: #aaa;
-      text-align: center;
-      line-height: 1.7;
-    }
-
-    #start-btn {
-      background: #4afa7e;
-      color: #0f0f1a;
-      border: none;
-      border-radius: 6px;
-      padding: 0.6rem 1.8rem;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      letter-spacing: 0.06em;
-      transition: background 0.15s, transform 0.1s;
-    }
-
-    #start-btn:hover { background: #6fffa0; transform: scale(1.04); }
-
-    #controls {
-      margin-top: 0.9rem;
-      font-size: 0.8rem;
-      color: #555;
-      text-align: center;
-      line-height: 1.9;
-    }
-
-    #touch-controls {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.4rem;
-      margin-top: 0.9rem;
-    }
-
-    @media (pointer: coarse), (max-width: 520px) {
-      #touch-controls { display: flex; }
-    }
-
-    .touch-row { display: flex; gap: 0.4rem; }
-
     .touch-btn {
-      width: 54px; height: 54px;
-      background: #1a1a2e;
-      border: 1px solid #4afa7e55;
-      border-radius: 8px;
-      color: #4afa7e;
-      font-size: 1.35rem;
-      cursor: pointer;
+      width: 60px; height: 60px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-hi);
+      border-radius: 12px;
+      color: var(--accent);
+      font-size: 1.5rem;
       display: flex; align-items: center; justify-content: center;
-      user-select: none;
-      -webkit-user-select: none;
+      cursor: pointer;
       touch-action: manipulation;
     }
-
-    .touch-btn:active { background: #4afa7e22; }
-
-    #tc-drop { width: 116px; font-size: 0.95rem; font-weight: bold; letter-spacing: 0.05em; }
-
-    @media (max-width: 520px) {
-      #game-wrapper { gap: 0.7rem; }
-      #side-panel { min-width: 90px; }
-      .panel-box { padding: 0.5rem 0.7rem; }
-      .panel-box .value { font-size: 1.1rem; }
-    }
-
-    /* Stack side panel below board on phones narrower than board+panel */
-    @media (max-width: 420px) {
-      #game-wrapper { flex-direction: column; align-items: center; }
-      #side-panel {
-        flex-direction: row;
-        flex-wrap: wrap;
-        min-width: unset;
-        width: 300px;
-        gap: 0.5rem;
-      }
-      .panel-box { flex: 1; min-width: 70px; }
-    }
+    .touch-btn:active { background: var(--accent); color: #000; }
+    #tc-drop { width: 128px; font-size: 0.9rem; font-weight: 800; }
   </style>
 </head>
 <body>
-  <a class="back-link" href="index.html">← Hub</a>
-  <h1>TETRIS</h1>
 
-  <div id="game-wrapper">
-    <div id="board-container">
-      <canvas id="board" width="300" height="600"></canvas>
-      <div id="overlay">
-        <p id="overlay-msg">TETRIS</p>
-        <small id="overlay-sub">
-          ← → Move &nbsp;|&nbsp; ↓ Soft drop<br>
-          ↑ / X Rotate right &nbsp;|&nbsp; Z Rotate left<br>
-          Space Hard drop &nbsp;|&nbsp; P Pause
-        </small>
-        <button id="start-btn">▶ Start Game</button>
-      </div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+      <a href="#" class="nav-link">Leaderboard</a>
     </div>
+  </nav>
 
-    <div id="side-panel">
-      <div class="panel-box">
-        <h3>Score</h3>
-        <div class="value" id="score-display">0</div>
-      </div>
-      <div class="panel-box">
-        <h3>Level</h3>
-        <div class="value" id="level-display">1</div>
-      </div>
-      <div class="panel-box">
-        <h3>Lines</h3>
-        <div class="value" id="lines-display">0</div>
-      </div>
-      <div class="panel-box">
-        <h3>Next</h3>
-        <canvas id="next" width="100" height="100"></canvas>
-      </div>
-      <div class="panel-box">
-        <h3>Best</h3>
-        <div class="value" id="best-display">0</div>
-      </div>
-    </div>
-  </div>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">TETRIS</h1>
+        <p class="game-subtitle">Classic block-stacking puzzle action.</p>
+      </header>
 
-  <div id="controls">
-    ← → Move &nbsp;|&nbsp; ↓ Soft drop &nbsp;|&nbsp; Space Hard drop<br>
-    ↑ / X Rotate right &nbsp;|&nbsp; Z Rotate left &nbsp;|&nbsp; P Pause
-  </div>
+      <div class="canvas-container" id="board-container">
+        <canvas id="board" width="300" height="600"></canvas>
+        <div id="overlay" class="overlay">
+          <h2 class="overlay-title" id="overlay-msg">TETRIS</h2>
+          <div class="overlay-body" id="overlay-sub">
+            ← → Move | ↓ Drop<br>
+            ↑ Rotate | Space Hard Drop
+          </div>
+          <button id="start-btn" class="btn btn-primary btn-lg">▶ Start Game</button>
+        </div>
+      </div>
 
-  <div class="lb-panel" style="margin-top:0.8rem;width:min(300px,90vw)">
-    <h3>Top Scores</h3>
-    <div id="lb-tetris"></div>
+      <div class="text-dim text-center mt-4" style="font-size: 0.85rem;">
+        ← → Move &nbsp;|&nbsp; ↓ Soft drop &nbsp;|&nbsp; Space Hard drop<br>
+        ↑ / X Rotate right &nbsp;|&nbsp; Z Rotate left &nbsp;|&nbsp; P Pause
+      </div>
+
+      <div class="touch-controls" id="touch-controls">
+        <div class="dpad-grid">
+          <div class="touch-btn" id="tc-rotl">↺</div>
+          <div class="touch-btn" id="tc-up">↑</div>
+          <div class="touch-btn" id="tc-rotr">↻</div>
+          <div class="touch-btn" id="tc-left">◀</div>
+          <div class="touch-btn" id="tc-down">▼</div>
+          <div class="touch-btn" id="tc-right">▶</div>
+        </div>
+        <div class="mt-4">
+          <div class="touch-btn" id="tc-drop">HARD DROP</div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score-display">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="best-display">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Level</span>
+          <span class="stat-value" id="level-display">1</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Lines</span>
+          <span class="stat-value" id="lines-display">0</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Next Piece</h3>
+        <div style="display: flex; justify-content: center; padding: 1rem; background: #000; border-radius: var(--radius-sm);">
+          <canvas id="next" width="100" height="100"></canvas>
+        </div>
+      </div>
+
+      <div class="lb-panel">
+        <h3>Top Scores</h3>
+        <div id="lb-tetris"></div>
+      </div>
+    </aside>
   </div>
 
   <script src="leaderboard.js"></script>
   <script src="leaderboard-cloud.js"></script>
-
-  <div id="touch-controls">
-    <div class="touch-row">
-      <div class="touch-btn" id="tc-rotl" title="Rotate left">↺</div>
-      <div class="touch-btn" id="tc-up"   title="Rotate right">↑</div>
-      <div class="touch-btn" id="tc-rotr" title="Rotate right">↻</div>
-    </div>
-    <div class="touch-row">
-      <div class="touch-btn" id="tc-left"  title="Move left">◀</div>
-      <div class="touch-btn" id="tc-down"  title="Soft drop">▼</div>
-      <div class="touch-btn" id="tc-right" title="Move right">▶</div>
-    </div>
-    <div class="touch-row">
-      <div class="touch-btn" id="tc-drop">HARD DROP</div>
-    </div>
-  </div>
 
   <script>
   (function () {
