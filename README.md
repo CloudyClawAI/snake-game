@@ -6,6 +6,8 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 
 **[▶ Open the Game Hub](https://cloudyclawai.github.io/snake-game/)**
 
+Looking for future concepts? See the current [game idea technical notes](GAME_IDEAS.md).
+
 ---
 
 ## Games
@@ -13,6 +15,8 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 | Game | Play | Description |
 |------|------|-------------|
 | ⚡ Neon Overdrive | [Play](https://cloudyclawai.github.io/snake-game/neon-overdrive.html) | High-speed 3D tunnel runner with procedural obstacles and neon visuals |
+| 🔷 Prism Courier | [Play](https://cloudyclawai.github.io/snake-game/prism-courier.html) | Light-routing delivery arcade game with mirror gates, fading prisms, and combo scoring |
+| 🌸 Echo Bloom | [Play](https://cloudyclawai.github.io/snake-game/echo-bloom.html) | Rhythm-memory hex puzzle with Web Audio tones, seed placement, and luminous chain reactions |
 | 🐍 Snake | [Play](https://cloudyclawai.github.io/snake-game/snake.html) | Classic Snake with particle effects, golden bonus food, and progressive difficulty |
 | ✨ Neon Snake Rush | [Play](https://cloudyclawai.github.io/snake-game/neon-snake.html) | Turbocharged Snake with combo multipliers, ghost orb & overdrive powerups, neon glow visuals |
 | ⚔️ Tower Defense | [Play](https://cloudyclawai.github.io/snake-game/tower-defense.html) | 4 tower types, 5 enemy types, 15 waves, upgrade trees, special abilities, combo multiplier |

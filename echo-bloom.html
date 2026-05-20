@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echo Bloom - CloudyClaw Games</title>
+  <meta name="description" content="Memorize echo tones, plant matching seeds, and grow luminous chain reactions on a hex garden.">
+  <meta property="og:title" content="Echo Bloom - CloudyClaw Games">
+  <meta property="og:description" content="A rhythm-memory hex puzzle with glowing blooms, chains, and accessible visual tone cues.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/echo-bloom.html">
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/echo-bloom.html">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c6aff">
+  <link rel="stylesheet" href="design-system.css">
+  <style>
+    body {
+      min-height: 100vh;
+      padding: 0 1rem 2rem;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(89, 255, 140, 0.12), transparent 26rem),
+        radial-gradient(circle at 76% 8%, rgba(255, 106, 155, 0.12), transparent 24rem),
+        #070812;
+    }
+
+    .shell {
+      width: min(100%, 980px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .game-board {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: var(--radius-card);
+      background: rgba(8, 10, 21, 0.92);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      touch-action: manipulation;
+    }
+
+    .side {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .panel {
+      background: rgba(18, 18, 31, 0.86);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 1rem;
+    }
+
+    .stats {
+      display: grid;
+      gap: 0.45rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 0.35rem;
+    }
+
+    .stat:last-child { border-bottom: 0; padding-bottom: 0; }
+    .stat span { color: var(--text-muted); }
+    .stat strong { color: #fff; }
+
+    .seed-tray {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .seed {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      gap: 0.45rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .seed.active {
+      outline: 2px solid currentColor;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .glyph {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: currentColor;
+      color: #05060e;
+      font-size: 0.9rem;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    button {
+      border: 0;
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.85rem;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .sequence {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      min-height: 2.1rem;
+      align-items: center;
+    }
+
+    .tone-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #05060e;
+      font-size: 0.8rem;
+      font-weight: 900;
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .message {
+      color: var(--text-muted);
+      line-height: 1.5;
+      font-size: 0.88rem;
+      min-height: 2.8rem;
+    }
+
+    @media (max-width: 760px) {
+      body { padding-inline: 0.7rem; }
+      .shell { grid-template-columns: 1fr; }
+      .side { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 540px) {
+      .side { grid-template-columns: 1fr; }
+      .seed-tray { grid-template-columns: repeat(4, 1fr); }
+      .seed {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        font-size: 0.74rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="index.html">← Hub</a>
+
+  <header class="game-page-header">
+    <h1>Echo Bloom</h1>
+    <p>Plant the melody and grow the longest luminous chain.</p>
+  </header>
+
+  <main class="shell">
+    <section class="game-board">
+      <canvas id="garden" width="840" height="630" aria-label="Echo Bloom hex garden"></canvas>
+    </section>
+
+    <aside class="side">
+      <div class="panel stats">
+        <div class="stat"><span>Round</span><strong id="round">1</strong></div>
+        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+        <div class="stat"><span>Best</span><strong id="best">0</strong></div>
+        <div class="stat"><span>Chain</span><strong id="chain">0</strong></div>
+      </div>
+
+      <div class="panel">
+        <div class="sequence" id="sequence"></div>
+        <p class="message" id="message">Press New Melody, memorize the tones, then plant matching seeds on neighboring cells.</p>
+      </div>
+
+      <div class="panel">
+        <div class="seed-tray" id="seed-tray"></div>
+      </div>
+
+      <div class="panel actions">
+        <button id="new-btn">New Melody</button>
+        <button id="play-btn" class="secondary">Play Chain</button>
+        <button id="clear-btn" class="secondary">Clear</button>
+        <button id="share-btn" class="secondary">Share</button>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('garden');
+    const ctx = canvas.getContext('2d');
+    const roundEl = document.getElementById('round');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const chainEl = document.getElementById('chain');
+    const messageEl = document.getElementById('message');
+    const sequenceEl = document.getElementById('sequence');
+    const seedTray = document.getElementById('seed-tray');
+    const newBtn = document.getElementById('new-btn');
+    const playBtn = document.getElementById('play-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const shareBtn = document.getElementById('share-btn');
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const bestKey = 'echo-bloom-best';
+    const tones = [
+      { name: 'Pulse', color: '#00dcff', glyph: 'o', freq: 261.63 },
+      { name: 'Flare', color: '#ff6a9b', glyph: '+', freq: 329.63 },
+      { name: 'Root', color: '#59ff8c', glyph: '^', freq: 392.00 },
+      { name: 'Star', color: '#f5c542', glyph: '*', freq: 523.25 }
+    ];
+    const dirs = [[1,0], [1,-1], [0,-1], [-1,0], [-1,1], [0,1]];
+    const cells = [];
+    const radius = 38;
+    const origin = { x: W / 2, y: H / 2 + 10 };
+    let audioCtx = null;
+    let selected = 0;
+    let sequence = [];
+    let placements = new Map();
+    let round = 1;
+    let score = 0;
+    let chain = 0;
+    let pulses = [];
+    let animating = false;
+
+    function axialToPixel(q, r) {
+      return {
+        x: origin.x + radius * Math.sqrt(3) * (q + r / 2),
+        y: origin.y + radius * 1.5 * r
+      };
+    }
+
+    function key(q, r) {
+      return `${q},${r}`;
+    }
+
+    function buildCells() {
+      cells.length = 0;
+      for (let q = -3; q <= 3; q++) {
+        for (let r = -3; r <= 3; r++) {
+          const s = -q - r;
+          if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) <= 3) {
+            cells.push({ q, r, ...axialToPixel(q, r) });
+          }
+        }
+      }
+    }
+
+    function loadBest() {
+      bestEl.textContent = localStorage.getItem(bestKey) || '0';
+    }
+
+    function playTone(index, duration = 0.28) {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const tone = tones[index];
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = tone.freq;
+        gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration + 0.03);
+      } catch (error) {
+        audioCtx = null;
+      }
+    }
+
+    function renderTray() {
+      seedTray.innerHTML = '';
+      tones.forEach((tone, index) => {
+        const button = document.createElement('button');
+        button.className = `seed${selected === index ? ' active' : ''}`;
+        button.style.color = tone.color;
+        button.innerHTML = `<span class="glyph">${tone.glyph}</span><span>${tone.name}</span>`;
+        button.addEventListener('click', () => {
+          selected = index;
+          renderTray();
+          playTone(index, 0.18);
+        });
+        seedTray.appendChild(button);
+      });
+    }
+
+    function renderSequence(reveal = true) {
+      sequenceEl.innerHTML = '';
+      sequence.forEach((toneIndex, i) => {
+        const dot = document.createElement('span');
+        dot.className = 'tone-dot';
+        dot.style.background = reveal ? tones[toneIndex].color : 'rgba(255,255,255,0.14)';
+        dot.style.color = reveal ? '#05060e' : '#999';
+        dot.textContent = reveal ? tones[toneIndex].glyph : i + 1;
+        sequenceEl.appendChild(dot);
+      });
+    }
+
+    function newMelody() {
+      placements.clear();
+      pulses = [];
+      sequence = [];
+      const length = Math.min(4 + Math.floor(round / 2), 9);
+      for (let i = 0; i < length; i++) {
+        sequence.push(Math.floor(Math.random() * tones.length));
+      }
+      renderSequence(true);
+      messageEl.textContent = 'Listen and watch. Then plant the same tones in a connected path.';
+      sequence.forEach((toneIndex, i) => {
+        setTimeout(() => {
+          playTone(toneIndex);
+          pulses.push({ cell: cells[(i * 5 + round) % cells.length], color: tones[toneIndex].color, life: 0.7, max: 0.7 });
+        }, i * 420);
+      });
+      setTimeout(() => {
+        renderSequence(false);
+        messageEl.textContent = 'Plant the melody from memory. Cells must touch to keep the chain alive.';
+      }, sequence.length * 420 + 450);
+      draw();
+    }
+
+    function nearestCell(x, y) {
+      let best = null;
+      let bestDist = Infinity;
+      cells.forEach(cell => {
+        const d = Math.hypot(cell.x - x, cell.y - y);
+        if (d < bestDist) {
+          bestDist = d;
+          best = cell;
+        }
+      });
+      return bestDist < radius * 0.92 ? best : null;
+    }
+
+    function neighbors(cell) {
+      return dirs.map(([dq, dr]) => key(cell.q + dq, cell.r + dr));
+    }
+
+    function orderedPath() {
+      const entries = [...placements.entries()].map(([cellKey, value]) => ({ cellKey, ...value }));
+      if (!entries.length) return [];
+      const start = entries.find(e => e.order === 0) || entries.sort((a, b) => a.order - b.order)[0];
+      const path = [start];
+      const used = new Set([start.cellKey]);
+      while (path.length < entries.length) {
+        const lastCell = cells.find(c => key(c.q, c.r) === path[path.length - 1].cellKey);
+        const next = entries
+          .filter(e => !used.has(e.cellKey) && neighbors(lastCell).includes(e.cellKey))
+          .sort((a, b) => a.order - b.order)[0];
+        if (!next) break;
+        used.add(next.cellKey);
+        path.push(next);
+      }
+      return path;
+    }
+
+    function playChain() {
+      if (animating || !sequence.length) return;
+      const path = orderedPath();
+      if (!path.length) {
+        messageEl.textContent = 'Plant at least one seed before playing the chain.';
+        return;
+      }
+      animating = true;
+      playBtn.disabled = true;
+      let matched = 0;
+      path.forEach((step, i) => {
+        setTimeout(() => {
+          const cell = cells.find(c => key(c.q, c.r) === step.cellKey);
+          const tone = tones[step.tone];
+          const correct = sequence[i] === step.tone;
+          pulses.push({ cell, color: correct ? tone.color : '#ff4d4d', life: 0.85, max: 0.85 });
+          playTone(step.tone, 0.2);
+          if (correct) matched += 1;
+          draw();
+        }, i * 300);
+      });
+      setTimeout(() => {
+        chain = matched;
+        const complete = matched === sequence.length && path.length >= sequence.length;
+        if (complete) {
+          const hybridBonus = countHybridBonus(path);
+          const gained = sequence.length * 120 + round * 35 + hybridBonus;
+          score += gained;
+          round += 1;
+          messageEl.textContent = `Full bloom! +${gained} points. Hybrid bonus: ${hybridBonus}.`;
+          const best = Number(localStorage.getItem(bestKey) || 0);
+          if (score > best) localStorage.setItem(bestKey, String(score));
+        } else {
+          score = Math.max(0, score - 45);
+          messageEl.textContent = `Chain faded at ${matched}/${sequence.length}. Adjust the path and try this melody again.`;
+        }
+        animating = false;
+        playBtn.disabled = false;
+        updateStats();
+        loadBest();
+        renderSequence(!complete);
+        if (complete) setTimeout(newMelody, 950);
+      }, path.length * 300 + 120);
+    }
+
+    function countHybridBonus(path) {
+      let bonus = 0;
+      for (let i = 1; i < path.length; i++) {
+        if (path[i].tone !== path[i - 1].tone) bonus += 18;
+      }
+      return bonus;
+    }
+
+    function updateStats() {
+      roundEl.textContent = round;
+      scoreEl.textContent = score;
+      chainEl.textContent = chain;
+    }
+
+    function hexPath(cell) {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 6 + i * Math.PI / 3;
+        const x = cell.x + Math.cos(angle) * radius;
+        const y = cell.y + Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      const gradient = ctx.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, 520);
+      gradient.addColorStop(0, '#10172a');
+      gradient.addColorStop(1, '#060712');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      cells.forEach(cell => {
+        const placed = placements.get(key(cell.q, cell.r));
+        hexPath(cell);
+        ctx.fillStyle = placed ? tones[placed.tone].color + '28' : 'rgba(255,255,255,0.035)';
+        ctx.strokeStyle = placed ? tones[placed.tone].color : 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = placed ? 2.5 : 1;
+        ctx.fill();
+        ctx.stroke();
+        if (placed) {
+          ctx.fillStyle = tones[placed.tone].color;
+          ctx.shadowColor = tones[placed.tone].color;
+          ctx.shadowBlur = 18;
+          ctx.beginPath();
+          ctx.arc(cell.x, cell.y, 13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#05060e';
+          ctx.font = '900 15px Segoe UI, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(tones[placed.tone].glyph, cell.x, cell.y + 1);
+        }
+      });
+
+      const path = orderedPath();
+      if (path.length > 1) {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(255,255,255,0.38)';
+        ctx.beginPath();
+        path.forEach((step, i) => {
+          const cell = cells.find(c => key(c.q, c.r) === step.cellKey);
+          if (i === 0) ctx.moveTo(cell.x, cell.y);
+          else ctx.lineTo(cell.x, cell.y);
+        });
+        ctx.stroke();
+      }
+
+      pulses = pulses.filter(pulse => {
+        const alpha = pulse.life / pulse.max;
+        ctx.strokeStyle = pulse.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+        ctx.lineWidth = 5 * alpha;
+        ctx.shadowColor = pulse.color;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(pulse.cell.x, pulse.cell.y, radius * (1.2 - alpha * 0.4), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        pulse.life -= 1 / 60;
+        return pulse.life > 0;
+      });
+    }
+
+    function canvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * (canvas.width / rect.width),
+        y: (event.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    canvas.addEventListener('click', event => {
+      if (animating) return;
+      const point = canvasPoint(event);
+      const cell = nearestCell(point.x, point.y);
+      if (!cell) return;
+      const cellKey = key(cell.q, cell.r);
+      if (placements.has(cellKey)) placements.delete(cellKey);
+      else placements.set(cellKey, { tone: selected, order: placements.size });
+      draw();
+    });
+
+    window.addEventListener('keydown', event => {
+      if (event.key >= '1' && event.key <= '4') {
+        selected = Number(event.key) - 1;
+        renderTray();
+        playTone(selected, 0.15);
+      }
+      if (event.key === 'Enter') playChain();
+      if (event.key === 'Backspace') {
+        placements.clear();
+        draw();
+      }
+    });
+
+    newBtn.addEventListener('click', newMelody);
+    playBtn.addEventListener('click', playChain);
+    clearBtn.addEventListener('click', () => {
+      placements.clear();
+      messageEl.textContent = 'Garden cleared. Plant the melody again.';
+      draw();
+    });
+    shareBtn.addEventListener('click', async () => {
+      const text = `I scored ${score} in Echo Bloom on CloudyClaw Games.`;
+      if (navigator.share) await navigator.share({ title: 'Echo Bloom', text });
+      else await navigator.clipboard.writeText(text);
+    });
+
+    buildCells();
+    renderTray();
+    loadBest();
+    updateStats();
+    newMelody();
+    setInterval(draw, 1000 / 60);
+  </script>
+</body>
+</html>

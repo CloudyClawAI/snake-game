@@ -1,5 +1,5 @@
 /* CloudyClaw Games — Service Worker (offline-first hub) */
-const CACHE = 'cloudyclaw-v1';
+const CACHE = 'cloudyclaw-v2';
 
 const PRECACHE = [
   '/',
@@ -7,10 +7,12 @@ const PRECACHE = [
   '/design-system.css',
   '/leaderboard.js',
   '/manifest.json',
+  '/echo-bloom.html',
   '/flappy-bird.html',
   '/maze.html',
   '/neon-snake.html',
   '/pong.html',
+  '/prism-courier.html',
   '/snake.html',
   '/tetris.html',
   '/tic-tac-toe.html',

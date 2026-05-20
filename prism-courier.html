@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prism Courier - CloudyClaw Games</title>
+  <meta name="description" content="Pilot a light courier through a shifting stained-glass city. Deliver matching energy prisms before their glow fades.">
+  <meta property="og:title" content="Prism Courier - CloudyClaw Games">
+  <meta property="og:description" content="A neon route-action delivery game with mirror gates, combos, and procedural glass visuals.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cloudyclawai.github.io/snake-game/prism-courier.html">
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/prism-courier.html">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c6aff">
+  <link rel="stylesheet" href="design-system.css">
+  <style>
+    body {
+      min-height: 100vh;
+      padding: 0 1rem 2rem;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(0, 220, 255, 0.14), transparent 28rem),
+        radial-gradient(circle at 82% 18%, rgba(255, 76, 180, 0.16), transparent 24rem),
+        #060712;
+    }
+
+    .shell {
+      width: min(100%, 980px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 250px;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .game-wrap {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      background: #080915;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      touch-action: none;
+    }
+
+    .hud {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .panel {
+      background: rgba(18, 18, 31, 0.86);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 1rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric:last-child { border-bottom: 0; }
+    .metric span:first-child { color: var(--text-muted); font-size: 0.82rem; }
+    .metric strong { color: #fff; }
+
+    .instructions {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: rgba(5, 6, 15, 0.82);
+      text-align: center;
+      z-index: 4;
+    }
+
+    .overlay.hidden { display: none; }
+
+    .overlay-card {
+      width: min(100%, 430px);
+      background: rgba(14, 16, 33, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      box-shadow: 0 0 60px rgba(124, 106, 255, 0.2);
+    }
+
+    .overlay h2 {
+      color: #fff;
+      font-size: clamp(1.8rem, 8vw, 3rem);
+      margin-bottom: 0.5rem;
+    }
+
+    .overlay p {
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: var(--radius-sm);
+      padding: 0.72rem 1rem;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text);
+    }
+
+    button:hover { filter: brightness(1.12); }
+
+    .touch-boost {
+      display: none;
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      z-index: 6;
+      box-shadow: 0 0 30px rgba(255, 106, 155, 0.32);
+    }
+
+    @media (max-width: 760px) {
+      body { padding-inline: 0.7rem; }
+      .shell { grid-template-columns: 1fr; }
+      .hud { grid-template-columns: 1fr 1fr; }
+      .instructions { display: none; }
+      .touch-boost { display: block; }
+    }
+
+    @media (max-width: 520px) {
+      .game-page-header { padding-top: 3.2rem; }
+      .hud { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="index.html">← Hub</a>
+
+  <header class="game-page-header">
+    <h1>Prism Courier</h1>
+    <p>Deliver fading prisms through a shifting glass city.</p>
+  </header>
+
+  <main class="shell">
+    <section class="game-wrap">
+      <canvas id="game" width="840" height="630" aria-label="Prism Courier game canvas"></canvas>
+      <div class="overlay" id="start-screen">
+        <div class="overlay-card">
+          <h2>Prism Courier</h2>
+          <p>Collect the glowing prism, deliver it to the matching tower, and keep your combo alive before the timer fades.</p>
+          <div class="actions">
+            <button id="start-btn">Start Run</button>
+          </div>
+        </div>
+      </div>
+      <div class="overlay hidden" id="game-over-screen">
+        <div class="overlay-card">
+          <h2>Run Complete</h2>
+          <p id="final-line">Score: 0</p>
+          <div class="actions">
+            <button id="restart-btn">Restart</button>
+            <button class="secondary" id="share-btn">Share</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="hud">
+      <div class="panel">
+        <div class="metric"><span>Score</span><strong id="score">0</strong></div>
+        <div class="metric"><span>Combo</span><strong id="combo">0x</strong></div>
+        <div class="metric"><span>Timer</span><strong id="timer">12.0</strong></div>
+        <div class="metric"><span>Boost</span><strong id="boost">100%</strong></div>
+        <div class="metric"><span>Best</span><strong id="best">0</strong></div>
+      </div>
+      <div class="panel instructions">
+        Steer with <strong>WASD</strong> or arrow keys. Hold <strong>Space</strong> to boost. On touch screens, drag on the playfield and use the boost button.
+      </div>
+    </aside>
+  </main>
+
+  <button class="touch-boost" id="touch-boost" aria-label="Boost">Boost</button>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const comboEl = document.getElementById('combo');
+    const timerEl = document.getElementById('timer');
+    const boostEl = document.getElementById('boost');
+    const bestEl = document.getElementById('best');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const finalLine = document.getElementById('final-line');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const shareBtn = document.getElementById('share-btn');
+    const touchBoost = document.getElementById('touch-boost');
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const colors = ['#00dcff', '#ff4db8', '#f5c542', '#59ff8c'];
+    const keys = new Set();
+    const bestKey = 'prism-courier-best';
+
+    let running = false;
+    let lastTime = 0;
+    let score = 0;
+    let combo = 0;
+    let parcel = null;
+    let tower = null;
+    let timer = 12;
+    let maxTimer = 12;
+    let boost = 1;
+    let boostHeld = false;
+    let particles = [];
+    let gates = [];
+    let shards = [];
+    let pointer = null;
+
+    const player = {
+      x: W / 2,
+      y: H / 2,
+      vx: 0,
+      vy: 0,
+      r: 13,
+      color: colors[0],
+      trail: []
+    };
+
+    function rand(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function dist(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function loadBest() {
+      bestEl.textContent = localStorage.getItem(bestKey) || '0';
+    }
+
+    function createGlass() {
+      shards = [];
+      for (let i = 0; i < 42; i++) {
+        const x = rand(0, W);
+        const y = rand(0, H);
+        const radius = rand(55, 150);
+        const sides = Math.floor(rand(3, 7));
+        const hue = colors[i % colors.length];
+        const points = [];
+        for (let p = 0; p < sides; p++) {
+          const angle = (Math.PI * 2 * p) / sides + rand(-0.25, 0.25);
+          points.push({ x: x + Math.cos(angle) * radius * rand(0.45, 1), y: y + Math.sin(angle) * radius * rand(0.45, 1) });
+        }
+        shards.push({ points, color: hue, alpha: rand(0.04, 0.12) });
+      }
+    }
+
+    function spawnGates() {
+      gates = [];
+      const types = ['reflect', 'split', 'absorb'];
+      for (let i = 0; i < 7; i++) {
+        gates.push({
+          x: rand(90, W - 90),
+          y: rand(90, H - 90),
+          angle: rand(0, Math.PI),
+          len: rand(64, 105),
+          type: types[i % types.length],
+          spin: rand(-0.7, 0.7)
+        });
+      }
+    }
+
+    function spawnParcel() {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      parcel = { x: rand(55, W - 55), y: rand(55, H - 55), r: 15, color, pulse: 0 };
+      tower = { x: rand(70, W - 70), y: rand(70, H - 70), r: 27, color };
+      while (dist(parcel, tower) < 260) {
+        tower.x = rand(70, W - 70);
+        tower.y = rand(70, H - 70);
+      }
+      maxTimer = Math.max(6.2, 12 - score / 1600);
+      timer = maxTimer;
+    }
+
+    function burst(x, y, color, amount) {
+      for (let i = 0; i < amount; i++) {
+        const angle = rand(0, Math.PI * 2);
+        const speed = rand(50, 240);
+        particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: rand(0.35, 0.9), max: 0.9, color });
+      }
+    }
+
+    function startGame() {
+      running = true;
+      score = 0;
+      combo = 0;
+      boost = 1;
+      player.x = W / 2;
+      player.y = H / 2;
+      player.vx = 0;
+      player.vy = 0;
+      player.trail = [];
+      particles = [];
+      createGlass();
+      spawnGates();
+      spawnParcel();
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      lastTime = performance.now();
+      requestAnimationFrame(loop);
+    }
+
+    function endGame() {
+      running = false;
+      const best = Number(localStorage.getItem(bestKey) || 0);
+      if (score > best) {
+        localStorage.setItem(bestKey, String(score));
+      }
+      loadBest();
+      finalLine.textContent = `Score: ${score} - Best Combo: ${combo}x`;
+      gameOverScreen.classList.remove('hidden');
+    }
+
+    function inputVector() {
+      let x = 0;
+      let y = 0;
+      if (keys.has('ArrowLeft') || keys.has('a')) x -= 1;
+      if (keys.has('ArrowRight') || keys.has('d')) x += 1;
+      if (keys.has('ArrowUp') || keys.has('w')) y -= 1;
+      if (keys.has('ArrowDown') || keys.has('s')) y += 1;
+      if (pointer) {
+        x += pointer.x - player.x;
+        y += pointer.y - player.y;
+      }
+      const mag = Math.hypot(x, y);
+      return mag > 0 ? { x: x / mag, y: y / mag } : { x: 0, y: 0 };
+    }
+
+    function update(dt) {
+      timer -= dt;
+      if (timer <= 0) {
+        burst(player.x, player.y, '#ffffff', 45);
+        endGame();
+        return;
+      }
+
+      const input = inputVector();
+      const boosting = (keys.has(' ') || boostHeld) && boost > 0.02;
+      const accel = boosting ? 980 : 620;
+      const maxSpeed = boosting ? 420 : 265;
+      boost = clamp(boost + (boosting ? -0.5 : 0.23) * dt, 0, 1);
+
+      player.vx += input.x * accel * dt;
+      player.vy += input.y * accel * dt;
+      const speed = Math.hypot(player.vx, player.vy);
+      if (speed > maxSpeed) {
+        player.vx = (player.vx / speed) * maxSpeed;
+        player.vy = (player.vy / speed) * maxSpeed;
+      }
+      player.vx *= Math.pow(0.08, dt);
+      player.vy *= Math.pow(0.08, dt);
+      player.x = clamp(player.x + player.vx * dt, player.r, W - player.r);
+      player.y = clamp(player.y + player.vy * dt, player.r, H - player.r);
+      player.trail.push({ x: player.x, y: player.y, color: player.color, life: 1 });
+      if (player.trail.length > 46) player.trail.shift();
+      player.trail.forEach(t => { t.life -= dt * 1.7; });
+
+      gates.forEach(gate => {
+        gate.angle += gate.spin * dt;
+        const dx = Math.cos(gate.angle) * gate.len / 2;
+        const dy = Math.sin(gate.angle) * gate.len / 2;
+        const ax = gate.x - dx;
+        const ay = gate.y - dy;
+        const bx = gate.x + dx;
+        const by = gate.y + dy;
+        const l2 = (bx - ax) ** 2 + (by - ay) ** 2;
+        const t = clamp(((player.x - ax) * (bx - ax) + (player.y - ay) * (by - ay)) / l2, 0, 1);
+        const px = ax + (bx - ax) * t;
+        const py = ay + (by - ay) * t;
+        if (Math.hypot(player.x - px, player.y - py) < player.r + 5) {
+          if (gate.type === 'absorb') {
+            player.vx *= -0.45;
+            player.vy *= -0.45;
+            combo = Math.max(0, combo - 1);
+            burst(player.x, player.y, '#ff4d4d', 8);
+          } else {
+            const nx = -Math.sin(gate.angle);
+            const ny = Math.cos(gate.angle);
+            const dot = player.vx * nx + player.vy * ny;
+            player.vx -= 2 * dot * nx;
+            player.vy -= 2 * dot * ny;
+            if (gate.type === 'split') burst(player.x, player.y, '#ffffff', 7);
+          }
+          player.x += (player.x - px) * 0.08;
+          player.y += (player.y - py) * 0.08;
+        }
+      });
+
+      if (parcel && dist(player, parcel) < player.r + parcel.r) {
+        player.color = parcel.color;
+        burst(parcel.x, parcel.y, parcel.color, 24);
+        parcel = null;
+      }
+
+      if (!parcel && dist(player, tower) < player.r + tower.r) {
+        combo += 1;
+        const timerBonus = Math.ceil(timer * 18);
+        score += 140 + combo * 35 + timerBonus;
+        burst(tower.x, tower.y, tower.color, 42);
+        if (combo % 3 === 0) spawnGates();
+        spawnParcel();
+      }
+
+      particles = particles.filter(p => {
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= Math.pow(0.1, dt);
+        p.vy *= Math.pow(0.1, dt);
+        return p.life > 0;
+      });
+
+      scoreEl.textContent = score;
+      comboEl.textContent = `${combo}x`;
+      timerEl.textContent = timer.toFixed(1);
+      boostEl.textContent = `${Math.round(boost * 100)}%`;
+    }
+
+    function drawBackground(time) {
+      ctx.fillStyle = '#060712';
+      ctx.fillRect(0, 0, W, H);
+      shards.forEach((shard, index) => {
+        ctx.beginPath();
+        shard.points.forEach((point, i) => {
+          const wobble = Math.sin(time * 0.001 + index + i) * 2;
+          if (i === 0) ctx.moveTo(point.x + wobble, point.y);
+          else ctx.lineTo(point.x + wobble, point.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = shard.color + Math.floor(shard.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+        ctx.stroke();
+      });
+    }
+
+    function draw(time) {
+      drawBackground(time);
+
+      player.trail.forEach((point, index) => {
+        const alpha = Math.max(0, point.life) * (index / player.trail.length);
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5 + index * 0.12, 0, Math.PI * 2);
+        ctx.fillStyle = point.color + Math.floor(alpha * 180).toString(16).padStart(2, '0');
+        ctx.fill();
+      });
+
+      gates.forEach(gate => {
+        const dx = Math.cos(gate.angle) * gate.len / 2;
+        const dy = Math.sin(gate.angle) * gate.len / 2;
+        ctx.lineWidth = gate.type === 'absorb' ? 7 : 5;
+        ctx.strokeStyle = gate.type === 'reflect' ? '#00dcff' : gate.type === 'split' ? '#f5c542' : '#ff4d4d';
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.moveTo(gate.x - dx, gate.y - dy);
+        ctx.lineTo(gate.x + dx, gate.y + dy);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      });
+
+      if (tower) {
+        const pulse = 1 + Math.sin(time * 0.006) * 0.08;
+        ctx.strokeStyle = tower.color;
+        ctx.fillStyle = tower.color + '22';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = tower.color;
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.arc(tower.x, tower.y, tower.r * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      if (parcel) {
+        parcel.pulse += 0.08;
+        const r = parcel.r + Math.sin(parcel.pulse) * 3;
+        ctx.save();
+        ctx.translate(parcel.x, parcel.y);
+        ctx.rotate(parcel.pulse * 0.45);
+        ctx.fillStyle = parcel.color;
+        ctx.shadowColor = parcel.color;
+        ctx.shadowBlur = 24;
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.lineTo(r, 0);
+        ctx.lineTo(0, r);
+        ctx.lineTo(-r, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        ctx.shadowBlur = 0;
+      }
+
+      particles.forEach(p => {
+        const alpha = Math.max(0, p.life / p.max);
+        ctx.fillStyle = p.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2 + alpha * 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = player.color;
+      ctx.shadowColor = player.color;
+      ctx.shadowBlur = 24;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      ctx.font = '700 14px Segoe UI, sans-serif';
+      ctx.fillText(parcel ? 'COLLECT' : 'DELIVER', 18, H - 22);
+    }
+
+    function loop(now) {
+      if (!running) return;
+      const dt = Math.min(0.033, (now - lastTime) / 1000);
+      lastTime = now;
+      update(dt);
+      draw(now);
+      if (running) requestAnimationFrame(loop);
+    }
+
+    function canvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * (canvas.width / rect.width),
+        y: (event.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    window.addEventListener('keydown', event => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) event.preventDefault();
+      keys.add(event.key.toLowerCase() === ' ' ? ' ' : event.key.toLowerCase());
+    });
+    window.addEventListener('keyup', event => keys.delete(event.key.toLowerCase() === ' ' ? ' ' : event.key.toLowerCase()));
+    canvas.addEventListener('pointerdown', event => {
+      canvas.setPointerCapture(event.pointerId);
+      pointer = canvasPoint(event);
+      if (!running) startGame();
+    });
+    canvas.addEventListener('pointermove', event => {
+      if (pointer) pointer = canvasPoint(event);
+    });
+    canvas.addEventListener('pointerup', () => { pointer = null; });
+    canvas.addEventListener('pointercancel', () => { pointer = null; });
+    touchBoost.addEventListener('pointerdown', event => { event.preventDefault(); boostHeld = true; });
+    touchBoost.addEventListener('pointerup', () => { boostHeld = false; });
+    touchBoost.addEventListener('pointercancel', () => { boostHeld = false; });
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+    shareBtn.addEventListener('click', async () => {
+      const text = `I scored ${score} in Prism Courier on CloudyClaw Games.`;
+      if (navigator.share) await navigator.share({ title: 'Prism Courier', text });
+      else await navigator.clipboard.writeText(text);
+    });
+
+    createGlass();
+    spawnGates();
+    spawnParcel();
+    loadBest();
+    draw(performance.now());
+  </script>
+</body>
+</html>
