@@ -31,6 +31,12 @@
       background: #1e293b;
     }
 
+    .game-stage {
+      position: relative;
+      display: block;
+      line-height: 0;
+    }
+
     canvas {
       display: block;
       width: 100%;
@@ -39,8 +45,7 @@
 
     .ui {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -117,6 +122,10 @@
       margin: 1rem auto 0;
     }
 
+    .lb-panel.lb-play-hidden {
+      display: none;
+    }
+
     #best-score-line {
       text-align: center;
       font-size: 0.85rem;
@@ -142,23 +151,25 @@
 
   <div style="padding-top: 56px; width: 100%">
     <div id="game-container">
-      <div class="score-display" id="score">0</div>
-      <div class="floors-display" id="floors">Floor 1</div>
-      <div id="perfect-msg" class="perfect-text">PERFECT!</div>
-      <canvas id="gameCanvas" width="400" height="600"></canvas>
+      <div class="game-stage">
+        <div class="score-display" id="score">0</div>
+        <div class="floors-display" id="floors">Floor 1</div>
+        <div id="perfect-msg" class="perfect-text">PERFECT!</div>
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
 
-      <div id="start-screen" class="ui">
-        <h1>Stack Tower</h1>
-        <p>Tap or Space to Stack</p>
-        <button id="start-btn">Start Game</button>
-      </div>
+        <div id="start-screen" class="ui">
+          <h1>Stack Tower</h1>
+          <p>Tap or Space to Stack</p>
+          <button id="start-btn">Start Game</button>
+        </div>
 
-      <div id="game-over-screen" class="ui hidden">
-        <h1>Tower Tumbled!</h1>
-        <p id="final-score">Score: 0</p>
-        <p id="final-floors">Floors: 0</p>
-        <div id="lb-widget"></div>
-        <button id="restart-btn">Try Again</button>
+        <div id="game-over-screen" class="ui hidden">
+          <h1>Tower Tumbled!</h1>
+          <p id="final-score">Score: 0</p>
+          <p id="final-floors">Floors: 0</p>
+          <div id="lb-widget"></div>
+          <button id="restart-btn">Try Again</button>
+        </div>
       </div>
     </div>
 
@@ -185,6 +196,7 @@
     const finalFloorsElement = document.getElementById('final-floors');
     const bestLine = document.getElementById('best-score-line');
     const perfectMsg = document.getElementById('perfect-msg');
+    const lbContainer = document.getElementById('lb-container');
 
     // Game Constants
     const BLOCK_HEIGHT = 40;
@@ -213,8 +225,7 @@
     ];
 
     let gameActive = false;
-    let score = 0;
-    let floors = 0;
+    let floors = 1;
     let combo = 0;
     let currentWidth = INITIAL_WIDTH;
     let currentX = 0;
@@ -224,6 +235,28 @@
     let cameraY = 0;
     let targetCameraY = 0;
     let sliceAnimation = null;
+    let dropCooldown = false;
+
+    const PLAYFIELD_MIN_X = -ISO_X_OFFSET;
+    const PLAYFIELD_MAX_X = CANVAS_WIDTH - ISO_X_OFFSET;
+
+    function spawnXForDirection(dir) {
+      return dir === 1
+        ? PLAYFIELD_MIN_X - currentWidth
+        : PLAYFIELD_MAX_X - currentWidth;
+    }
+
+    function blocksPlaced() {
+      return stack.length - 1;
+    }
+
+    function syncScoreDisplay() {
+      scoreElement.innerText = blocksPlaced().toLocaleString();
+    }
+
+    function setLbPanelVisible(show) {
+      lbContainer.classList.toggle('lb-play-hidden', !show);
+    }
 
     function updateBestLine() {
       const best = Leaderboard.getBest(GAME_KEY);
@@ -292,7 +325,6 @@
 
     function initGame() {
       gameActive = false;
-      score = 0;
       floors = 1;
       combo = 0;
       currentWidth = INITIAL_WIDTH;
@@ -303,13 +335,17 @@
       targetCameraY = 0;
       stack = [new Block(0, 0, INITIAL_WIDTH, 0)];
       sliceAnimation = null;
+      dropCooldown = false;
       
-      scoreElement.innerText = '0';
+      syncScoreDisplay();
       floorsElement.innerText = 'Floor 1';
       document.body.style.background = '#0a0a14';
       
       startScreen.classList.remove('hidden');
       gameOverScreen.classList.add('hidden');
+      setLbPanelVisible(true);
+      direction = Math.random() > 0.5 ? 1 : -1;
+      currentX = spawnXForDirection(direction);
       draw();
     }
 
@@ -317,27 +353,34 @@
       gameActive = true;
       startScreen.classList.add('hidden');
       gameOverScreen.classList.add('hidden');
+      setLbPanelVisible(false);
+      direction = Math.random() > 0.5 ? 1 : -1;
+      currentX = spawnXForDirection(direction);
       requestAnimationFrame(gameLoop);
     }
 
     function endGame() {
       gameActive = false;
-      // Final score = floors reached × remaining block width
-      const finalScore = Math.floor(floors * currentWidth);
+      const placed = blocksPlaced();
+      const finalScore = placed;
       Leaderboard.saveScore(GAME_KEY, finalScore);
       finalScoreElement.innerText = `Score: ${finalScore.toLocaleString()}`;
-      finalFloorsElement.innerText = `Floors: ${floors}`;
+      finalFloorsElement.innerText = `Floors: ${placed}`;
       Leaderboard.renderWidget(GAME_KEY, 'lb-widget');
       Leaderboard.renderWidget(GAME_KEY, 'lb-widget-main');
       updateBestLine();
+      setLbPanelVisible(true);
       gameOverScreen.classList.remove('hidden');
     }
 
     function drop() {
-      if (!gameActive) return;
+      if (!gameActive || dropCooldown) return;
+      dropCooldown = true;
+      requestAnimationFrame(() => { dropCooldown = false; });
 
       const lastBlock = stack[stack.length - 1];
-      const diff = currentX - lastBlock.x;
+      const diff = Math.round(currentX) - lastBlock.x;
+      currentX = Math.round(currentX);
       const absDiff = Math.abs(diff);
 
       if (absDiff >= currentWidth) {
@@ -348,11 +391,11 @@
 
       let isPerfect = absDiff <= PERFECT_THRESHOLD;
       
+      const placedY = stack.length;
+
       if (isPerfect) {
         currentX = lastBlock.x;
         combo++;
-        const bonus = 50 * combo;
-        score += 100 + bonus;
         showPerfect(combo > 1 ? `PERFECT! x${combo}` : 'PERFECT!');
       } else {
         combo = 0;
@@ -363,24 +406,22 @@
         const sliceWidth = absDiff;
         sliceAnimation = {
           x: sliceX,
-          y: floors,
+          y: placedY,
           width: sliceWidth,
-          colorIndex: floors,
+          colorIndex: placedY,
           opacity: 1,
           vx: diff > 0 ? 4 : -4,
           vy: 2
         };
 
         currentX = diff > 0 ? currentX : lastBlock.x;
-        currentWidth = overlap;
-        score += 100;
+        currentWidth = Math.max(1, Math.round(overlap));
       }
 
-      stack.push(new Block(currentX, floors, currentWidth, floors));
-      floors++;
+      stack.push(new Block(currentX, placedY, currentWidth, placedY));
+      floors = stack.length;
       floorsElement.innerText = `Floor ${floors}`;
-      // Display cumulative score during game
-      scoreElement.innerText = Math.floor(score).toLocaleString();
+      syncScoreDisplay();
 
       // Increase difficulty
       speed = Math.min(MAX_SPEED, BASE_SPEED + (floors * SPEED_INCREMENT));
@@ -389,14 +430,14 @@
       const darkness = Math.min(80, floors * 0.5);
       document.body.style.background = `hsl(240, 30%, ${10 - darkness * 0.1}%)`;
 
-      // Move camera
-      if (floors > 5) {
-        targetCameraY = (floors - 5) * BLOCK_HEIGHT;
+      // Move camera before the tower leaves the viewport
+      if (floors > 4) {
+        targetCameraY = (floors - 4) * BLOCK_HEIGHT;
       }
 
       // Reset current block for next level
       direction = Math.random() > 0.5 ? 1 : -1;
-      currentX = direction === 1 ? -currentWidth : CANVAS_WIDTH - ISO_X_OFFSET;
+      currentX = spawnXForDirection(direction);
     }
 
     function showPerfect(msg) {
@@ -415,13 +456,15 @@
       if (!gameActive) return;
 
       currentX += direction * speed;
+      currentX = Math.round(currentX);
 
-      if (currentX + currentWidth > CANVAS_WIDTH - ISO_X_OFFSET || currentX < -ISO_X_OFFSET) {
+      if (currentX + currentWidth > PLAYFIELD_MAX_X || currentX < PLAYFIELD_MIN_X) {
         direction *= -1;
+        currentX = Math.max(PLAYFIELD_MIN_X, Math.min(PLAYFIELD_MAX_X - currentWidth, currentX));
       }
 
       // Smooth camera
-      cameraY += (targetCameraY - cameraY) * 0.1;
+      cameraY += (targetCameraY - cameraY) * 0.2;
 
       // Update slice animation
       if (sliceAnimation) {
@@ -456,9 +499,9 @@
         ctx.restore();
       }
 
-      // Draw current sliding block
+      // Draw current sliding block one level above the stack
       if (gameActive) {
-        const currentBlock = new Block(currentX, floors, currentWidth, floors);
+        const currentBlock = new Block(currentX, stack.length, currentWidth, stack.length);
         currentBlock.draw(ctx, cameraY);
       }
     }
@@ -481,8 +524,7 @@
     document.addEventListener('keydown', e => {
       if (e.code === 'Space' || e.code === 'Enter') handleAction(e);
     });
-    canvas.addEventListener('mousedown', handleAction);
-    canvas.addEventListener('touchstart', handleAction, { passive: false });
+    canvas.addEventListener('pointerdown', handleAction);
     
     document.getElementById('start-btn').onclick = startGame;
     document.getElementById('restart-btn').onclick = initGame;
