@@ -103,6 +103,16 @@
       box-shadow: 0 0 15px var(--neon-cyan);
     }
 
+    #hud .boost {
+      margin-top: 6px;
+      color: #fff;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+      text-shadow: 0 0 8px var(--neon-magenta);
+      opacity: 0.82;
+    }
+
     .game-overlay {
       position: absolute;
       inset: 0;
@@ -326,12 +336,13 @@
       <div id="race-time">0:00.0</div>
       <div class="hud-center">
         <div class="speed" id="speed-display">0 KM/H</div>
+        <div class="boost" id="boost-display"></div>
       </div>
       <div class="lap" id="lap-display">LAP 0/3</div>
     </div>
     <div id="start-screen" class="game-overlay visible">
       <h1>NEON CIRCUIT</h1>
-      <p class="overlay-sub">3 laps on the neon track. WASD / arrows to steer · Space or GAS to start</p>
+      <p class="overlay-sub">3 laps on the neon track. Hit pulse gates for boost chains. WASD / arrows to steer · Space or GAS to start</p>
       <button type="button" class="overlay-btn" id="start-btn">START RACE</button>
       <div class="leaderboard-mini" id="lb-widget-start"></div>
     </div>
@@ -379,6 +390,11 @@
     const LOOK_AHEAD = 0.04;
     const TOTAL_LAPS = 3;
     const MAX_SPEED = 95;
+    const BOOST_MAX_SPEED = 128;
+    const BOOST_DURATION_SEC = 1.15;
+    const BOOST_GATE_COUNT = 18;
+    const BOOST_GATE_RADIUS = 2.6;
+    const BOOST_GATE_SCORE = 650;
     const ACCEL = 65;
     const BRAKE_FORCE = 85;
     const DRAG = 0.35;
@@ -405,6 +421,8 @@
     let trackLength = 1;
     let carGroup;
     let trailMesh;
+    let boostGateGroup;
+    let boostGates = [];
     let trailPoints = [];
     const TRAIL_MAX = 60;
     let lastFrameTime = 0;
@@ -421,6 +439,10 @@
     let countdownTimer = null;
     let lastRaceTimeMs = 0;
     let lastRaceScore = 0;
+    let boostTimer = 0;
+    let boostGateHits = 0;
+    let boostCombo = 0;
+    let bestBoostCombo = 0;
 
     const car = { t: FINISH_LINE_T, u: 0, v: 0 };
     const keys = Object.create(null);
@@ -429,6 +451,7 @@
 
     const raceTimeEl = document.getElementById('race-time');
     const speedDisplayEl = document.getElementById('speed-display');
+    const boostDisplayEl = document.getElementById('boost-display');
     const lapDisplayEl = document.getElementById('lap-display');
     const statusBanner = document.getElementById('status-banner');
     const startScreen = document.getElementById('start-screen');
@@ -572,7 +595,8 @@
     }
 
     function computeScore(raceTimeMs) {
-      return Math.max(1, Math.floor(1_000_000 / Math.max(raceTimeMs, 1)));
+      const paceScore = Math.max(1, Math.floor(1_000_000 / Math.max(raceTimeMs, 1)));
+      return paceScore + boostGateHits * BOOST_GATE_SCORE + bestBoostCombo * 300;
     }
 
     function showBanner(text, durationSec = 2) {
@@ -591,6 +615,14 @@
     function updateHud(now) {
       const speedKmh = Math.round(car.v * 1.45);
       speedDisplayEl.textContent = `${speedKmh} KM/H`;
+      if (gameState === 'RACING') {
+        const boostPct = Math.max(0, Math.min(1, boostTimer / BOOST_DURATION_SEC));
+        boostDisplayEl.textContent = boostTimer > 0
+          ? `BOOST ${Math.round(boostPct * 100)}% · x${Math.max(1, boostCombo)}`
+          : `${boostGateHits} GATES · BEST x${Math.max(1, bestBoostCombo)}`;
+      } else {
+        boostDisplayEl.textContent = '';
+      }
 
       if (gameState === 'WAITING' || gameState === 'COUNTDOWN') {
         lapDisplayEl.textContent = 'LAP 0/3';
@@ -711,6 +743,42 @@
       return mesh;
     }
 
+    function buildBoostGates(curve) {
+      const group = new THREE.Group();
+      const gateGeo = new THREE.TorusGeometry(BOOST_GATE_RADIUS, 0.12, 10, 36);
+      const gateMat = new THREE.MeshStandardMaterial({
+        color: 0x06181c,
+        emissive: COLORS.lane,
+        emissiveIntensity: 2.4,
+        metalness: 0.2,
+        roughness: 0.25,
+      });
+      const lateralPattern = [0, -2.2, 2.2, 0, 1.4, -1.4];
+      const gateMatrix = new THREE.Matrix4();
+      const up = new THREE.Vector3(0, 1, 0);
+
+      for (let i = 0; i < BOOST_GATE_COUNT; i += 1) {
+        const t = ((i + 1) / (BOOST_GATE_COUNT + 1) + 0.035) % 1;
+        const lateral = lateralPattern[i % lateralPattern.length];
+        const point = curve.getPointAt(t);
+        const tangent = curve.getTangentAt(t).normalize();
+        const binormal = new THREE.Vector3().crossVectors(tangent, up).normalize();
+        const normal = new THREE.Vector3().crossVectors(binormal, tangent).normalize();
+        const mesh = new THREE.Mesh(gateGeo, gateMat.clone());
+
+        mesh.position.copy(point)
+          .addScaledVector(binormal, lateral)
+          .addScaledVector(normal, 2.15);
+        gateMatrix.makeBasis(binormal, normal, tangent);
+        mesh.quaternion.setFromRotationMatrix(gateMatrix);
+        group.add(mesh);
+        group.userData.gates = group.userData.gates || [];
+        group.userData.gates.push({ t, lateral, mesh, lastHitLap: -1 });
+      }
+
+      return group;
+    }
+
     function findClosestT(curve, point) {
       let bestT = 0;
       let bestDist = Infinity;
@@ -743,6 +811,9 @@
       root.add(buildTrackMesh(curve));
       root.add(buildLaneLines(curve));
       root.add(buildCornerMarkers(curve, controlPoints));
+      boostGateGroup = buildBoostGates(curve);
+      boostGates = boostGateGroup.userData.gates;
+      root.add(boostGateGroup);
 
       // Stars
       const starCount = 1200;
@@ -1015,10 +1086,15 @@
       raceStartMs = performance.now();
       completedLaps = 0;
       offTrackTimer = 0;
+      boostTimer = 0;
+      boostGateHits = 0;
+      boostCombo = 0;
+      bestBoostCombo = 0;
       car.t = FINISH_LINE_T;
       car.u = 0;
       car.v = 0;
       prevT = car.t;
+      resetBoostGates();
       updateChaseCamera(0);
       chasePos.copy(scratchCam);
       showBanner('GO!', 1.2);
@@ -1035,6 +1111,10 @@
       completedLaps = 0;
       offTrackTimer = 0;
       screenShake = 0;
+      boostTimer = 0;
+      boostGateHits = 0;
+      boostCombo = 0;
+      bestBoostCombo = 0;
       car.t = FINISH_LINE_T;
       car.u = 0;
       car.v = 0;
@@ -1042,6 +1122,8 @@
       raceTimeEl.textContent = '0:00.0';
       lapDisplayEl.textContent = 'LAP 0/3';
       speedDisplayEl.textContent = '0 KM/H';
+      boostDisplayEl.textContent = '';
+      resetBoostGates();
       statusBanner.classList.remove('visible');
       countdownOverlay.classList.remove('visible');
       resultsScreen.classList.remove('visible');
@@ -1077,9 +1159,60 @@
       car.v = Math.min(car.v, 18);
       prevT = car.t;
       offTrackTimer = 0;
+      boostTimer = 0;
+      boostCombo = 0;
       showBanner('OFF TRACK — LAP RESET', 2);
       addScreenShake(6);
       playBeep(180, 220, 0.1);
+    }
+
+    function resetBoostGates() {
+      boostGates.forEach((gate) => {
+        gate.lastHitLap = -1;
+        gate.mesh.visible = true;
+        gate.mesh.scale.setScalar(1);
+      });
+    }
+
+    function circularDistance(a, b) {
+      const d = Math.abs(a - b);
+      return Math.min(d, 1 - d);
+    }
+
+    function collectBoostGate(gate) {
+      gate.lastHitLap = completedLaps;
+      gate.mesh.visible = false;
+      boostGateHits += 1;
+      boostCombo += 1;
+      bestBoostCombo = Math.max(bestBoostCombo, boostCombo);
+      boostTimer = BOOST_DURATION_SEC;
+      car.v = Math.min(BOOST_MAX_SPEED, car.v + 24);
+      showBanner(`PULSE BOOST x${boostCombo}`, 0.85);
+      addScreenShake(2.5);
+      playBeep(920 + Math.min(boostCombo, 6) * 80, 90, 0.08);
+    }
+
+    function checkBoostGates() {
+      for (const gate of boostGates) {
+        if (gate.lastHitLap === completedLaps) continue;
+        const closeAlongTrack = circularDistance(car.t, gate.t) < 0.014;
+        const closeAcrossTrack = Math.abs(car.u - gate.lateral) < BOOST_GATE_RADIUS;
+        if (closeAlongTrack && closeAcrossTrack) collectBoostGate(gate);
+      }
+    }
+
+    function updateBoostGates(dt) {
+      boostGates.forEach((gate, i) => {
+        if (gate.lastHitLap === completedLaps) return;
+        const pulse = 1 + Math.sin(performance.now() * 0.006 + i) * 0.08;
+        gate.mesh.scale.setScalar(pulse);
+        gate.mesh.visible = true;
+      });
+
+      if (boostTimer > 0) {
+        boostTimer = Math.max(0, boostTimer - dt);
+        if (boostTimer === 0) boostCombo = 0;
+      }
     }
 
     function onLapCrossing() {
@@ -1102,14 +1235,15 @@
 
     function updateCarPhysics(dt) {
       const { steer, gas, brake } = frameInput;
+      const speedLimit = boostTimer > 0 ? BOOST_MAX_SPEED : MAX_SPEED;
 
       if (gas) {
-        car.v += ACCEL * dt;
+        car.v += ACCEL * (boostTimer > 0 ? 1.14 : 1) * dt;
       } else if (brake) {
         car.v -= BRAKE_FORCE * dt;
       }
       car.v -= car.v * DRAG * dt;
-      car.v = Math.max(0, Math.min(car.v, MAX_SPEED));
+      car.v = Math.max(0, Math.min(car.v, speedLimit));
 
       car.u += steer * STEER_RATE * dt;
       car.u -= car.u * LATERAL_GRIP * dt;
@@ -1129,6 +1263,7 @@
       if (car.t < 0) car.t += 1;
 
       detectLapCrossing();
+      checkBoostGates();
     }
 
     function trackFrameAt(t, lateralU, out) {
@@ -1261,6 +1396,7 @@
         updateChaseCamera(dt);
       }
       updateTrail();
+      updateBoostGates(dt);
       updateAudio();
       updateHud(now);
     }
