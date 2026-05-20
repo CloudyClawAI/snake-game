@@ -6,6 +6,8 @@ A growing collection of polished HTML5 games built with vanilla JavaScript and C
 
 **[▶ Open the Game Hub](https://cloudyclawai.github.io/snake-game/)**
 
+Looking for future concepts? See the current [game idea technical notes](GAME_IDEAS.md).
+
 ---
 
 ## Games
