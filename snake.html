@@ -8,124 +8,97 @@
   <meta name="theme-color" content="#7c6aff" />
   <link rel="stylesheet" href="design-system.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #0f0f1a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      color: #e0e0e0;
-      padding-top: 56px;
-      padding-bottom: 2rem;
+    /* Game-specific overrides */
+    :root {
+      --accent: #4afa7e;
+      --accent-glow: rgba(74, 250, 126, 0.25);
     }
-    canvas { max-width: 100vw; }
-
-    h1 {
-      font-size: 2.4rem;
-      letter-spacing: 0.15em;
-      color: #4afa7e;
-      text-shadow: 0 0 16px #4afa7e88;
-      margin-bottom: 0.4rem;
-    }
-
-    #info {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 1rem;
-      font-size: 1.1rem;
-    }
-
-    #info span { color: #aaa; }
-    #info strong { color: #fff; }
-
-    canvas {
-      border: 2px solid #4afa7e44;
-      border-radius: 6px;
-      box-shadow: 0 0 40px #4afa7e22;
-      display: block;
-    }
-
-    #overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      background: rgba(15, 15, 26, 0.88);
-      border-radius: 6px;
-      pointer-events: none;
-    }
-
-    #overlay.hidden { display: none; }
-
-    #overlay p {
-      font-size: 1.6rem;
-      font-weight: bold;
-      color: #4afa7e;
-      text-shadow: 0 0 12px #4afa7eaa;
-    }
-
-    #overlay small {
-      font-size: 1rem;
-      color: #aaa;
-    }
-
-    #restart-btn {
-      pointer-events: all;
-      background: #4afa7e;
-      color: #0f0f1a;
-      border: none;
-      border-radius: 6px;
-      padding: 0.6rem 1.8rem;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      letter-spacing: 0.06em;
-      transition: background 0.15s, transform 0.1s;
-    }
-
-    #restart-btn:hover { background: #6fffa0; transform: scale(1.04); }
-
-    #controls {
-      margin-top: 1rem;
-      font-size: 0.85rem;
-      color: #555;
-      text-align: center;
-      line-height: 1.8;
+    canvas#game {
+      border: 2px solid var(--accent-glow);
+      box-shadow: 0 0 40px rgba(74, 250, 126, 0.1);
     }
   </style>
 </head>
 <body>
-  <a class="back-link" href="index.html">← Hub</a>
-  <h1>SNAKE</h1>
 
-  <div id="info">
-    <div><span>Score: </span><strong id="score-display">0</strong></div>
-    <div><span>High Score: </span><strong id="hi-display">0</strong></div>
-    <div><span>Level: </span><strong id="level-display">1</strong></div>
-  </div>
-
-  <div style="position:relative; line-height:0;">
-    <canvas id="game" width="400" height="400"></canvas>
-    <div id="overlay">
-      <p id="overlay-msg">SNAKE</p>
-      <small id="overlay-sub">Use arrow keys or WASD to move</small>
-      <button id="restart-btn">▶ Start Game</button>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+      <a href="#" class="nav-link">Leaderboard</a>
     </div>
-  </div>
+  </nav>
 
-  <div id="controls">
-    Arrow keys / WASD &nbsp;|&nbsp; P to pause &nbsp;|&nbsp; R to restart &nbsp;|&nbsp; Swipe on mobile
-  </div>
-  <div class="lb-panel" style="margin-top:1rem;width:min(400px,90vw)">
-    <h3>Top Scores</h3>
-    <div id="lb-widget"></div>
+  <div class="game-shell">
+    <main class="game-main">
+      <a class="back-link" href="index.html">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 13l-5-5 5-5"/>
+        </svg>
+        Back to Hub
+      </a>
+
+      <header class="game-header">
+        <h1 class="game-title">SNAKE</h1>
+        <p class="game-subtitle">Classic arcade action with a neon twist.</p>
+      </header>
+
+      <div class="canvas-container">
+        <canvas id="game" width="400" height="400"></canvas>
+        <div id="overlay" class="overlay">
+          <h2 id="overlay-msg" class="overlay-title">SNAKE</h2>
+          <p id="overlay-sub" class="overlay-body">Use arrow keys or WASD to move</p>
+          <button id="restart-btn" class="btn btn-primary btn-lg">▶ Start Game</button>
+        </div>
+      </div>
+
+      <div class="panel mt-4">
+        <p class="text-dim" style="font-size: 0.85rem; text-align: center;">
+          Arrow keys / WASD &nbsp;|&nbsp; P to pause &nbsp;|&nbsp; R to restart &nbsp;|&nbsp; Swipe on mobile
+        </p>
+      </div>
+
+      <div class="touch-controls">
+        <div class="dpad-grid">
+          <div></div>
+          <div class="control-btn" id="tc-up">↑</div>
+          <div></div>
+          <div class="control-btn" id="tc-left">◀</div>
+          <div class="control-btn" id="tc-down">▼</div>
+          <div class="control-btn" id="tc-right">▶</div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Score</span>
+          <span id="score-display" class="stat-value">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">High Score</span>
+          <span id="hi-display" class="stat-value">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Level</span>
+          <span id="level-display" class="stat-value">1</span>
+        </div>
+      </div>
+
+      <div class="lb-panel">
+        <h3>Top Scores</h3>
+        <div id="lb-widget"></div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">How to Play</h3>
+        <p class="text-muted" style="font-size: 0.88rem;">
+          Eat the red apples to grow. Avoid hitting the walls or yourself. 
+          Golden apples give bonus points!
+        </p>
+      </div>
+    </aside>
   </div>
 
   <script src="leaderboard.js"></script>
@@ -474,6 +447,23 @@
       touchStart = null;
       e.preventDefault();
     }, { passive: false });
+
+    // Touch D-pad buttons
+    function btn(id, dx, dy) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        if (state === 'playing') {
+          const d = { x: dx, y: dy };
+          if (d.x !== -dir.x || d.y !== -dir.y) nextDir = d;
+        }
+      });
+    }
+    btn('tc-up', 0, -1);
+    btn('tc-down', 0, 1);
+    btn('tc-left', -1, 0);
+    btn('tc-right', 1, 0);
 
     function startGame() {
       init();
