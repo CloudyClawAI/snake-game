@@ -4,6 +4,8 @@ Two niche game concepts designed for the current CloudyClaw stack: single-file H
 
 ## 1. Prism Courier
 
+Implementation: [`prism-courier.html`](prism-courier.html)
+
 ### Pitch
 
 Prism Courier is a one-thumb arcade route-planning game where the player pilots a light-skiff through a stained-glass city that rearranges every few seconds. The goal is to deliver color-coded energy parcels to matching towers before their glow decays, while rotating mirror gates, splitting beams, and chaining perfect deliveries for score multipliers.
@@ -56,6 +58,8 @@ Most delivery games focus on roads or physics. Prism Courier turns delivery into
 - Local high score, restart flow, and score share button.
 
 ## 2. Echo Bloom
+
+Implementation: [`echo-bloom.html`](echo-bloom.html)
 
 ### Pitch
 
