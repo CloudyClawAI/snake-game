@@ -4,62 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minesweeper — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
-    }
-
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-bottom: 3rem;
       user-select: none;
       -webkit-user-select: none;
     }
 
-    /* ── Nav ── */
-    nav {
-      width: 100%;
-      max-width: 700px;
-      display: flex;
-      align-items: center;
-      padding: 1rem 1rem 0;
-    }
-
-    .back-link {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      transition: color 0.15s;
-    }
-    .back-link:hover { color: var(--accent); }
-
-    .nav-title {
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: 0.06em;
-      flex: 1;
-      text-align: center;
-    }
-
-    /* ── Difficulty ── */
     .diff-row {
       display: flex;
       gap: 0.5rem;
@@ -74,7 +27,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
-      color: var(--muted);
+      color: var(--text-muted);
       font-size: 0.85rem;
       font-weight: 600;
       padding: 0.4rem 1rem;
@@ -195,10 +148,9 @@
     .n5 { color: #ff8c42; }
     .n6 { color: #40e0d0; }
     .n7 { color: #ff69b4; }
-    .n8 { color: var(--muted); }
+    .n8 { color: var(--text-muted); }
 
-    /* ── Overlay ── */
-    .overlay {
+    .game-modal {
       display: none;
       position: fixed;
       inset: 0;
@@ -210,7 +162,7 @@
       justify-content: center;
       padding: 2rem;
     }
-    .overlay.visible { display: flex; }
+    .game-modal.visible { display: flex; }
 
     .overlay-box {
       background: var(--surface);
@@ -225,7 +177,7 @@
 
     .overlay-emoji { font-size: 3.5rem; margin-bottom: 0.5rem; }
     .overlay-title { font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; }
-    .overlay-sub   { font-size: 1rem; color: var(--muted); margin-bottom: 1.4rem; }
+    .overlay-sub   { font-size: 1rem; color: var(--text-muted); margin-bottom: 1.4rem; }
     .overlay-time  { font-size: 1.1rem; color: var(--text); margin-bottom: 1.4rem; }
 
     .overlay-btn {
@@ -259,49 +211,58 @@
       border-radius: 8px;
       padding: 0.3rem 0.8rem;
       font-size: 0.78rem;
-      color: var(--muted);
+      color: var(--text-muted);
     }
     .best-box span { color: var(--accent); font-weight: 700; }
   </style>
 </head>
 <body>
 
-  <nav>
-    <a class="back-link" href="index.html">&#8592; Hub</a>
-    <div class="nav-title">Minesweeper</div>
-    <div style="width:48px"></div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
   </nav>
 
-  <!-- Difficulty -->
-  <div class="diff-row">
-    <button class="diff-btn active" data-diff="easy">Easy 9×9</button>
-    <button class="diff-btn" data-diff="medium">Medium 16×16</button>
-    <button class="diff-btn" data-diff="hard">Hard 30×16</button>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">Minesweeper</h1>
+        <p class="game-subtitle">Clear the field without detonating a mine.</p>
+      </header>
+
+      <div class="diff-row">
+        <button class="diff-btn chip active" data-diff="easy">Easy 9×9</button>
+        <button class="diff-btn chip" data-diff="medium">Medium 16×16</button>
+        <button class="diff-btn chip" data-diff="hard">Hard 30×16</button>
+      </div>
+
+      <div class="status-bar">
+        <div class="stat-box" id="mineCount">💣 10</div>
+        <div class="smiley-btn" id="smileyBtn">😊</div>
+        <div class="stat-box" id="timerDisplay">⏱ 0</div>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board-outer panel" id="boardOuter">
+          <div class="board-grid" id="boardGrid"></div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="panel">
+        <h3 class="panel-title">Best Times</h3>
+        <p class="text-muted" style="font-size:0.88rem;">Easy: <strong id="bestEasy" class="text-accent">--</strong></p>
+        <p class="text-muted" style="font-size:0.88rem;">Medium: <strong id="bestMedium" class="text-accent">--</strong></p>
+        <p class="text-muted" style="font-size:0.88rem;">Hard: <strong id="bestHard" class="text-accent">--</strong></p>
+      </div>
+    </aside>
   </div>
 
-  <!-- Status bar -->
-  <div class="status-bar">
-    <div class="stat-box" id="mineCount">💣 10</div>
-    <div class="smiley-btn" id="smileyBtn">😊</div>
-    <div class="stat-box" id="timerDisplay">⏱ 0</div>
-  </div>
-
-  <!-- Board -->
-  <div class="board-wrap">
-    <div class="board-outer" id="boardOuter">
-      <div class="board-grid" id="boardGrid"></div>
-    </div>
-  </div>
-
-  <!-- Best times -->
-  <div class="best-row">
-    <div class="best-box">Easy best: <span id="bestEasy">--</span></div>
-    <div class="best-box">Medium best: <span id="bestMedium">--</span></div>
-    <div class="best-box">Hard best: <span id="bestHard">--</span></div>
-  </div>
-
-  <!-- Win Overlay -->
-  <div class="overlay" id="winOverlay">
+  <div class="game-modal" id="winOverlay">
     <div class="overlay-box">
       <div class="overlay-emoji">😎</div>
       <div class="overlay-title">You Win!</div>
@@ -311,8 +272,7 @@
     </div>
   </div>
 
-  <!-- Loss Overlay -->
-  <div class="overlay" id="lossOverlay">
+  <div class="game-modal" id="lossOverlay">
     <div class="overlay-box">
       <div class="overlay-emoji">😵</div>
       <div class="overlay-title">Boom!</div>

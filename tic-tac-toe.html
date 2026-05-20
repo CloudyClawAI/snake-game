@@ -8,22 +8,6 @@
   <meta name="theme-color" content="#7c6aff" />
   <link rel="stylesheet" href="design-system.css" />
   <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 64px 1rem 4rem;
-    }
-
-    h1 {
-      font-size: clamp(1.6rem, 6vw, 2.4rem);
-      color: #fff;
-      margin-bottom: 0.3rem;
-      letter-spacing: 0.04em;
-    }
-
     .status {
       margin-bottom: 1.5rem;
       font-size: 1.1rem;
@@ -77,94 +61,72 @@
     }
 
     .controls {
-      margin-top: 1.4rem;
       display: flex;
       gap: 1rem;
+      flex-wrap: wrap;
     }
 
-    button {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 0.6rem 1.4rem;
-      font-size: 0.95rem;
-      font-weight: bold;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-    }
-    button:hover { background: #9b8fff; }
-    button:active { transform: scale(0.97); }
-
-    .score-row {
-      display: flex;
-      gap: 1.5rem;
-      margin: 1.2rem 0 0.4rem;
-    }
-
-    .score-badge {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.4rem 1rem;
-      text-align: center;
-      min-width: 70px;
-    }
-
-    .score-badge .label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-    }
-
-    .score-badge .val {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .score-badge.x-badge .val { color: #f43f5e; }
-    .score-badge.o-badge .val { color: #10b981; }
+    .stat-tile.x-badge .stat-value { color: #f43f5e; }
+    .stat-tile.o-badge .stat-value { color: #10b981; }
   </style>
 </head>
 <body>
 
-  <a class="back-link" href="index.html">← Hub</a>
-
-  <h1>Tic-Tac-Toe</h1>
-  <div class="status" id="status">Player X's Turn</div>
-
-  <div class="board" id="board">
-    <div class="cell" data-index="0"></div>
-    <div class="cell" data-index="1"></div>
-    <div class="cell" data-index="2"></div>
-    <div class="cell" data-index="3"></div>
-    <div class="cell" data-index="4"></div>
-    <div class="cell" data-index="5"></div>
-    <div class="cell" data-index="6"></div>
-    <div class="cell" data-index="7"></div>
-    <div class="cell" data-index="8"></div>
-  </div>
-
-  <div class="score-row">
-    <div class="score-badge x-badge">
-      <div class="label">X Wins</div>
-      <div class="val" id="x-wins">0</div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
     </div>
-    <div class="score-badge">
-      <div class="label">Draws</div>
-      <div class="val" id="draws">0</div>
-    </div>
-    <div class="score-badge o-badge">
-      <div class="label">O Wins</div>
-      <div class="val" id="o-wins">0</div>
-    </div>
-  </div>
+  </nav>
 
-  <div class="controls">
-    <button id="reset">Reset Game</button>
-    <button id="reset-scores">Clear Scores</button>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">Tic-Tac-Toe</h1>
+        <p class="game-subtitle">Classic 3×3 duel for two players.</p>
+      </header>
+
+      <div class="status" id="status">Player X's Turn</div>
+
+      <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="reset">Reset Game</button>
+        <button class="btn btn-secondary" id="reset-scores">Clear Scores</button>
+      </div>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="stat-grid">
+        <div class="stat-tile x-badge">
+          <span class="stat-label">X Wins</span>
+          <span class="stat-value" id="x-wins">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Draws</span>
+          <span class="stat-value" id="draws">0</span>
+        </div>
+        <div class="stat-tile o-badge">
+          <span class="stat-label">O Wins</span>
+          <span class="stat-value" id="o-wins">0</span>
+        </div>
+      </div>
+      <div class="lb-panel">
+        <h3>Top Scores</h3>
+        <div id="lb-tictactoe"></div>
+      </div>
+    </aside>
   </div>
 
   <script src="leaderboard.js"></script>
@@ -208,6 +170,7 @@
           else { sessionOWins++; oWinsEl.textContent = sessionOWins; }
           // Save combined score: X wins count as positive signal
           Leaderboard.saveScore(GAME_KEY, sessionXWins + sessionOWins);
+          Leaderboard.renderWidget(GAME_KEY, 'lb-tictactoe');
           return;
         }
       }
@@ -232,6 +195,7 @@
       });
     }
 
+    Leaderboard.renderWidget(GAME_KEY, 'lb-tictactoe');
     cells.forEach(cell => cell.addEventListener('click', handleCellClick));
     document.getElementById('reset').addEventListener('click', resetGame);
     document.getElementById('reset-scores').addEventListener('click', () => {

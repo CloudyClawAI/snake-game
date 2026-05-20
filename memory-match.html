@@ -4,71 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Memory Match — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
       --match-glow: #22c55e55;
       --match-border: #22c55e;
       --card-back: #1c1a36;
       --card-back-border: #2e2b58;
     }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* NAV */
-    nav {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.85rem 1.4rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .back-link {
-      text-decoration: none;
-      color: var(--muted);
-      font-size: 0.88rem;
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      transition: color 0.15s;
-    }
-    .back-link:hover { color: var(--accent); }
-    .back-link svg { width: 14px; height: 14px; }
-    nav .title {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: #fff;
-      letter-spacing: 0.04em;
-    }
-
-    /* MAIN LAYOUT */
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.2rem 1rem 3rem;
-      gap: 1rem;
-    }
-
-    /* DIFFICULTY SELECTOR */
     .difficulty-row {
       display: flex;
       gap: 0.5rem;
@@ -76,7 +22,7 @@
     .diff-btn {
       background: var(--surface);
       border: 1px solid var(--border);
-      color: var(--muted);
+      color: var(--text-muted);
       border-radius: 8px;
       padding: 0.4rem 1rem;
       font-size: 0.82rem;
@@ -114,7 +60,7 @@
     }
     .stat .stat-label {
       font-size: 0.7rem;
-      color: var(--muted);
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -166,7 +112,7 @@
       background: var(--card-back);
       border: 1px solid var(--card-back-border);
       font-size: 1.4rem;
-      color: var(--muted);
+      color: var(--text-muted);
       box-shadow: inset 0 1px 4px #00000044;
     }
     /* subtle pattern on card back */
@@ -235,8 +181,7 @@
     }
     .btn.primary:hover { background: #9b8fff; border-color: #9b8fff; color: #fff; }
 
-    /* WIN OVERLAY */
-    .overlay {
+    .game-modal {
       position: fixed;
       inset: 0;
       background: #0a0a14cc;
@@ -249,7 +194,7 @@
       pointer-events: none;
       transition: opacity 0.35s;
     }
-    .overlay.show {
+    .game-modal.show {
       opacity: 1;
       pointer-events: all;
     }
@@ -265,10 +210,10 @@
       transform: scale(0.88);
       transition: transform 0.35s;
     }
-    .overlay.show .overlay-card { transform: scale(1); }
+    .game-modal.show .overlay-card { transform: scale(1); }
     .overlay-card .trophy { font-size: 3rem; margin-bottom: 0.5rem; }
     .overlay-card h2 { font-size: 1.7rem; color: #fff; margin-bottom: 0.4rem; }
-    .overlay-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.25rem; }
+    .overlay-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.25rem; }
     .overlay-card .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -281,7 +226,7 @@
       border-radius: 8px;
       padding: 0.6rem;
     }
-    .overlay-card .st-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .overlay-card .st-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
     .overlay-card .st-val { font-size: 1.2rem; font-weight: 700; color: #fff; margin-top: 0.1rem; }
     .overlay-card .st-val.new-best { color: #22c55e; }
     .overlay-btns { display: flex; gap: 0.8rem; justify-content: center; }
@@ -295,58 +240,61 @@
 </head>
 <body>
 
-<nav>
-  <a class="back-link" href="index.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 18 9 12 15 6"/>
-    </svg>
-    Back to Hub
-  </a>
-  <span class="title">Memory Match</span>
-</nav>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
+  </nav>
 
-<main>
-  <div class="difficulty-row" id="diffRow">
-    <button class="diff-btn active" data-diff="easy">Easy (4×4)</button>
-    <button class="diff-btn" data-diff="medium">Medium (4×6)</button>
-    <button class="diff-btn" data-diff="hard">Hard (5×6)</button>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">Memory Match</h1>
+        <p class="game-subtitle">Flip cards and find matching pairs.</p>
+      </header>
+
+      <div class="difficulty-row" id="diffRow">
+        <button class="diff-btn chip active" data-diff="easy">Easy (4×4)</button>
+        <button class="diff-btn chip" data-diff="medium">Medium (4×6)</button>
+        <button class="diff-btn chip" data-diff="hard">Hard (5×6)</button>
+      </div>
+
+      <div class="card-grid" id="cardGrid"></div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="btnNew">New Game</button>
+      </div>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Moves</span>
+          <span class="stat-value" id="statMoves">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="statTime">0:00</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best Moves</span>
+          <span class="stat-value" id="statBestMoves">—</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best Time</span>
+          <span class="stat-value" id="statBestTime">—</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Pairs</span>
+          <span class="stat-value" id="statPairs">0 / 0</span>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat">
-      <span class="stat-label">Moves</span>
-      <span class="stat-val" id="statMoves">0</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat">
-      <span class="stat-label">Time</span>
-      <span class="stat-val" id="statTime">0:00</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat">
-      <span class="stat-label">Best Moves</span>
-      <span class="stat-val best" id="statBestMoves">—</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat">
-      <span class="stat-label">Best Time</span>
-      <span class="stat-val best" id="statBestTime">—</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat">
-      <span class="stat-label">Pairs</span>
-      <span class="stat-val" id="statPairs">0 / 0</span>
-    </div>
-  </div>
-
-  <div class="card-grid" id="cardGrid"></div>
-
-  <div class="controls">
-    <button class="btn primary" id="btnNew">New Game</button>
-  </div>
-</main>
-
-<div class="overlay" id="overlay">
+  <div class="game-modal" id="overlay">
   <div class="overlay-card">
     <div class="trophy">🏆</div>
     <h2>You Won!</h2>

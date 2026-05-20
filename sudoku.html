@@ -4,17 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sudoku — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
       --cell-bg: #181828;
       --cell-border: #ffffff18;
       --box-border: #ffffff40;
@@ -29,114 +23,12 @@
       --correct-bg: #4ade8018;
     }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      flex-shrink: 0;
-    }
-
-    .back-link {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: color 0.15s;
-    }
-    .back-link:hover { color: var(--accent); }
-
-    .logo {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.04em;
-    }
-    .logo span { color: var(--accent); }
-
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.1rem;
-    }
-    .timer-display {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--accent);
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 0.05em;
-    }
-    .best-time {
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-    .best-time strong { color: var(--accent); }
-
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem 0.5rem 2rem;
-      gap: 1rem;
-    }
-
-    h1 {
-      font-size: clamp(1.4rem, 4vw, 2rem);
-      color: #fff;
-      text-align: center;
-      text-shadow: 0 0 30px var(--accent-glow);
-      letter-spacing: 0.05em;
-    }
-
-    /* Controls */
     .controls {
       display: flex;
       flex-wrap: wrap;
       gap: 0.7rem;
       align-items: center;
       justify-content: center;
-    }
-
-    .btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 0.6rem 1.1rem;
-      font-size: 0.88rem;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      letter-spacing: 0.04em;
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-      white-space: nowrap;
-    }
-    .btn:hover { background: #9b8fff; box-shadow: 0 4px 16px var(--accent-glow); }
-    .btn:active { transform: scale(0.97); }
-    .btn.secondary {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-    .btn.secondary:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
-    .btn.active-mode {
-      background: var(--accent);
-      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     .diff-group {
@@ -151,7 +43,7 @@
     .diff-btn {
       background: transparent;
       border: none;
-      color: var(--muted);
+      color: var(--text-muted);
       cursor: pointer;
       padding: 0.3rem 0.7rem;
       border-radius: 6px;
@@ -275,7 +167,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
-      color: var(--muted);
+      color: var(--text-muted);
       font-size: clamp(0.65rem, 2.2vw, 0.82rem);
       font-weight: 700;
       font-family: inherit;
@@ -293,8 +185,7 @@
     .pencil-toggle:hover { border-color: var(--accent); }
     .pencil-icon { font-size: clamp(0.9rem, 2.8vw, 1.1rem); }
 
-    /* Overlay */
-    .overlay {
+    .game-modal {
       display: none;
       position: fixed;
       inset: 0;
@@ -305,7 +196,7 @@
       justify-content: center;
       padding: 1rem;
     }
-    .overlay.active { display: flex; }
+    .game-modal.active { display: flex; }
 
     .result-card {
       background: var(--surface);
@@ -327,7 +218,7 @@
     .result-card .emoji { font-size: 3rem; margin-bottom: 0.8rem; }
 
     .result-card p {
-      color: var(--muted);
+      color: var(--text-muted);
       margin-bottom: 1.2rem;
       font-size: 0.95rem;
     }
@@ -355,7 +246,7 @@
 
     .hints-left {
       font-size: 0.8rem;
-      color: var(--muted);
+      color: var(--text-muted);
       text-align: center;
     }
     .hints-left strong { color: var(--accent); }
@@ -367,67 +258,83 @@
 </head>
 <body>
 
-<header>
-  <a class="back-link" href="index.html">&#8592; Hub</a>
-  <div class="logo">Cloudy<span>Claw</span></div>
-  <div class="header-right">
-    <div class="timer-display" id="timerDisplay">0:00</div>
-    <div class="best-time">Best: <strong id="bestTimeDisplay">—</strong></div>
-  </div>
-</header>
-
-<main>
-  <h1>Sudoku</h1>
-
-  <div class="controls">
-    <div class="diff-group">
-      <button class="diff-btn selected" data-diff="easy">Easy</button>
-      <button class="diff-btn" data-diff="medium">Medium</button>
-      <button class="diff-btn" data-diff="hard">Hard</button>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
     </div>
-    <button class="btn secondary" id="newGameBtn">New Game</button>
-    <button class="btn secondary" id="checkBtn">Check</button>
-    <button class="btn secondary" id="hintBtn">Hint</button>
+  </nav>
+
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">Sudoku</h1>
+        <p class="game-subtitle">Fill the grid so every row, column, and box has 1–9.</p>
+      </header>
+
+      <div class="controls">
+        <div class="diff-group panel">
+          <button class="diff-btn chip selected" data-diff="easy">Easy</button>
+          <button class="diff-btn chip" data-diff="medium">Medium</button>
+          <button class="diff-btn chip" data-diff="hard">Hard</button>
+        </div>
+        <button class="btn btn-secondary" id="newGameBtn">New Game</button>
+        <button class="btn btn-secondary" id="checkBtn">Check</button>
+        <button class="btn btn-secondary" id="hintBtn">Hint</button>
+      </div>
+
+      <div class="hints-left text-muted text-center">Hints: <strong id="hintsLeft" class="text-accent">3</strong> remaining</div>
+
+      <div class="grid-wrapper">
+        <div class="sudoku-grid" id="sudokuGrid"></div>
+      </div>
+
+      <div class="numpad" id="numpad">
+        <button class="numpad-btn" data-num="1">1</button>
+        <button class="numpad-btn" data-num="2">2</button>
+        <button class="numpad-btn" data-num="3">3</button>
+        <button class="numpad-btn" data-num="4">4</button>
+        <button class="numpad-btn" data-num="5">5</button>
+        <button class="numpad-btn" data-num="6">6</button>
+        <button class="numpad-btn" data-num="7">7</button>
+        <button class="numpad-btn" data-num="8">8</button>
+        <button class="numpad-btn" data-num="9">9</button>
+        <button class="numpad-btn clear-btn" data-num="0">Clear</button>
+        <button class="pencil-toggle btn btn-ghost btn-sm" id="pencilToggle">
+          <span class="pencil-icon">✏️</span>
+          <span>Notes</span>
+        </button>
+      </div>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="timerDisplay">0:00</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="bestTimeDisplay">—</span>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <div class="hints-left">Hints: <strong id="hintsLeft">3</strong> remaining</div>
-
-  <div class="grid-wrapper">
-    <div class="sudoku-grid" id="sudokuGrid"></div>
-  </div>
-
-  <div class="numpad" id="numpad">
-    <button class="numpad-btn" data-num="1">1</button>
-    <button class="numpad-btn" data-num="2">2</button>
-    <button class="numpad-btn" data-num="3">3</button>
-    <button class="numpad-btn" data-num="4">4</button>
-    <button class="numpad-btn" data-num="5">5</button>
-    <button class="numpad-btn" data-num="6">6</button>
-    <button class="numpad-btn" data-num="7">7</button>
-    <button class="numpad-btn" data-num="8">8</button>
-    <button class="numpad-btn" data-num="9">9</button>
-    <button class="numpad-btn clear-btn" data-num="0">Clear</button>
-    <button class="pencil-toggle" id="pencilToggle">
-      <span class="pencil-icon">✏️</span>
-      <span>Notes</span>
-    </button>
-  </div>
-</main>
-
-<!-- Win overlay -->
-<div class="overlay" id="winOverlay">
-  <div class="result-card">
-    <div class="emoji">🎉</div>
-    <h2>Puzzle Solved!</h2>
-    <div class="result-time" id="resTime">0:00</div>
-    <div class="new-best-msg" id="newBestMsg" style="display:none">New Best Time!</div>
-    <p id="resDiff">Easy difficulty</p>
-    <div class="btn-row">
-      <button class="btn" id="playAgainBtn">Play Again</button>
-      <button class="btn secondary" id="winNewGameBtn">New Puzzle</button>
+  <div class="game-modal" id="winOverlay">
+    <div class="result-card panel">
+      <div class="emoji">🎉</div>
+      <h2>Puzzle Solved!</h2>
+      <div class="result-time" id="resTime">0:00</div>
+      <div class="new-best-msg" id="newBestMsg" style="display:none">New Best Time!</div>
+      <p id="resDiff">Easy difficulty</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="playAgainBtn">Play Again</button>
+        <button class="btn btn-secondary" id="winNewGameBtn">New Puzzle</button>
+      </div>
     </div>
   </div>
-</div>
 
 <script>
 // ════════════════════════════════════════════════════════════════════════════

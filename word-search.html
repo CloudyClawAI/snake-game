@@ -4,17 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Word Search — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
       --found: #7c6aff;
       --drag: #7c6aff88;
       --cell: #1a1a2e;
@@ -22,85 +16,10 @@
     }
 
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-bottom: 3rem;
       user-select: none;
       -webkit-user-select: none;
     }
 
-    /* ── Header ── */
-    header {
-      width: 100%;
-      max-width: 1000px;
-      padding: 1.2rem 1.5rem 0.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .back-link {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.85rem;
-      letter-spacing: 0.04em;
-      transition: color 0.2s;
-      white-space: nowrap;
-    }
-    .back-link:hover { color: var(--accent); }
-    .back-link::before { content: '‹ '; }
-
-    header h1 {
-      flex: 1;
-      font-size: clamp(1.2rem, 4vw, 1.8rem);
-      color: #fff;
-      text-shadow: 0 0 24px var(--accent-glow);
-      letter-spacing: 0.06em;
-      text-align: center;
-    }
-
-    .header-spacer { width: 80px; }
-
-    /* ── HUD ── */
-    .hud {
-      display: flex;
-      gap: 0.8rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin: 0.8rem 1rem;
-      width: 100%;
-      max-width: 1000px;
-    }
-
-    .hud-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.45rem 1rem;
-      text-align: center;
-      min-width: 90px;
-      flex: 1;
-    }
-    .hud-box .label {
-      font-size: 0.68rem;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .hud-box .value {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #fff;
-      line-height: 1.2;
-    }
-    .hud-box.accent .value { color: var(--accent); }
-
-    /* ── Category badge ── */
     .category-bar {
       display: flex;
       align-items: center;
@@ -206,7 +125,7 @@
 
     .word-list-panel h3 {
       font-size: 0.75rem;
-      color: var(--muted);
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.1em;
       margin-bottom: 0.7rem;
@@ -229,14 +148,13 @@
     }
 
     .word-item.found {
-      color: var(--muted);
+      color: var(--text-muted);
       text-decoration: line-through;
       text-decoration-color: var(--accent);
       text-decoration-thickness: 2px;
     }
 
-    /* ── Win / Overlay ── */
-    .overlay {
+    .game-modal {
       position: fixed;
       inset: 0;
       background: #0a0a14dd;
@@ -246,7 +164,7 @@
       z-index: 100;
       backdrop-filter: blur(4px);
     }
-    .overlay.hidden { display: none; }
+    .game-modal.hidden { display: none; }
 
     .overlay-box {
       background: var(--surface);
@@ -275,34 +193,11 @@
     }
 
     .overlay-box .sub {
-      color: var(--muted);
+      color: var(--text-muted);
       font-size: 0.88rem;
       margin-bottom: 1.4rem;
     }
     .overlay-box .sub strong { color: #ffd700; }
-
-    .btn {
-      background: var(--accent);
-      color: #fff;
-      font-weight: 700;
-      font-size: 1rem;
-      letter-spacing: 0.06em;
-      border: none;
-      border-radius: 8px;
-      padding: 0.75rem 2rem;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-      box-shadow: 0 0 16px var(--accent-glow);
-    }
-    .btn:hover {
-      background: #9b8fff;
-      transform: scale(1.04);
-      box-shadow: 0 0 28px var(--accent-glow);
-    }
-    .btn:active { transform: scale(0.97); }
-
-    /* ── Timer ── */
-    .hud-box.timer .value { color: var(--accent); }
 
     /* ── Responsive ── */
     @media (max-width: 560px) {
@@ -338,50 +233,60 @@
 </head>
 <body>
 
-  <!-- Win overlay -->
-  <div class="overlay hidden" id="winOverlay">
-    <div class="overlay-box">
+  <div class="game-modal hidden" id="winOverlay">
+    <div class="overlay-box panel">
       <h2>Puzzle Complete!</h2>
       <div class="time-display" id="winTimeEl">0:00</div>
       <div class="sub" id="winSubEl">Best: <strong id="winBestEl">--</strong></div>
-      <button class="btn" id="winRestartBtn">↺ New Puzzle</button>
+      <button class="btn btn-primary" id="winRestartBtn">↺ New Puzzle</button>
     </div>
   </div>
 
-  <header>
-    <a class="back-link" href="index.html">Back to Hub</a>
-    <h1>Word Search</h1>
-    <div class="header-spacer"></div>
-  </header>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
+  </nav>
 
-  <div class="hud">
-    <div class="hud-box">
-      <div class="label">Found</div>
-      <div class="value" id="foundEl">0 / 10</div>
-    </div>
-    <div class="hud-box timer">
-      <div class="label">Time</div>
-      <div class="value" id="timerEl">0:00</div>
-    </div>
-    <div class="hud-box accent">
-      <div class="label">Best</div>
-      <div class="value" id="bestEl">--</div>
-    </div>
-  </div>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">Word Search</h1>
+        <p class="game-subtitle">Find hidden words across the letter grid.</p>
+      </header>
 
-  <div class="category-bar">
-    <span class="category-name" id="categoryEl"></span>
-    <button class="new-puzzle-btn" id="newPuzzleBtn">New Puzzle</button>
-  </div>
+      <div class="category-bar">
+        <span class="category-name chip active" id="categoryEl"></span>
+        <button class="btn btn-secondary btn-sm" id="newPuzzleBtn">New Puzzle</button>
+      </div>
 
-  <div class="main-layout">
-    <div class="grid-wrapper">
-      <div class="grid-container" id="grid"></div>
-    </div>
-    <div class="word-list-panel">
-      <h3>Find These Words</h3>
-      <div class="word-list" id="wordList"></div>
-    </div>
+      <div class="grid-wrapper">
+        <div class="grid-container panel" id="grid"></div>
+      </div>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Found</span>
+          <span class="stat-value" id="foundEl">0 / 10</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="timerEl">0:00</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="bestEl">--</span>
+        </div>
+      </div>
+      <div class="word-list-panel panel">
+        <h3 class="panel-title">Find These Words</h3>
+        <div class="word-list" id="wordList"></div>
+      </div>
+    </aside>
   </div>
 
 <script>

@@ -4,124 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>2048 — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
-    }
-
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0 0 3rem;
       user-select: none;
       -webkit-user-select: none;
     }
 
-    /* ── Header ── */
-    nav {
-      width: 100%;
-      max-width: 520px;
-      display: flex;
-      align-items: center;
-      padding: 1rem 1rem 0;
-      gap: 1rem;
-    }
-
-    .back-link {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      transition: color 0.15s;
-    }
-    .back-link:hover { color: var(--accent); }
-
-    .nav-title {
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: 0.06em;
-      flex: 1;
-      text-align: center;
-    }
-
-    /* ── Score Bar ── */
-    .score-row {
-      display: flex;
-      gap: 0.75rem;
-      width: 100%;
-      max-width: 520px;
-      padding: 0.75rem 1rem 0;
-    }
-
-    .score-box {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.5rem 0.6rem;
-      text-align: center;
-    }
-
-    .score-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    .score-value {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #fff;
-      line-height: 1.2;
-    }
-
-    /* ── Buttons ── */
-    .btn-row {
-      display: flex;
-      gap: 0.75rem;
-      width: 100%;
-      max-width: 520px;
-      padding: 0.75rem 1rem 0;
-    }
-
-    .btn {
-      flex: 1;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 0.55rem 1rem;
-      font-size: 0.9rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-    }
-    .btn:hover { background: #9b8fff; transform: scale(1.02); }
-    .btn:active { transform: scale(0.97); }
-
-    /* ── Board ── */
     .board-wrap {
       width: 100%;
       max-width: 520px;
-      padding: 0.75rem 1rem 0;
     }
 
     .board-bg {
@@ -199,8 +93,8 @@
     .t2048 { background: var(--accent); box-shadow: 0 0 24px var(--accent-glow); font-size: clamp(0.7rem, 2.8vw, 1.1rem); }
     .tbig  { background: #5a30c0; font-size: clamp(0.6rem, 2.4vw, 0.95rem); }
 
-    /* ── Overlay Screens ── */
-    .overlay {
+    /* ── End-game modals (scoped name avoids design-system .overlay) ── */
+    .game-modal {
       display: none;
       position: fixed;
       inset: 0;
@@ -213,7 +107,7 @@
       gap: 1.2rem;
       padding: 2rem;
     }
-    .overlay.visible { display: flex; }
+    .game-modal.visible { display: flex; }
 
     .overlay-box {
       background: var(--surface);
@@ -228,7 +122,7 @@
 
     .overlay-emoji { font-size: 3.5rem; margin-bottom: 0.5rem; }
     .overlay-title { font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; }
-    .overlay-sub   { font-size: 1rem; color: var(--muted); margin-bottom: 1.4rem; }
+    .overlay-sub   { font-size: 1rem; color: var(--text-muted); margin-bottom: 1.4rem; }
     .overlay-score { font-size: 1.1rem; color: var(--text); margin-bottom: 1.4rem; }
 
     .overlay-btn {
@@ -255,48 +149,55 @@
     /* ── Hint text ── */
     .hint {
       font-size: 0.78rem;
-      color: var(--muted);
+      color: var(--text-muted);
       text-align: center;
-      padding: 0.6rem 1rem 0;
     }
   </style>
 </head>
 <body>
 
-  <nav>
-    <a class="back-link" href="index.html">&#8592; Hub</a>
-    <div class="nav-title">2048</div>
-    <div style="width:48px"></div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
   </nav>
 
-  <div class="score-row">
-    <div class="score-box">
-      <div class="score-label">Score</div>
-      <div class="score-value" id="score">0</div>
-    </div>
-    <div class="score-box">
-      <div class="score-label">Best</div>
-      <div class="score-value" id="best">0</div>
-    </div>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">2048</h1>
+        <p class="game-subtitle">Merge tiles to reach 2048 and beyond.</p>
+      </header>
+
+      <div class="board-wrap">
+        <div class="board-bg panel" id="board">
+          <div class="grid-bg" id="gridBg"></div>
+          <div class="tiles-layer" id="tilesLayer"></div>
+        </div>
+      </div>
+
+      <p class="hint text-dim text-center">Arrow keys / WASD / swipe to move tiles</p>
+
+      <button class="btn btn-primary btn-full" id="newGameBtn" style="max-width: 520px;">New Game</button>
+    </main>
+
+    <aside class="game-sidebar">
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="best">0</span>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <div class="btn-row">
-    <button class="btn" id="newGameBtn">New Game</button>
-  </div>
-
-  <div class="board-wrap">
-    <div class="board-bg" id="board">
-      <!-- background cells -->
-      <div class="grid-bg" id="gridBg"></div>
-      <!-- tile overlay -->
-      <div class="tiles-layer" id="tilesLayer"></div>
-    </div>
-  </div>
-
-  <p class="hint">Arrow keys / WASD / swipe to move tiles</p>
-
-  <!-- Game Over Overlay -->
-  <div class="overlay" id="overOverlay">
+  <div class="game-modal" id="overOverlay">
     <div class="overlay-box">
       <div class="overlay-emoji">😵</div>
       <div class="overlay-title">Game Over</div>
@@ -306,8 +207,7 @@
     </div>
   </div>
 
-  <!-- Win Overlay -->
-  <div class="overlay" id="winOverlay">
+  <div class="game-modal" id="winOverlay">
     <div class="overlay-box">
       <div class="overlay-emoji">🏆</div>
       <div class="overlay-title">You Win!</div>
