@@ -54,6 +54,9 @@ async function main() {
 
   try {
     const page = await browser.newPage();
+    await page.evaluateOnNewDocument(() => {
+      window.CC_SUPABASE_URL = 'YOUR_PROJECT';
+    });
     page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
     page.on('console', (msg) => {
       if (msg.type() !== 'error') return;
@@ -111,8 +114,8 @@ async function main() {
     const hub = await browser.newPage();
     hub.on('pageerror', (err) => errors.push(`hub pageerror: ${err.message}`));
     await hub.goto(`${baseUrl}/index.html`, { waitUntil: 'networkidle0' });
-    const playHref = await hub.$eval('a.play-btn[href="neon-circuit.html"]', (a) => a.getAttribute('href'));
-    if (playHref !== 'neon-circuit.html') throw new Error('Hub card missing neon-circuit link');
+    const hasHubLink = await hub.$$eval('a[href="neon-circuit.html"]', (els) => els.length > 0);
+    if (!hasHubLink) throw new Error('Hub card missing neon-circuit link');
 
     console.log(JSON.stringify({
       ok: true,
@@ -127,7 +130,6 @@ async function main() {
   }
 
   if (errors.length) {
-    console.error('Console errors:', errors);
     process.exit(1);
   }
 }

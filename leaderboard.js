@@ -136,5 +136,5 @@ const Leaderboard = (() => {
     el.innerHTML = rows || '<p class="lb-empty">Play a game to set scores!</p>';
   }
 
-  return { saveScore, getScores, getBest, getAllBest, renderWidget, renderHubSummary, ALL_GAMES };
+  return { saveScore, getScores, getBest, getAllBest, getActiveGames, renderWidget, renderHubSummary, ALL_GAMES };
 })();
