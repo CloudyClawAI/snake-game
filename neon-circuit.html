@@ -1127,15 +1127,6 @@
       if (car.t < 0) car.t += 1;
 
       detectLapCrossing();
-      placeCarOnTrack();
-
-      // Visual tilt/lean
-      const targetRoll = -steer * 0.25;
-      carGroup.rotation.z = THREE.MathUtils.lerp(carGroup.rotation.z, targetRoll, 0.1);
-      
-      // Pitch based on speed/accel (simple)
-      const targetPitch = (gas ? -0.05 : (brake ? 0.05 : 0));
-      carGroup.rotation.x = THREE.MathUtils.lerp(carGroup.rotation.x, targetPitch, 0.1);
     }
 
     function updateChaseCamera(dt) {
@@ -1182,20 +1173,6 @@
       if (trailPoints.length > TRAIL_MAX) trailPoints.pop();
 
       const posAttr = trailMesh.geometry.attributes.position;
-      for (let i = 0; i < TRAIL_MAX; i++) {
-        if (i < trailPoints.length - 1) {
-          const p1 = trailPoints[i];
-          const p2 = trailPoints[i + 1];
-          
-          // Segment i: 2 triangles (6 vertices)
-          // But we are using a simple strip-like approach with Mesh (need 6 vertices per segment if not using Index)
-          // For simplicity, let's just use 2 vertices per "step" and we'd need a better geometry.
-          // Actually, let's just update the positions and use a different geometry type if needed.
-          // A better way for a trail is a Ribbon. 
-          // Let's just use a simple BufferGeometry with 2*TRAIL_MAX vertices and update them.
-        }
-      }
-      // Re-implementing updateTrail more robustly:
       const positions = posAttr.array;
       for (let i = 0; i < TRAIL_MAX; i++) {
         const p = trailPoints[i] || trailPoints[trailPoints.length - 1] || { left: carGroup.position, right: carGroup.position };
@@ -1238,6 +1215,12 @@
       }
 
       placeCarOnTrack();
+
+      // Apply visual tilt after lookAt so it isn't overwritten by placeCarOnTrack
+      const steerForTilt = frameInput.steer;
+      carGroup.rotation.z = THREE.MathUtils.lerp(carGroup.rotation.z, -steerForTilt * 0.25, 0.1);
+      carGroup.rotation.x = THREE.MathUtils.lerp(carGroup.rotation.x, (frameInput.gas ? -0.05 : (frameInput.brake ? 0.05 : 0)), 0.1);
+
       updateChaseCamera(dt);
       updateTrail();
       updateAudio();
