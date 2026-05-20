@@ -4,85 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Pinball — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
   <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    header {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.7rem 1.25rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    header h1 {
-      font-size: clamp(1rem, 4vw, 1.3rem);
-      letter-spacing: 0.06em;
-      color: #fff;
-      text-shadow: 0 0 20px var(--accent-glow);
-    }
-
-    header h1 span { color: var(--accent); }
-
-    .back-link {
-      text-decoration: none;
-      color: var(--muted);
-      font-size: 0.85rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.3rem 0.75rem;
-      transition: color 0.15s, border-color 0.15s;
-    }
-    .back-link:hover { color: var(--accent); border-color: var(--accent); }
-
-    #hud {
-      display: flex;
-      gap: 1.5rem;
-      align-items: center;
-      justify-content: center;
-      padding: 0.4rem 1rem;
-      font-size: clamp(0.73rem, 2.5vw, 0.88rem);
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      flex-shrink: 0;
-      flex-wrap: wrap;
-    }
-
-    #hud span { color: #fff; font-weight: 700; }
+    body { overflow: hidden; }
 
     #canvas-wrap {
-      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
+      min-height: 50vh;
       padding: 0.25rem;
-      min-height: 0;
     }
 
     canvas {
@@ -95,11 +29,8 @@
     }
 
     .controls-hint {
-      position: absolute;
-      bottom: 1rem;
-      left: 1rem;
       font-size: 0.75rem;
-      color: var(--muted);
+      color: var(--text-muted);
       pointer-events: none;
     }
 
@@ -110,25 +41,49 @@
 </head>
 <body>
 
-<header>
-  <h1>Pin<span>ball</span></h1>
-  <a class="back-link" href="index.html">← Hub</a>
-</header>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
+  </nav>
 
-<div id="hud">
-  SCORE: <span id="score-val">0</span>&nbsp;&nbsp;
-  HI: <span id="hi-val">0</span>&nbsp;&nbsp;
-  BALLS: <span id="balls-val">3</span>&nbsp;&nbsp;
-  MULT: <span id="mult-val">1x</span>
-</div>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">PINBALL</h1>
+        <p class="game-subtitle">Classic arcade pinball with bumpers, ramps, and multiball.</p>
+      </header>
 
-<div id="canvas-wrap">
-  <canvas id="gc"></canvas>
-</div>
+      <div class="stat-grid" id="hud">
+        <div class="stat-tile">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score-val">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="hi-val">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Balls</span>
+          <span class="stat-value" id="balls-val">3</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Mult</span>
+          <span class="stat-value" id="mult-val">1x</span>
+        </div>
+      </div>
 
-<div class="controls-hint">
-  Z: Left Flipper | /: Right Flipper | SPACE: Plunger
-</div>
+      <div class="canvas-container" id="canvas-wrap">
+        <canvas id="gc"></canvas>
+      </div>
+
+      <div class="controls-hint text-dim text-center mt-4">
+        Z: Left Flipper | /: Right Flipper | SPACE: Plunger
+      </div>
+    </main>
+  </div>
 
 <script src="leaderboard.js"></script>
 <script src="leaderboard-cloud.js"></script>

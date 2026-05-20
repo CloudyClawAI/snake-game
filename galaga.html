@@ -4,50 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Galaga — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ff0044" />
   <link rel="stylesheet" href="design-system.css">
   <style>
     :root {
       --bg: #000005;
       --accent: #ff0044;
+      --accent-hi: #ff3366;
       --accent-glow: rgba(255, 0, 68, 0.3);
     }
 
     body {
       background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       overflow: hidden;
       touch-action: none;
-    }
-
-    #hud {
-      display: flex;
-      width: 100%;
-      max-width: 800px;
-      justify-content: space-between;
-      padding: 1rem;
-      font-family: var(--font-mono);
-      color: #fff;
-      z-index: 5;
-    }
-
-    .stat-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .stat-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-    .stat-value {
-      font-size: 1.2rem;
-      font-weight: bold;
     }
 
     #canvas-wrap {
@@ -141,39 +112,54 @@
 </head>
 <body>
 
-<a href="index.html" class="back-link">← Hub</a>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
+  </nav>
 
-<div id="hud">
-  <div class="stat-box">
-    <div class="stat-label">1UP</div>
-    <div class="stat-value" id="score-val">00</div>
-  </div>
-  <div class="stat-box">
-    <div class="stat-label">High Score</div>
-    <div class="stat-value" id="hi-val">00</div>
-  </div>
-  <div class="stat-box">
-    <div class="stat-label">Stage</div>
-    <div class="stat-value" id="stage-val">1</div>
-  </div>
-</div>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">GALAGA</h1>
+        <p class="game-subtitle">Dodge enemy fire and clear formation waves.</p>
+      </header>
 
-<div id="canvas-wrap">
-  <canvas id="gameCanvas"></canvas>
-  <div id="overlay">
-    <h2 id="overlay-title">GALAGA</h2>
-    <p id="overlay-desc">Press Start to Play</p>
-    <button id="start-btn">START</button>
-  </div>
-</div>
+      <div class="stat-grid" id="hud">
+        <div class="stat-tile">
+          <span class="stat-label">1UP</span>
+          <span class="stat-value" id="score-val">00</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">High Score</span>
+          <span class="stat-value" id="hi-val">00</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Stage</span>
+          <span class="stat-value" id="stage-val">1</span>
+        </div>
+      </div>
 
-<div id="mobile-controls">
-  <div class="mob-row">
-    <button class="mob-btn" id="btn-left">◀</button>
-    <button class="mob-btn" id="btn-right">▶</button>
+      <div class="canvas-container" id="canvas-wrap">
+        <canvas id="gameCanvas"></canvas>
+        <div id="overlay" class="overlay">
+          <h2 class="overlay-title" id="overlay-title">GALAGA</h2>
+          <div class="overlay-body" id="overlay-desc">Press Start to Play</div>
+          <button class="btn btn-primary btn-lg" id="start-btn">START</button>
+        </div>
+      </div>
+
+      <div id="mobile-controls" class="touch-controls">
+        <div class="mob-row">
+          <button class="mob-btn control-btn" id="btn-left">◀</button>
+          <button class="mob-btn control-btn" id="btn-right">▶</button>
+        </div>
+        <button class="mob-btn control-btn wide" id="fire-btn">FIRE</button>
+      </div>
+    </main>
   </div>
-  <button class="mob-btn" id="fire-btn">FIRE</button>
-</div>
 
 <script src="leaderboard.js"></script>
 <script src="leaderboard-cloud.js"></script>

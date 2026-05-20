@@ -112,29 +112,55 @@
 </style>
 </head>
 <body>
-<div id="header">
-  <h1>MAZE MUNCHER</h1>
-  <div class="stat">SCORE <span id="score-val">0</span></div>
-  <div class="stat">HIGH <span id="hi-val">0</span></div>
-  <div class="stat">LEVEL <span id="level-val">1</span></div>
-  <div id="lives-display"></div>
-</div>
 
-<div id="canvas-wrap">
-  <canvas id="c"></canvas>
-  <div id="overlay">
-    <h2 id="ov-title">MAZE MUNCHER</h2>
-    <p id="ov-sub">Eat all dots. Avoid ghosts!</p>
-    <p id="ov-info">Arrow Keys / WASD to move</p>
-    <button id="ov-btn">START</button>
+<nav class="nav-bar">
+  <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Games</a>
   </div>
-</div>
+</nav>
 
-<div id="touch-controls">
-  <div class="touch-btn" id="btn-up">▲</div>
-  <div class="touch-btn" id="btn-down">▼</div>
-  <div class="touch-btn" id="btn-left">◀</div>
-  <div class="touch-btn" id="btn-right">▶</div>
+<div class="game-shell">
+  <main class="game-main">
+    <header class="game-header">
+      <a href="index.html" class="back-link">← Hub</a>
+      <h1 class="game-title">MAZE MUNCHER</h1>
+      <p class="game-subtitle">Eat all dots and avoid the ghosts.</p>
+    </header>
+
+    <div class="stat-grid" id="header">
+      <div class="stat-tile">
+        <span class="stat-label">Score</span>
+        <span class="stat-value" id="score-val">0</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-label">High</span>
+        <span class="stat-value" id="hi-val">0</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-label">Level</span>
+        <span class="stat-value" id="level-val">1</span>
+      </div>
+      <div class="stat-tile" id="lives-display"></div>
+    </div>
+
+    <div class="canvas-container" id="canvas-wrap">
+      <canvas id="c"></canvas>
+      <div id="overlay" class="overlay">
+        <h2 class="overlay-title" id="ov-title">MAZE MUNCHER</h2>
+        <div class="overlay-body" id="ov-sub">Eat all dots. Avoid ghosts!</div>
+        <div class="overlay-body text-dim" id="ov-info">Arrow Keys / WASD to move</div>
+        <button class="btn btn-primary btn-lg" id="ov-btn">START</button>
+      </div>
+    </div>
+
+    <div id="touch-controls">
+      <div class="touch-btn" id="btn-up">▲</div>
+      <div class="touch-btn" id="btn-down">▼</div>
+      <div class="touch-btn" id="btn-left">◀</div>
+      <div class="touch-btn" id="btn-right">▶</div>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -947,10 +973,6 @@ updateHUD();
 showOverlay('MAZE MUNCHER', 'Eat all dots, avoid ghosts!', '↑↓←→ / WASD to move | P to pause', 'START');
 initLevel(); // so the maze renders on the canvas behind the overlay
 startLoop();
-// back-link
-const _bl = document.createElement('a');
-_bl.href = 'index.html'; _bl.className = 'back-link'; _bl.textContent = '← Hub';
-document.body.prepend(_bl);
 </script>
 <script src="leaderboard.js"></script>
   <script src="leaderboard-cloud.js"></script>

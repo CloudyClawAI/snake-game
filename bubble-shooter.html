@@ -4,117 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bubble Shooter — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    header {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.25rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-
-    header a {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      transition: color 0.15s;
-    }
-
-    header a:hover { color: #9b8fff; }
-
-    header h1 {
-      font-size: 1.15rem;
-      letter-spacing: 0.08em;
-      color: #fff;
-      text-shadow: 0 0 20px var(--accent-glow);
-    }
-
-    #hud {
-      display: flex;
-      gap: 1.5rem;
-      font-size: 0.82rem;
-      color: var(--muted);
-    }
-
-    #hud span { color: var(--text); font-weight: 700; }
-
     #game-wrap {
-      flex: 1;
       display: flex;
       align-items: flex-start;
       justify-content: center;
       width: 100%;
-      padding: 0.75rem 0.5rem;
     }
 
     .game-stage {
       position: relative;
       display: inline-block;
       line-height: 0;
+      width: 100%;
     }
 
-    canvas {
-      display: block;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+    #game-wrap canvas {
       touch-action: none;
       cursor: crosshair;
-      max-width: 100%;
-    }
-
-    /* Overlay */
-    .overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1.1rem;
-      background: rgba(10,10,20,0.85);
-      border-radius: 8px;
-    }
-
-    .overlay h2 {
-      font-size: clamp(1.6rem, 5vw, 2.4rem);
-      color: #fff;
-      text-shadow: 0 0 30px var(--accent);
-      letter-spacing: 0.08em;
-    }
-
-    .overlay p {
-      color: var(--muted);
-      font-size: 0.92rem;
-      text-align: center;
-      max-width: 300px;
-      line-height: 1.65;
+      background: var(--bg);
     }
 
     .overlay .score-display {
@@ -122,60 +33,69 @@
       color: var(--accent);
       font-weight: 700;
     }
-
-    .btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 0.7rem 2rem;
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.15s, transform 0.1s;
-    }
-
-    .btn:hover { background: #9b8fff; transform: scale(1.04); }
-    .btn:active { transform: scale(0.97); }
   </style>
 </head>
 <body>
 
-<header>
-  <a href="index.html">← Back to Hub</a>
-  <h1>BUBBLE SHOOTER</h1>
-  <div id="hud">
-    <div>SCORE <span id="score-display">0</span></div>
-    <div>BEST <span id="hi-display">0</span></div>
-    <div>MISSES <span id="misses-display">0</span>/3</div>
-  </div>
-</header>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
+  </nav>
 
-<div id="game-wrap">
-  <div class="game-stage">
-  <canvas id="c"></canvas>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">BUBBLE SHOOTER</h1>
+        <p class="game-subtitle">Aim and match three or more bubbles to clear the board.</p>
+      </header>
 
-  <div class="overlay" id="start-screen">
-    <h2>BUBBLE SHOOTER</h2>
-    <p>
-      Aim with mouse or touch.<br>
-      Click / tap to fire.<br>
-      Match 3+ same-color bubbles to pop them!<br>
-      3 misses = game over.
-    </p>
-    <button class="btn" id="start-btn">PLAY</button>
-  </div>
+      <div class="stat-grid" id="hud">
+        <div class="stat-tile">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score-display">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="hi-display">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Misses</span>
+          <span class="stat-value" id="misses-display">0</span>/3
+        </div>
+      </div>
 
-  <div class="overlay" id="gameover-screen" style="display:none">
-    <h2 id="go-title">GAME OVER</h2>
-    <div class="score-display" id="go-score">0</div>
-    <p id="go-hi-msg"></p>
-    <button class="btn" id="restart-btn">PLAY AGAIN</button>
+      <div class="canvas-container" id="game-wrap">
+        <div class="game-stage">
+          <canvas id="c"></canvas>
+
+          <div class="overlay" id="start-screen">
+            <h2 class="overlay-title">BUBBLE SHOOTER</h2>
+            <div class="overlay-body">
+              Aim with mouse or touch.<br>
+              Click / tap to fire.<br>
+              Match 3+ same-color bubbles to pop them!<br>
+              3 misses = game over.
+            </div>
+            <button class="btn btn-primary btn-lg" id="start-btn">PLAY</button>
+          </div>
+
+          <div class="overlay" id="gameover-screen" style="display:none">
+            <h2 class="overlay-title" id="go-title">GAME OVER</h2>
+            <div class="score-display" id="go-score">0</div>
+            <div class="overlay-body" id="go-hi-msg"></div>
+            <button class="btn btn-primary btn-lg" id="restart-btn">PLAY AGAIN</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-dim text-center mt-4" style="font-size: 0.85rem;">
+        Mouse or touch aim &nbsp;|&nbsp; Click / tap to fire
+      </div>
+    </main>
   </div>
-  </div>
-</div>
 
 <script src="leaderboard.js"></script>
   <script src="leaderboard-cloud.js"></script>

@@ -11,68 +11,14 @@
   <meta property="og:description" content="A polished Match-3 puzzle game. Swap gems to create matches of 3 or more and score points!" />
   <meta property="og:type" content="website" />
   <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/gem-crush.html" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #0f0a1a;
-      --surface: #1a1429;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
       --accent: #ff33cc;
-      --accent-glow: #ff33cc44;
+      --accent-hi: #ff66dd;
+      --accent-glow: rgba(255, 51, 204, 0.25);
+      --bg: #0f0a1a;
     }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow-x: hidden;
-    }
-
-    header {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.25rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      z-index: 10;
-    }
-
-    header a {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      transition: color 0.15s;
-    }
-
-    header a:hover { color: #ff66dd; }
-
-    header h1 {
-      font-size: 1.15rem;
-      letter-spacing: 0.08em;
-      color: #fff;
-      text-shadow: 0 0 20px var(--accent-glow);
-    }
-
-    #hud {
-      display: flex;
-      gap: 1.5rem;
-      font-size: 0.82rem;
-      color: var(--muted);
-      align-items: center;
-    }
-
-    #hud span { color: var(--text); font-weight: 700; }
 
     #hud-status {
       display: flex;
@@ -84,21 +30,14 @@
     #hud-mode-label {
       text-transform: uppercase;
       font-size: 0.65rem;
-      color: var(--muted);
-    }
-
-    #hud-mode-value {
-      color: var(--text);
-      font-weight: 700;
+      color: var(--text-muted);
     }
 
     #game-wrap {
-      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
-      padding: 1rem;
     }
 
     .game-stage {
@@ -118,20 +57,11 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
 
-    /* Overlay */
-    .overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      background: rgba(15,10,26,0.9);
-      border-radius: 12px;
+    .game-stage .overlay {
       z-index: 20;
       text-align: center;
       padding: 2rem;
+      background: rgba(15,10,26,0.9);
     }
 
     .mode-selector {
@@ -160,30 +90,10 @@
     }
 
     .mode-detail {
-      color: var(--muted);
+      color: var(--text-muted);
       font-size: 0.95rem;
       text-align: center;
       line-height: 1.4;
-    }
-
-    .mode-detail strong {
-      color: var(--text);
-      font-weight: 700;
-    }
-
-    .overlay h2 {
-      font-size: clamp(2rem, 8vw, 3rem);
-      color: #fff;
-      text-shadow: 0 0 30px var(--accent);
-      letter-spacing: 0.1em;
-      margin-bottom: 0.5rem;
-    }
-
-    .overlay p {
-      color: var(--muted);
-      font-size: 1rem;
-      max-width: 320px;
-      line-height: 1.6;
     }
 
     .overlay .score-display {
@@ -192,24 +102,6 @@
       font-weight: 800;
       margin: 1rem 0;
     }
-
-    .btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      padding: 0.8rem 2.5rem;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      box-shadow: 0 4px 15px var(--accent-glow);
-    }
-
-    .btn:hover { background: #ff66dd; transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
-    .btn:active { transform: translateY(0); }
 
     #share-btn {
       background: transparent;
@@ -220,58 +112,75 @@
     #share-btn:hover { background: var(--accent-glow); color: #fff; }
 
     @media (max-width: 480px) {
-      header h1 { font-size: 1rem; }
-      #hud { gap: 0.75rem; font-size: 0.75rem; }
-      .overlay { padding: 1rem; }
+      .game-stage .overlay { padding: 1rem; }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <a href="index.html">← Back</a>
-  <h1>GEM CRUSH</h1>
-  <div id="hud">
-    <div>SCORE <span id="score-display">0</span></div>
-    <div>BEST <span id="hi-display">0</span></div>
-    <div id="hud-status">
-      <span id="hud-mode-label">TIME</span>
-      <span id="hud-mode-value">60s</span>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
     </div>
-  </div>
-</header>
+  </nav>
 
-<div id="game-wrap">
-  <div class="game-stage">
-  <canvas id="c"></canvas>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">GEM CRUSH</h1>
+        <p class="game-subtitle">Match-3 puzzle with timed and move-limited modes.</p>
+      </header>
 
-  <div class="overlay" id="start-screen">
-    <h2>GEM CRUSH</h2>
-    <p>
-      Swap adjacent gems to match 3 or more of the same kind.<br><br>
-      Match 4 or 5 for bonus points!<br>
-      Keep matching before the time runs out.
-    </p>
-    <div class="mode-selector">
-      <button class="mode-btn active" data-mode="timed">Timed: 60s</button>
-      <button class="mode-btn" data-mode="moves">Moves: 30 / Goal 1500</button>
-    </div>
-    <p class="mode-detail" id="mode-detail">
-      Timed mode gives you 60 seconds to rack up combos and beat your high score.
-    </p>
-    <button class="btn" id="start-btn">START GAME</button>
-  </div>
+      <div class="stat-grid" id="hud">
+        <div class="stat-tile">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score-display">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="hi-display">0</span>
+        </div>
+        <div class="stat-tile" id="hud-status">
+          <span class="stat-label" id="hud-mode-label">Time</span>
+          <span class="stat-value" id="hud-mode-value">60s</span>
+        </div>
+      </div>
 
-  <div class="overlay" id="gameover-screen" style="display:none">
-    <h2 id="go-title">TIME'S UP!</h2>
-    <div class="score-display" id="go-score">0</div>
-    <p id="go-hi-msg"></p>
-    <p class="mode-detail" id="go-mode-detail"></p>
-    <button class="btn" id="restart-btn">PLAY AGAIN</button>
-    <button class="btn" id="share-btn">SHARE SCORE</button>
+      <div class="canvas-container" id="game-wrap">
+        <div class="game-stage">
+          <canvas id="c"></canvas>
+
+          <div class="overlay" id="start-screen">
+            <h2 class="overlay-title">GEM CRUSH</h2>
+            <div class="overlay-body">
+              Swap adjacent gems to match 3 or more of the same kind.<br><br>
+              Match 4 or 5 for bonus points!<br>
+              Keep matching before the time runs out.
+            </div>
+            <div class="mode-selector">
+              <button class="mode-btn active" data-mode="timed">Timed: 60s</button>
+              <button class="mode-btn" data-mode="moves">Moves: 30 / Goal 1500</button>
+            </div>
+            <p class="mode-detail" id="mode-detail">
+              Timed mode gives you 60 seconds to rack up combos and beat your high score.
+            </p>
+            <button class="btn btn-primary btn-lg" id="start-btn">START GAME</button>
+          </div>
+
+          <div class="overlay" id="gameover-screen" style="display:none">
+            <h2 class="overlay-title" id="go-title">TIME'S UP!</h2>
+            <div class="score-display" id="go-score">0</div>
+            <div class="overlay-body" id="go-hi-msg"></div>
+            <p class="mode-detail" id="go-mode-detail"></p>
+            <button class="btn btn-primary btn-lg" id="restart-btn">PLAY AGAIN</button>
+            <button class="btn btn-secondary" id="share-btn">SHARE SCORE</button>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
-  </div>
-</div>
 
 <script src="leaderboard.js"></script>
   <script src="leaderboard-cloud.js"></script>

@@ -4,80 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Typing Speed Test — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c6aff" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #0a0a14;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
-      --accent: #7c6aff;
-      --accent-glow: #7c6aff44;
       --correct: #4ade80;
       --incorrect: #f87171;
       --correct-bg: #4ade8018;
       --incorrect-bg: #f8717118;
     }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      flex-shrink: 0;
-    }
-
-    .back-link {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: color 0.15s;
-    }
-    .back-link:hover { color: var(--accent); }
-
-    .logo {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.04em;
-    }
-    .logo span { color: var(--accent); }
-
-    .best-score {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-    .best-score strong { color: var(--accent); }
-
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.5rem 1rem 2rem;
-      gap: 1.2rem;
+    .game-main {
       max-width: 860px;
       margin: 0 auto;
       width: 100%;
     }
 
-    h1 {
+    .best-score {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .best-score strong { color: var(--accent); }
+
+    .game-main > h1,
+    .typing-title {
       font-size: clamp(1.4rem, 4vw, 2rem);
       color: #fff;
       text-align: center;
@@ -107,7 +58,7 @@
 
     .control-group label {
       font-size: 0.8rem;
-      color: var(--muted);
+      color: var(--text-muted);
       white-space: nowrap;
     }
 
@@ -124,7 +75,7 @@
       border-radius: 6px;
       font-size: 0.82rem;
       border: 1px solid transparent;
-      color: var(--muted);
+      color: var(--text-muted);
       transition: all 0.15s;
     }
     .radio-group input[type="radio"]:checked + label {
@@ -177,7 +128,7 @@
 
     .stat-label {
       font-size: 0.72rem;
-      color: var(--muted);
+      color: var(--text-muted);
       margin-top: 0.2rem;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -219,7 +170,7 @@
 
     .char.correct { color: var(--correct); }
     .char.incorrect { color: var(--incorrect); background: var(--incorrect-bg); border-radius: 2px; }
-    .char.untyped { color: var(--muted); }
+    .char.untyped { color: var(--text-muted); }
     .char.current-cursor {
       border-left: 2px solid var(--accent);
       margin-left: -1px;
@@ -289,8 +240,8 @@
       justify-content: center;
     }
 
-    /* Overlay */
-    .overlay {
+    /* Result overlay */
+    .result-overlay {
       display: none;
       position: fixed;
       inset: 0;
@@ -301,7 +252,7 @@
       justify-content: center;
       padding: 1rem;
     }
-    .overlay.active { display: flex; }
+    .result-overlay.active { display: flex; }
 
     .result-card {
       background: var(--surface);
@@ -344,7 +295,7 @@
 
     .result-stat .lbl {
       font-size: 0.75rem;
-      color: var(--muted);
+      color: var(--text-muted);
       margin-top: 0.3rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -410,18 +361,25 @@
 </head>
 <body>
 
-<header>
-  <a class="back-link" href="index.html">&#8592; Hub</a>
-  <div class="logo">Cloudy<span>Claw</span></div>
-  <div class="best-score">Best: <strong id="bestDisplay">—</strong> WPM</div>
-</header>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+      <span class="best-score">Best: <strong id="bestDisplay">—</strong> WPM</span>
+    </div>
+  </nav>
 
-<main>
-  <h1>Typing Speed Test</h1>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">Typing Speed Test</h1>
+        <p class="game-subtitle">Measure WPM and accuracy across 15 difficulty levels.</p>
+      </header>
 
   <div class="controls">
     <div class="control-group">
-      <span style="font-size:0.8rem;color:var(--muted);margin-right:0.2rem">Duration:</span>
+      <span style="font-size:0.8rem;color:var(--text-muted);margin-right:0.2rem">Duration:</span>
       <div class="radio-group">
         <input type="radio" name="duration" id="d30" value="30">
         <label for="d30">30s</label>
@@ -493,12 +451,13 @@
   </div>
 
   <div class="btn-row">
-    <button class="btn" id="startBtn">Start Test</button>
+    <button class="btn btn-primary" id="startBtn">Start Test</button>
   </div>
-</main>
+    </main>
+  </div>
 
 <!-- Result overlay -->
-<div class="overlay" id="resultOverlay">
+<div class="result-overlay" id="resultOverlay">
   <div class="result-card">
     <h2>Test Complete!</h2>
     <div id="newBestMsg" class="new-best" style="display:none">New Best Score!</div>

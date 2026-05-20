@@ -4,93 +4,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Missile Command — CloudyClaw Games</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ff3e3e" />
+  <link rel="stylesheet" href="design-system.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #05050a;
-      --surface: #12121f;
-      --border: #ffffff14;
-      --text: #e0e0e0;
-      --muted: #888;
       --accent: #ff3e3e;
-      --accent-glow: #ff3e3e44;
+      --accent-hi: #ff6666;
+      --accent-glow: rgba(255, 62, 62, 0.3);
+      --bg: #05050a;
       --city-color: #44dd88;
       --battery-color: #ffcc44;
     }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    header {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.25rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      z-index: 10;
-    }
-
-    header h1 {
-      font-size: clamp(1rem, 4vw, 1.3rem);
-      letter-spacing: 0.06em;
-      color: #fff;
-      text-shadow: 0 0 20px var(--accent-glow);
-    }
-
-    header h1 span { color: var(--accent); }
-
-    .back-link {
-      text-decoration: none;
-      color: var(--muted);
-      font-size: 0.85rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.3rem 0.75rem;
-      transition: color 0.15s, border-color 0.15s;
-    }
-    .back-link:hover { color: var(--accent); border-color: var(--accent); }
-
-    #hud {
-      display: flex;
-      gap: 1.5rem;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5rem 1rem;
-      font-size: clamp(0.75rem, 2.5vw, 0.9rem);
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      flex-shrink: 0;
-      background: rgba(0,0,0,0.3);
-      width: 100%;
-      z-index: 10;
-    }
-
-    #hud span { color: #fff; font-weight: 700; }
+    body { overflow: hidden; }
 
     #canvas-wrap {
       position: relative;
-      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
+      min-height: 50vh;
       background: #000;
       cursor: crosshair;
     }
 
-    canvas {
+    #canvas-wrap canvas {
       display: block;
       background: #000;
       touch-action: none;
@@ -100,10 +40,8 @@
       display: none;
       width: 100%;
       padding: 0.5rem;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
       text-align: center;
-      color: var(--muted);
+      color: var(--text-muted);
       font-size: 0.8rem;
     }
 
@@ -114,25 +52,49 @@
 </head>
 <body>
 
-<header>
-  <h1>Missile<span>Command</span></h1>
-  <a class="back-link" href="index.html">← Hub</a>
-</header>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
+  </nav>
 
-<div id="hud">
-  SCORE: <span id="score-val">0</span>&nbsp;&nbsp;
-  HI: <span id="hi-val">0</span>&nbsp;&nbsp;
-  WAVE: <span id="wave-val">1</span>&nbsp;&nbsp;
-  AMMO: <span id="ammo-val">30</span>
-</div>
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">MISSILE COMMAND</h1>
+        <p class="game-subtitle">Tap the sky to intercept incoming warheads before they reach your cities.</p>
+      </header>
 
-<div id="canvas-wrap">
-  <canvas id="gc"></canvas>
-</div>
+      <div class="stat-grid" id="hud">
+        <div class="stat-tile">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score-val">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="hi-val">0</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Wave</span>
+          <span class="stat-value" id="wave-val">1</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Ammo</span>
+          <span class="stat-value" id="ammo-val">30</span>
+        </div>
+      </div>
 
-<div id="mobile-controls">
-  Tap the sky to launch defense missiles
-</div>
+      <div class="canvas-container" id="canvas-wrap">
+        <canvas id="gc"></canvas>
+      </div>
+
+      <div id="mobile-controls" class="text-dim text-center mt-4">
+        Tap the sky to launch defense missiles
+      </div>
+    </main>
+  </div>
 
 <script src="leaderboard.js"></script>
 <script src="leaderboard-cloud.js"></script>

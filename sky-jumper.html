@@ -103,25 +103,26 @@
       padding: 6px 0 2px;
     }
 
-    .back-link {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      color: #fff;
-      text-decoration: none;
-      font-weight: bold;
-      z-index: 15;
-      background: rgba(0,0,0,0.3);
-      padding: 4px 12px;
-      border-radius: 20px;
-    }
   </style>
 </head>
 <body>
 
-  <a class="back-link" href="index.html">← Hub</a>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-brand">Cloudy<span>Claw</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Games</a>
+    </div>
+  </nav>
 
-  <div style="padding-top: 56px; width: 100%">
+  <div class="game-shell">
+    <main class="game-main">
+      <header class="game-header">
+        <a href="index.html" class="back-link">← Hub</a>
+        <h1 class="game-title">Sky Jumper</h1>
+        <p class="game-subtitle">Jump higher, shoot enemies, and beat your best height.</p>
+      </header>
+
+  <div style="width: 100%">
     <div id="game-container">
       <div class="score-display" id="score">0m</div>
       <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -148,6 +149,8 @@
         <div id="lb-widget-main"></div>
       </div>
     </div>
+  </div>
+    </main>
   </div>
 
   <script src="leaderboard.js"></script>
