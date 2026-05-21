@@ -40,6 +40,7 @@
         <button class="category-chip" data-category="Classic">Classic</button>
         <button class="category-chip" data-category="Strategy">Strategy</button>
         <button class="category-chip" data-category="Multiplayer">Multiplayer</button>
+        <button class="category-chip" data-category="Skill">Skill</button>
       </div>
     </div>
   </header>
@@ -119,9 +120,7 @@
 
       function renderFullHub(container) {
         const featured = state.games.filter(g => g.categories.includes('Featured'));
-        const arcade = state.games.filter(g => g.categories.includes('Arcade') && !g.categories.includes('Featured'));
-        const puzzle = state.games.filter(g => g.categories.includes('Puzzle') && !g.categories.includes('Featured'));
-        const classic = state.games.filter(g => g.categories.includes('Classic') && !g.categories.includes('Featured'));
+        const remaining = state.games.filter(g => !g.categories.includes('Featured'));
 
         container.style.display = 'block';
         container.innerHTML = `
@@ -133,23 +132,9 @@
           </section>
 
           <section class="hub-section mt-8">
-            <h2 class="section-title">🕹️ Arcade Classics</h2>
+            <h2 class="section-title">All Games</h2>
             <div class="shelf">
-              ${arcade.map(renderCard).join('')}
-            </div>
-          </section>
-
-          <section class="hub-section mt-8">
-            <h2 class="section-title">🧩 Puzzles & Logic</h2>
-            <div class="shelf">
-              ${puzzle.map(renderCard).join('')}
-            </div>
-          </section>
-
-          <section class="hub-section mt-8">
-            <h2 class="section-title">🏛️ Retro Vault</h2>
-            <div class="shelf">
-              ${classic.map(renderCard).join('')}
+              ${remaining.map(renderCard).join('')}
             </div>
           </section>
         `;

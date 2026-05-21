@@ -44,6 +44,7 @@
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
     .back-link {
       text-decoration: none;
@@ -416,6 +417,25 @@
     .overlay-btns { display: flex; gap: 0.8rem; justify-content: center; }
 
     @media (max-width: 400px) {
+      nav {
+        gap: 0.55rem;
+        padding: 0.65rem 0.75rem;
+      }
+
+      nav .title {
+        order: 3;
+        width: 100%;
+        font-size: 0.9rem;
+      }
+
+      .conn-status {
+        margin-left: auto;
+      }
+
+      .join-row {
+        flex-direction: column;
+      }
+
       .board { gap: 4px; padding: 5px; }
       .scoreboard { padding: 0.6rem 0.9rem; }
       .lobby-card { padding: 1.8rem 1.2rem; }

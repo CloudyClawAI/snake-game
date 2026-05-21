@@ -26,8 +26,9 @@
       box-shadow: 0 0 50px rgba(0,0,0,0.5);
       border-radius: var(--radius-card);
       overflow: hidden;
-      width: min(400px, 100vw);
-      height: 600px;
+      width: min(400px, 100%);
+      aspect-ratio: 2 / 3;
+      max-height: calc(100vh - 230px);
       margin: 0 auto;
       background: transparent;
     }
@@ -92,7 +93,7 @@
     }
 
     .lb-panel {
-      width: min(400px, 100vw);
+      width: min(400px, 100%);
       margin: 1rem auto 0;
     }
 

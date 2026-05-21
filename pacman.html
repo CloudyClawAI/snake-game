@@ -184,7 +184,7 @@
 
   // scale canvas to fit viewport
   function resizeCanvas() {
-    const maxW = Math.min(window.innerWidth, 640);
+    const maxW = Math.min(window.innerWidth - 48, 640);
     const maxH = 500; // Fixed height for pacman to avoid overflow
     const scale = Math.min(maxW / W, maxH / H);
     canvas.style.width  = (W * scale) + 'px';

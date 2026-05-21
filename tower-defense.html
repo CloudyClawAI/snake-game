@@ -38,7 +38,6 @@ h1 {
   width: 100%;
 }
 #canvas-scaler {
-  transform-origin: top left;
   flex-shrink: 0;
 }
 @keyframes pulse { from{filter:brightness(1)} to{filter:brightness(1.4)} }
@@ -165,12 +164,20 @@ canvas.height = CH;
 // ── Responsive canvas scaling ────────────────────────────────────────────────
 function applyCanvasScale() {
   const scaler = document.getElementById('canvas-scaler');
-  const avail = Math.min(window.innerWidth - 16, CW);
+  const viewportW = Math.min(
+    document.documentElement.clientWidth || window.innerWidth,
+    window.visualViewport ? window.visualViewport.width : window.innerWidth,
+    window.innerWidth
+  );
+  const avail = Math.max(260, Math.min(viewportW - 20, CW));
   const scale = avail / CW;
-  scaler.style.transform = `scale(${scale})`;
-  scaler.style.width = CW + 'px';
-  scaler.style.height = CH + 'px';
-  scaler.style.marginBottom = ((scale - 1) * CH) + 'px';
+  const cssW = Math.round(CW * scale);
+  const cssH = Math.round(CH * scale);
+  scaler.style.width = cssW + 'px';
+  scaler.style.height = cssH + 'px';
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  scaler.style.marginBottom = '0';
 }
 applyCanvasScale();
 window.addEventListener('resize', applyCanvasScale);

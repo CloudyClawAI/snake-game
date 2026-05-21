@@ -89,10 +89,12 @@
     .stats {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .stat {
-      min-width: 80px;
+      min-width: 74px;
       padding: 8px 12px;
       border-radius: 12px;
       background: rgba(255,255,255,0.05);
@@ -189,6 +191,34 @@
     @media (max-width: 900px) {
       .app { grid-template-columns: 1fr; }
       .side { display: none; }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        align-items: stretch;
+        overflow-y: auto;
+      }
+
+      .app {
+        width: 100%;
+        margin: 3.5rem 0 0;
+        padding: 0 0.75rem 1rem;
+      }
+
+      .hud {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .stats {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stat {
+        min-width: 0;
+      }
     }
   </style>
 </head>

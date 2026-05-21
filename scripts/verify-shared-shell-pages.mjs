@@ -78,7 +78,7 @@ async function checkPage(browser, baseUrl, route, viewport) {
 
   try {
     await page.setViewport(viewport);
-    await page.goto(`${baseUrl}/${route}`, { waitUntil: 'networkidle0', timeout: 30000 });
+    await page.goto(`${baseUrl}/${route}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await new Promise((r) => setTimeout(r, 350));
 
     const structural = await page.evaluate(() => {
