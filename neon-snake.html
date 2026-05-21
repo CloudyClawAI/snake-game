@@ -968,7 +968,9 @@
     resetGame();
     // back-link injection
     const bl = document.createElement('a');
-    bl.href = 'index.html'; bl.className = 'back-link'; bl.textContent = '← Hub';
+    bl.href = 'index.html';
+    bl.className = 'back-link';
+    bl.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13l-5-5 5-5"/></svg>Back to Hub';
     document.body.prepend(bl);
     requestAnimationFrame(loop);
   </script>

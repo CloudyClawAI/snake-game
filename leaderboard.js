@@ -132,7 +132,8 @@ const Leaderboard = (() => {
     const games = getActiveGames();
     const rows = games.map(g => {
       const best = getBest(g.key);
-      return `<a class="lb-hub-row${best ? ' lb-hub-played' : ''}" href="${g.href}">` +
+      const label = best ? `${best.toLocaleString()} points` : 'No score yet';
+      return `<a class="lb-hub-row${best ? ' lb-hub-played' : ''}" href="${g.href}" aria-label="Play ${g.label}. ${label}.">` +
         `<span class="lb-hub-name">${g.label}</span>` +
         `<span class="lb-hub-score">${best ? best.toLocaleString() : '—'}</span>` +
         `</a>`;
