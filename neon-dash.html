@@ -27,16 +27,25 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg1);
       color: var(--text);
     }
 
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 20;
+    }
+
     .app {
       width: min(94vw, 1100px);
+      margin: 4rem auto 1rem;
       display: grid;
       grid-template-columns: 1fr 300px;
       gap: 20px;
@@ -53,6 +62,9 @@
     }
 
     .game-shell {
+      display: block;
+      max-width: none;
+      margin: 0;
       padding: 18px;
       position: relative;
       overflow: hidden;

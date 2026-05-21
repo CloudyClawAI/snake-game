@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Connect Four Online — CloudyClaw Games</title>
+  <link rel="stylesheet" href="design-system.css" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -28,7 +29,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: var(--font);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -112,7 +113,7 @@
     .lobby-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: var(--radius-card);
       padding: 2.4rem 2rem;
       width: 100%;
       max-width: 420px;
@@ -253,7 +254,7 @@
       gap: 1rem;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius-card);
       padding: 0.75rem 1.4rem;
       width: 100%;
       max-width: 480px;
@@ -423,14 +424,15 @@
 </head>
 <body>
 
-<nav>
+<nav class="nav-bar">
   <a class="back-link" href="index.html">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="15 18 9 12 15 6"/>
     </svg>
     Back to Hub
   </a>
-  <span class="title">Connect Four Online</span>
+  <a class="nav-brand" href="index.html">Cloudy<span>Claw</span></a>
+  <span class="title nav-link active">Connect Four Online</span>
   <span class="conn-status" id="conn-status">
     <span class="dot"></span>
     <span id="conn-label">Offline</span>
@@ -439,7 +441,7 @@
 
 <!-- ── LOBBY ─────────────────────────────────────────────── -->
 <div class="screen" id="screen-lobby">
-  <div class="lobby-card">
+  <div class="lobby-card panel">
     <div class="lobby-title">Connect Four Online</div>
     <div style="width: 100%; display: flex; flex-direction: column; gap: 1rem;">
       <button class="btn primary" id="btn-create">Create New Game</button>
@@ -455,7 +457,7 @@
 
 <!-- ── WAITING (host) ─────────────────────────────────────── -->
 <div class="screen" id="screen-waiting" hidden>
-  <div class="lobby-card">
+  <div class="lobby-card panel">
     <div class="lobby-title" style="font-size: 1.2rem;">Waiting for opponent…</div>
     <div class="spinner" style="width: 30px; height: 30px;"></div>
     <div class="invite-section">
@@ -473,7 +475,7 @@
 
 <!-- ── JOINING (guest) ────────────────────────────────────── -->
 <div class="screen" id="screen-joining" hidden>
-  <div class="lobby-card">
+  <div class="lobby-card panel">
     <div class="lobby-title" style="font-size: 1.2rem;">Connecting…</div>
     <div class="spinner" id="joining-spinner" style="width: 30px; height: 30px;"></div>
     <p class="lobby-desc">Joining the game room, please wait.</p>
@@ -484,7 +486,7 @@
 
 <!-- ── GAME ───────────────────────────────────────────────── -->
 <div id="screen-game" hidden>
-  <div class="scoreboard">
+  <div class="scoreboard panel">
     <div class="score-player p1" id="sp1">
       <div class="label"><span class="disc-dot"></span><span id="p1name">Player 1</span></div>
       <div class="val" id="score1">0</div>
@@ -513,7 +515,7 @@
 
 <!-- ── DISCONNECTED ───────────────────────────────────────── -->
 <div class="screen" id="screen-disconnected" hidden>
-  <div class="lobby-card">
+  <div class="lobby-card panel">
     <div class="lobby-title" style="font-size: 1.2rem;">Connection Lost</div>
     <p class="lobby-desc">Your opponent disconnected from the game.</p>
     <div class="overlay-btns" style="width:100%">

@@ -119,6 +119,10 @@ const Leaderboard = (() => {
       '</ol>';
   }
 
+  function render(containerId, gameKey) {
+    renderWidget(gameKey, containerId);
+  }
+
   /**
    * Renders the hub summary table (best score per game) inside `containerId`.
    */
@@ -136,5 +140,5 @@ const Leaderboard = (() => {
     el.innerHTML = rows || '<p class="lb-empty">Play a game to set scores!</p>';
   }
 
-  return { saveScore, getScores, getBest, getAllBest, getActiveGames, renderWidget, renderHubSummary, ALL_GAMES };
+  return { saveScore, getScores, getBest, getAllBest, getActiveGames, render, renderWidget, renderHubSummary, ALL_GAMES };
 })();
