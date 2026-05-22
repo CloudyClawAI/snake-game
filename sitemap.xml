@@ -21,6 +21,11 @@
     <changefreq>monthly</changefreq>
   </url>
   <url>
+    <loc>https://cloudyclawai.github.io/snake-game/neon-circuit.html</loc>
+    <priority>0.9</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
     <loc>https://cloudyclawai.github.io/snake-game/snake.html</loc>
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
@@ -37,6 +42,11 @@
   </url>
   <url>
     <loc>https://cloudyclawai.github.io/snake-game/maze.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/pacman.html</loc>
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
   </url>
@@ -76,32 +86,7 @@
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://cloudyclawai.github.io/snake-game/connect-four-online.html</loc>
-    <priority>0.8</priority>
-    <changefreq>monthly</changefreq>
-  </url>
-  <url>
     <loc>https://cloudyclawai.github.io/snake-game/memory-match.html</loc>
-    <priority>0.8</priority>
-    <changefreq>monthly</changefreq>
-  </url>
-  <url>
-    <loc>https://cloudyclawai.github.io/snake-game/space-invaders.html</loc>
-    <priority>0.8</priority>
-    <changefreq>monthly</changefreq>
-  </url>
-  <url>
-    <loc>https://cloudyclawai.github.io/snake-game/breakout.html</loc>
-    <priority>0.8</priority>
-    <changefreq>monthly</changefreq>
-  </url>
-  <url>
-    <loc>https://cloudyclawai.github.io/snake-game/typing-speed.html</loc>
-    <priority>0.8</priority>
-    <changefreq>monthly</changefreq>
-  </url>
-  <url>
-    <loc>https://cloudyclawai.github.io/snake-game/sudoku.html</loc>
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
   </url>
@@ -126,12 +111,77 @@
     <changefreq>monthly</changefreq>
   </url>
   <url>
+    <loc>https://cloudyclawai.github.io/snake-game/gem-crush.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/space-invaders.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/missile-command.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/breakout.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/typing-speed.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/sudoku.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/connect-four-online.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
     <loc>https://cloudyclawai.github.io/snake-game/frogger.html</loc>
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://cloudyclawai.github.io/snake-game/galaga.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/simon-says.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/stack-tower.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/neon-dash.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/color-flood.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/pinball.html</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://cloudyclawai.github.io/snake-game/sky-jumper.html</loc>
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
   </url>
