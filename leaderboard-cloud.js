@@ -168,6 +168,7 @@ const CloudLeaderboard = (() => {
   // ── Nickname prompt UI ───────────────────────────────────────
   // Renders a small inline form in `containerId` to set/change nickname.
   function renderNicknameForm(containerId) {
+    if (!CONFIGURED) return;
     const el = document.getElementById(containerId);
     if (!el) return;
     const current = getNickname();
@@ -178,10 +179,12 @@ const CloudLeaderboard = (() => {
       `placeholder="Enter nickname">` +
       `<button id="cc-nick-save">Save</button>` +
       `</div>`;
-    document.getElementById('cc-nick-save').addEventListener('click', () => {
-      const val = document.getElementById('cc-nick-input').value;
-      const saved = setNickname(val);
-      document.getElementById('cc-nick-input').value = saved;
+    const saveBtn = document.getElementById('cc-nick-save');
+    const nickInput = document.getElementById('cc-nick-input');
+    if (!saveBtn || !nickInput) return;
+    saveBtn.addEventListener('click', () => {
+      const saved = setNickname(nickInput.value);
+      nickInput.value = saved;
     });
   }
 

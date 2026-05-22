@@ -223,6 +223,8 @@
     </aside>
   </main>
 
+  <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
   <script>
     const canvas = document.getElementById('garden');
     const ctx = canvas.getContext('2d');
@@ -285,7 +287,13 @@
     }
 
     function loadBest() {
-      bestEl.textContent = localStorage.getItem(bestKey) || '0';
+      const legacy = Number(localStorage.getItem(bestKey) || 0);
+      const shared = typeof Leaderboard !== 'undefined' ? Leaderboard.getBest('echo-bloom') : 0;
+      const best = Math.max(legacy, shared);
+      if (typeof Leaderboard !== 'undefined' && legacy > shared) {
+        Leaderboard.saveScore('echo-bloom', legacy);
+      }
+      bestEl.textContent = String(best);
     }
 
     function playTone(index, duration = 0.28) {
@@ -423,8 +431,14 @@
           score += gained;
           round += 1;
           messageEl.textContent = `Full bloom! +${gained} points. Hybrid bonus: ${hybridBonus}.`;
-          const best = Number(localStorage.getItem(bestKey) || 0);
-          if (score > best) localStorage.setItem(bestKey, String(score));
+          const prev = Number(localStorage.getItem(bestKey) || 0);
+          if (score > prev) {
+            localStorage.setItem(bestKey, String(score));
+            if (typeof Leaderboard !== 'undefined' && score > Leaderboard.getBest('echo-bloom')) {
+              Leaderboard.saveScore('echo-bloom', score);
+            }
+            loadBest();
+          }
         } else {
           score = Math.max(0, score - 45);
           messageEl.textContent = `Chain faded at ${matched}/${sequence.length}. Adjust the path and try this melody again.`;

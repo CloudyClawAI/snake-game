@@ -215,6 +215,8 @@
 
   <button class="touch-boost" id="touch-boost" aria-label="Boost">Boost</button>
 
+  <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
@@ -275,7 +277,13 @@
     }
 
     function loadBest() {
-      bestEl.textContent = localStorage.getItem(bestKey) || '0';
+      const legacy = Number(localStorage.getItem(bestKey) || 0);
+      const shared = typeof Leaderboard !== 'undefined' ? Leaderboard.getBest('prism-courier') : 0;
+      const best = Math.max(legacy, shared);
+      if (typeof Leaderboard !== 'undefined' && legacy > shared) {
+        Leaderboard.saveScore('prism-courier', legacy);
+      }
+      bestEl.textContent = String(best);
     }
 
     function createGlass() {
@@ -352,9 +360,10 @@
 
     function endGame() {
       running = false;
-      const best = Number(localStorage.getItem(bestKey) || 0);
-      if (score > best) {
-        localStorage.setItem(bestKey, String(score));
+      const prev = Number(localStorage.getItem(bestKey) || 0);
+      if (score > prev) localStorage.setItem(bestKey, String(score));
+      if (typeof Leaderboard !== 'undefined' && score > Leaderboard.getBest('prism-courier')) {
+        Leaderboard.saveScore('prism-courier', score);
       }
       loadBest();
       finalLine.textContent = `Score: ${score} - Best Combo: ${combo}x`;
