@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Snake — CloudyClaw Games</title>
   <link rel="manifest" href="manifest.json" />
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/snake.html" />
   <meta name="theme-color" content="#7c6aff" />
   <link rel="stylesheet" href="design-system.css" />
   <style>
@@ -103,6 +104,7 @@
 
   <script src="leaderboard.js"></script>
   <script src="leaderboard-cloud.js"></script>
+  <script src="game-shell.js"></script>
   <script>
     const GAME_KEY = 'snake';
   </script>
@@ -129,8 +131,17 @@
     let lastTs = 0;
     let particles = [];
 
-    hiScore = +localStorage.getItem('snake-hi') || 0;
-    hiEl.textContent = hiScore;
+    const shell = CloudyClawGameShell.create({
+      key: GAME_KEY,
+      overlay,
+      overlayTitle: overlayMsg,
+      overlayBody: overlaySub,
+      primaryButton: restartBtn,
+      bestEl: hiEl,
+      leaderboardTargetId: 'lb-widget'
+    });
+
+    hiScore = shell.getBest();
 
     /* ── Helpers ──────────────────────────────────────── */
 
@@ -245,9 +256,7 @@
         scoreEl.textContent = score;
 
         if (score > hiScore) {
-          hiScore = score;
-          hiEl.textContent = hiScore;
-          localStorage.setItem('snake-hi', hiScore);
+          hiScore = shell.setBest(score);
         }
       }
 
@@ -258,9 +267,7 @@
         score += 50 * level;
         scoreEl.textContent = score;
         if (score > hiScore) {
-          hiScore = score;
-          hiEl.textContent = hiScore;
-          localStorage.setItem('snake-hi', hiScore);
+          hiScore = shell.setBest(score);
         }
         specialFood = null;
       }
@@ -270,14 +277,12 @@
 
     function die() {
       state = 'dead';
-      overlayMsg.textContent = 'GAME OVER';
-      overlaySub.textContent = `Score: ${score}`;
-      restartBtn.textContent = '↺ Play Again';
-      overlay.classList.remove('hidden');
-      if (typeof Leaderboard !== 'undefined') {
-        Leaderboard.saveScore(GAME_KEY, score);
-        Leaderboard.renderWidget(GAME_KEY, 'lb-widget');
-      }
+      shell.showOverlay({
+        title: 'GAME OVER',
+        body: `Score: ${score}`,
+        buttonText: '↺ Play Again'
+      });
+      shell.saveScore(score);
     }
 
     /* ── Draw ─────────────────────────────────────────── */
@@ -387,28 +392,22 @@
 
     /* ── Controls ─────────────────────────────────────── */
 
-    const DIRS = {
-      ArrowUp:    { x:  0, y: -1 }, w: { x:  0, y: -1 },
-      ArrowDown:  { x:  0, y:  1 }, s: { x:  0, y:  1 },
-      ArrowLeft:  { x: -1, y:  0 }, a: { x: -1, y:  0 },
-      ArrowRight: { x:  1, y:  0 }, d: { x:  1, y:  0 },
-    };
-
     document.addEventListener('keydown', e => {
       const key = e.key === ' ' ? 'space' : e.key.length === 1 ? e.key.toLowerCase() : e.key;
 
       if ((key === 'p' || key === ' ') && state === 'playing') {
         state = 'paused';
-        overlayMsg.textContent = 'PAUSED';
-        overlaySub.textContent = 'Press P or Space to resume';
-        restartBtn.textContent = '▶ Resume';
-        overlay.classList.remove('hidden');
+        shell.showOverlay({
+          title: 'PAUSED',
+          body: 'Press P or Space to resume',
+          buttonText: '▶ Resume'
+        });
         e.preventDefault();
         return;
       }
       if ((key === 'p' || key === ' ') && state === 'paused') {
         state = 'playing';
-        overlay.classList.add('hidden');
+        shell.hideOverlay();
         e.preventDefault();
         return;
       }
@@ -417,66 +416,34 @@
         return;
       }
 
-      if (state !== 'playing') return;
-
-      const d = DIRS[e.key] || DIRS[key];
-      if (!d) return;
-      // Prevent reversing
-      if (d.x === -dir.x && d.y === -dir.y) return;
-      nextDir = d;
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
     });
 
-    // Touch / swipe support
-    let touchStart = null;
-    canvas.addEventListener('touchstart', e => {
-      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      e.preventDefault();
-    }, { passive: false });
-    canvas.addEventListener('touchend', e => {
-      if (!touchStart) return;
-      const dx = e.changedTouches[0].clientX - touchStart.x;
-      const dy = e.changedTouches[0].clientY - touchStart.y;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        const d = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
-        if (d.x !== -dir.x) nextDir = d;
-      } else {
-        const d = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
-        if (d.y !== -dir.y) nextDir = d;
+    CloudyClawGameShell.createDirectionalInput({
+      canvas,
+      controls: {
+        up: 'tc-up',
+        down: 'tc-down',
+        left: 'tc-left',
+        right: 'tc-right'
+      },
+      canMove(direction) {
+        return state === 'playing' && !(direction.x === -dir.x && direction.y === -dir.y);
+      },
+      onDirection(direction) {
+        nextDir = direction;
       }
-      touchStart = null;
-      e.preventDefault();
-    }, { passive: false });
-
-    // Touch D-pad buttons
-    function btn(id, dx, dy) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        if (state === 'playing') {
-          const d = { x: dx, y: dy };
-          if (d.x !== -dir.x || d.y !== -dir.y) nextDir = d;
-        }
-      });
-    }
-    btn('tc-up', 0, -1);
-    btn('tc-down', 0, 1);
-    btn('tc-left', -1, 0);
-    btn('tc-right', 1, 0);
+    });
 
     function startGame() {
       init();
       state = 'playing';
-      overlay.classList.add('hidden');
+      shell.hideOverlay();
     }
 
     restartBtn.addEventListener('click', startGame);
 
     // Render leaderboard on page load
-    if (typeof Leaderboard !== 'undefined') {
-      Leaderboard.renderWidget(GAME_KEY, 'lb-widget');
-    }
+    shell.renderLeaderboard();
 
     // Kick off the render loop immediately so idle screen renders
     lastTs = performance.now();

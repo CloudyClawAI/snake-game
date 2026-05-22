@@ -88,6 +88,43 @@ Every game should use the `.game-shell` layout.
 </div>
 ```
 
+### Minimum Game Contract
+
+New games must satisfy this checklist before they are added to the hub:
+
+- Include `<meta charset="UTF-8">`, a responsive viewport meta tag, `manifest.json`, `theme-color`, and `design-system.css`.
+- Include the standard nav bar and a visible hub link using `href="index.html"` or `href="./index.html"`.
+- Use `.game-shell` with a main play area and a sidebar or equivalent score panel. Canvas games should place the primary canvas inside `.canvas-container`.
+- Declare one stable leaderboard key that matches the catalog key in `games.js`, local high-score storage, and leaderboard save/render calls.
+- Provide start/restart, pause/resume where applicable, and game-over affordances through the shared `.overlay` pattern.
+- Preserve direct-file browser play: no build step, module bundler, or network dependency may be required for core gameplay.
+- Keep resize behavior deterministic. Canvas backing dimensions should be explicit, while CSS should allow the canvas to fit within the viewport without layout overflow.
+- Add touch controls for games that depend on directional or action input. Use `.touch-controls`, `.dpad-grid`, and `.control-btn` when a D-pad is appropriate.
+- Pass the relevant smoke verifier and record at least one manual browser check before marking a new shell migration done.
+
+### Optional Helper
+
+Canvas games may include `game-shell.js` after leaderboard scripts when it removes repeated shell logic:
+
+```html
+<script src="leaderboard.js"></script>
+<script src="leaderboard-cloud.js"></script>
+<script src="game-shell.js"></script>
+<script>
+  const shell = CloudyClawGameShell.create({
+    key: 'snake',
+    overlay: 'overlay',
+    overlayTitle: 'overlay-msg',
+    overlayBody: 'overlay-sub',
+    primaryButton: 'restart-btn',
+    bestEl: 'hi-display',
+    leaderboardTargetId: 'lb-widget'
+  });
+</script>
+```
+
+The helper is intentionally tiny and global so direct-file play and GitHub Pages deployment keep working.
+
 ## 4. Touch Controls
 
 For mobile-friendly games, use the `.touch-controls` container.
