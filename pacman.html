@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pac-Man — CloudyClaw Games</title>
   <link rel="manifest" href="manifest.json" />
+  <link rel="canonical" href="https://cloudyclawai.github.io/snake-game/pacman.html" />
   <meta name="theme-color" content="#7c6aff" />
   <link rel="stylesheet" href="design-system.css" />
   <style>
@@ -216,7 +217,12 @@
     return MAZE_TEMPLATE.map(row => [...row]);
   }
 
+  function isTunnelTile(mx, my) {
+    return my === 10 && (mx < 0 || mx >= COLS);
+  }
+
   function tileAt(mx, my) {
+    if (isTunnelTile(mx, my)) return 0;
     if (my < 0 || my >= ROWS || mx < 0 || mx >= COLS) return 1;
     return maze[my][mx];
   }
@@ -273,7 +279,7 @@
       dx: 0, dy: -1,
       color: GHOST_COLORS[i],
       scatter: GHOST_SCATTER_TARGETS[i],
-      mode: 'house',  // 'house' | 'scatter' | 'chase' | 'scared' | 'eaten'
+      mode: 'house',  // 'house' | 'exiting' | 'scatter' | 'chase' | 'scared' | 'eaten'
       houseTimer: i * 2500,
       speed: GHOST_SPEED_BASE,
       id: i,
@@ -582,7 +588,7 @@
       const ntx = g.tx + opt.dx;
       const nty = g.ty + opt.dy;
       if (!isGhostWalkable(ntx, nty)) continue;
-      if (tileAt(ntx, nty) === 4 && g.mode !== 'house' && g.mode !== 'eaten') continue;
+      if (tileAt(ntx, nty) === 4 && g.mode !== 'house' && g.mode !== 'exiting' && g.mode !== 'eaten') continue;
       const dist = Math.hypot(ntx - target.tx, nty - target.ty);
       if (dist < bestDist) { bestDist = dist; best = opt; }
     }
@@ -620,8 +626,11 @@
     const spd = g.speed * dt * 60 / 1000;
     if (g.mode === 'house') {
       g.houseTimer -= dt;
-      if (g.houseTimer <= 0) g.mode = 'scatter';
-      return;
+      if (g.houseTimer <= 0) g.mode = 'exiting';
+      else return;
+    }
+    if (g.mode === 'exiting' && g.tx === HOUSE_EXIT.tx && g.ty === HOUSE_EXIT.ty) {
+      g.mode = modeCycle % 2 === 0 ? 'scatter' : 'chase';
     }
     if (g.mode === 'eaten' && g.tx === HOUSE_EXIT.tx && g.ty === HOUSE_EXIT.ty) {
       g.mode = 'house';

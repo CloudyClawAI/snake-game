@@ -40,7 +40,6 @@ All games must pass this checklist before a task is marked **done** or the game 
 |------|------|-------|----------|------|-----|-------|-------|
 | Neon Overdrive | neon-overdrive.html | ✅ | ✅ | ✅ | N/A | ✅ | High-speed 3D tunnel runner |
 | Pac-Man | pacman.html | ✅ | ✅ | ✅ | ✅ | ✅ | Authentic AI; fruit bonuses; cloud LB |
-| Maze Muncher | maze.html | ✅ | ✅ | ✅ | ✅ | ✅ | Fixed movement bug (SYM-18) |
 | Snake | snake.html | ✅ | ✅ | ✅ | N/A | ✅ | |
 | Tetris | tetris.html | ✅ | ✅ | ✅ | N/A | ✅ | |
 | Tower Defense | tower-defense.html | ✅ | ✅ | ✅ | ✅ | — | |

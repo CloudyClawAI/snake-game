@@ -189,7 +189,7 @@
 
   <header class="game-page-header">
     <h1>Echo Bloom</h1>
-    <p>Plant the melody and grow the longest luminous chain.</p>
+    <p>Trace the melody through neighboring cells and grow the longest luminous chain.</p>
   </header>
 
   <main class="shell">
@@ -207,7 +207,7 @@
 
       <div class="panel">
         <div class="sequence" id="sequence"></div>
-        <p class="message" id="message">Press New Melody, memorize the tones, then plant matching seeds on neighboring cells.</p>
+        <p class="message" id="message">Press New Melody, memorize the tones, then click neighboring cells to plant the chain.</p>
       </div>
 
       <div class="panel">
@@ -274,6 +274,10 @@
       return `${q},${r}`;
     }
 
+    function cellAt(q, r) {
+      return cells.find(cell => cell.q === q && cell.r === r);
+    }
+
     function buildCells() {
       cells.length = 0;
       for (let q = -3; q <= 3; q++) {
@@ -331,6 +335,15 @@
       });
     }
 
+    function previewCell(index) {
+      const path = [
+        [0, 0], [1, 0], [1, -1], [2, -1], [2, -2],
+        [3, -2], [3, -3], [2, -3], [1, -2]
+      ];
+      const [q, r] = path[index % path.length];
+      return cellAt(q, r) || cells[index % cells.length];
+    }
+
     function renderSequence(reveal = true) {
       sequenceEl.innerHTML = '';
       sequence.forEach((toneIndex, i) => {
@@ -352,16 +365,16 @@
         sequence.push(Math.floor(Math.random() * tones.length));
       }
       renderSequence(true);
-      messageEl.textContent = 'Listen and watch. Then plant the same tones in a connected path.';
+      messageEl.textContent = 'Listen and watch the connected sample path. Then click neighboring cells to plant it.';
       sequence.forEach((toneIndex, i) => {
         setTimeout(() => {
           playTone(toneIndex);
-          pulses.push({ cell: cells[(i * 5 + round) % cells.length], color: tones[toneIndex].color, life: 0.7, max: 0.7 });
+          pulses.push({ cell: previewCell(i), color: tones[toneIndex].color, life: 0.7, max: 0.7 });
         }, i * 420);
       });
       setTimeout(() => {
         renderSequence(false);
-        messageEl.textContent = 'Plant the melody from memory. Cells must touch to keep the chain alive.';
+        messageEl.textContent = 'Click neighboring cells to plant the melody. Seed buttons can preview tones.';
       }, sequence.length * 420 + 450);
       draw();
     }
@@ -383,6 +396,20 @@
       return dirs.map(([dq, dr]) => key(cell.q + dq, cell.r + dr));
     }
 
+    function normalizePlacementOrders() {
+      [...placements.entries()]
+        .sort((a, b) => a[1].order - b[1].order)
+        .forEach(([cellKey, value], order) => {
+          placements.set(cellKey, { ...value, order });
+        });
+    }
+
+    function retonePlacementsToSequence() {
+      [...placements.entries()].forEach(([cellKey, value]) => {
+        placements.set(cellKey, { ...value, tone: sequence[value.order] ?? value.tone });
+      });
+    }
+
     function orderedPath() {
       const entries = [...placements.entries()].map(([cellKey, value]) => ({ cellKey, ...value }));
       if (!entries.length) return [];
@@ -399,6 +426,17 @@
         path.push(next);
       }
       return path;
+    }
+
+    function lastPlacedCell() {
+      const path = orderedPath();
+      if (!path.length) return null;
+      const lastKey = path[path.length - 1].cellKey;
+      return cells.find(c => key(c.q, c.r) === lastKey);
+    }
+
+    function nextPlantTone() {
+      return sequence[placements.size] ?? selected;
     }
 
     function playChain() {
@@ -552,8 +590,26 @@
       const cell = nearestCell(point.x, point.y);
       if (!cell) return;
       const cellKey = key(cell.q, cell.r);
-      if (placements.has(cellKey)) placements.delete(cellKey);
-      else placements.set(cellKey, { tone: selected, order: placements.size });
+      if (placements.has(cellKey)) {
+        placements.delete(cellKey);
+        normalizePlacementOrders();
+        retonePlacementsToSequence();
+        messageEl.textContent = 'Seed removed. Continue from the last connected cell.';
+      } else {
+        const previous = lastPlacedCell();
+        if (previous && !neighbors(previous).includes(cellKey)) {
+          messageEl.textContent = 'Choose a cell that touches the end of the chain.';
+          pulses.push({ cell, color: '#ff4d4d', life: 0.5, max: 0.5 });
+          draw();
+          return;
+        }
+        const tone = nextPlantTone();
+        placements.set(cellKey, { tone, order: placements.size });
+        selected = tone;
+        renderTray();
+        playTone(tone, 0.15);
+        messageEl.textContent = `${placements.size}/${sequence.length} planted. Keep the cells touching, then play the chain.`;
+      }
       draw();
     });
 

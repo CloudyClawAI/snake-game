@@ -1,6 +1,6 @@
 # Leaderboard & Persistence Audit
 
-Authoritative catalog: `games.js` (36 hub-visible games).  
+Authoritative catalog: `games.js` (35 hub-visible games).
 Shared modules: `leaderboard.js` (local top-5, higher-is-better), `leaderboard-cloud.js` (optional Supabase sync).
 
 ## Score semantics legend
@@ -24,7 +24,6 @@ Shared modules: `leaderboard.js` (local top-5, higher-is-better), `leaderboard-c
 | snake | Snake | higher | `lb_v1_snake` | Game over | Yes | Yes | |
 | neon-snake | Neon Snake Rush | higher | `lb_v1_neon-snake` | Game over | Yes | Yes | |
 | tower-defense | Tower Defense | higher | `lb_v1_tower-defense` | Wave end / game over | Yes | Yes | |
-| maze | Maze Muncher | higher | `lb_v1_maze` | Level / game over | Yes | Yes | |
 | pacman | Pac-Man | higher | `lb_v1_pacman` | Life lost / level | Yes | Yes | |
 | tetris | Tetris | higher | `lb_v1_tetris` | Game over | Yes | Yes | |
 | pong | Pong | higher | `lb_v1_pong` | Match win (first to 7) | Yes | Yes | Saves winning score only |

@@ -21,7 +21,6 @@ Looking for future concepts? See the current [game idea technical notes](GAME_ID
 | 🐍 Snake | [Play](https://cloudyclawai.github.io/snake-game/snake.html) | Classic Snake with particle effects, golden bonus food, and progressive difficulty |
 | ✨ Neon Snake Rush | [Play](https://cloudyclawai.github.io/snake-game/neon-snake.html) | Turbocharged Snake with combo multipliers, ghost orb & overdrive powerups, neon glow visuals |
 | ⚔️ Tower Defense | [Play](https://cloudyclawai.github.io/snake-game/tower-defense.html) | 4 tower types, 5 enemy types, 15 waves, upgrade trees, special abilities, combo multiplier |
-| 🟡 Maze Muncher | [Play](https://cloudyclawai.github.io/snake-game/maze.html) | Pac-Man-style maze with 4 ghosts, power pellets, multiple levels, and mobile touch controls |
 | 🍒 Pac-Man | [Play](https://cloudyclawai.github.io/snake-game/pacman.html) | Faithful Pac-Man clone with authentic ghost AI, fruit bonuses, and level progression |
 | 🧱 Tetris | [Play](https://cloudyclawai.github.io/snake-game/tetris.html) | All 7 tetrominoes, SRS wall kicks, hold piece, ghost preview, level progression |
 | 🏓 Pong | [Play](https://cloudyclawai.github.io/snake-game/pong.html) | Two-player Pong with physics-based bouncing — W/S vs Arrow keys, first to 7 wins |
@@ -87,8 +86,10 @@ Contributions are welcome! To add a new game or improve an existing one:
 2. **Build your game** as a single self-contained `<game-name>.html` file (no external dependencies).
 3. Check it against the [game quality gate](GAME_QUALITY_GATE.md) — all items must pass.
 4. **Update the catalog** in `games.js` with your game's metadata.
-5. **Run the verifier** to ensure consistency: `node scripts/verify-catalog.mjs`.
-6. **Reconcile other surfaces** if the verifier fails (README, sitemap, sw.js).
+5. **Run the verifiers** to ensure consistency:
+   - `node scripts/verify-catalog.mjs`
+   - `node scripts/verify-deployment-health.mjs`
+6. **Reconcile other surfaces** if a verifier fails (README, sitemap, sw.js, canonical URLs). See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
 7. Open a **pull request** with a short description and a screenshot or GIF.
 
 ### Quality bar

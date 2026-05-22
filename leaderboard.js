@@ -46,7 +46,6 @@ const Leaderboard = (() => {
 
   const ALL_GAMES = [
     { key: 'flappy',         label: 'Flappy Bird',    href: 'flappy-bird.html'  },
-    { key: 'maze',           label: 'Maze Muncher',   href: 'maze.html'          },
     { key: 'neon-snake',     label: 'Neon Snake',     href: 'neon-snake.html'    },
     { key: 'pong',           label: 'Pong',           href: 'pong.html'          },
     { key: 'snake',          label: 'Snake',          href: 'snake.html'         },

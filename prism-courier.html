@@ -373,10 +373,10 @@
     function inputVector() {
       let x = 0;
       let y = 0;
-      if (keys.has('ArrowLeft') || keys.has('a')) x -= 1;
-      if (keys.has('ArrowRight') || keys.has('d')) x += 1;
-      if (keys.has('ArrowUp') || keys.has('w')) y -= 1;
-      if (keys.has('ArrowDown') || keys.has('s')) y += 1;
+      if (keys.has('arrowleft') || keys.has('a')) x -= 1;
+      if (keys.has('arrowright') || keys.has('d')) x += 1;
+      if (keys.has('arrowup') || keys.has('w')) y -= 1;
+      if (keys.has('arrowdown') || keys.has('s')) y += 1;
       if (pointer) {
         x += pointer.x - player.x;
         y += pointer.y - player.y;
@@ -593,11 +593,15 @@
       };
     }
 
+    function normalizeKey(key) {
+      return key === ' ' ? ' ' : key.toLowerCase();
+    }
+
     window.addEventListener('keydown', event => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) event.preventDefault();
-      keys.add(event.key.toLowerCase() === ' ' ? ' ' : event.key.toLowerCase());
+      keys.add(normalizeKey(event.key));
     });
-    window.addEventListener('keyup', event => keys.delete(event.key.toLowerCase() === ' ' ? ' ' : event.key.toLowerCase()));
+    window.addEventListener('keyup', event => keys.delete(normalizeKey(event.key)));
     canvas.addEventListener('pointerdown', event => {
       canvas.setPointerCapture(event.pointerId);
       pointer = canvasPoint(event);
