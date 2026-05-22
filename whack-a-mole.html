@@ -386,11 +386,14 @@
     </main>
   </div>
 
+  <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
 <script>
 (function () {
   'use strict';
 
   /* ── Constants ── */
+  const GAME_KEY       = 'whack-a-mole';
   const TOTAL_TIME     = 60;
   const GOLDEN_CHANCE  = 0.12;   // 12% chance a new mole is golden
   const BASE_MIN_UP    = 900;    // ms mole stays up (min)
@@ -470,8 +473,15 @@
   }
 
   /* ── High Score ── */
-  function getHS() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
-  function setHS(v) { localStorage.setItem(HS_KEY, String(v)); }
+  function getHS() {
+    const legacy = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
+    const shared = typeof Leaderboard !== 'undefined' ? Leaderboard.getBest(GAME_KEY) : 0;
+    return Math.max(legacy, shared);
+  }
+  function setHS(v) {
+    localStorage.setItem(HS_KEY, String(v));
+    if (typeof Leaderboard !== 'undefined') Leaderboard.saveScore(GAME_KEY, v);
+  }
 
   function refreshHSDisplay() {
     const hs = getHS();

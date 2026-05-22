@@ -218,12 +218,21 @@
     </div>
   </div>
 
+  <script src="leaderboard.js"></script>
+  <script src="leaderboard-cloud.js"></script>
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
+const GAME_KEY = '2048';
 const GRID = 4;
 let board = [];       // 4x4 number matrix (0 = empty)
 let score = 0;
-let best  = parseInt(localStorage.getItem('2048_best') || '0', 10);
+let best = Math.max(
+  typeof Leaderboard !== 'undefined' ? Leaderboard.getBest(GAME_KEY) : 0,
+  parseInt(localStorage.getItem('2048_best') || '0', 10)
+);
+if (typeof Leaderboard !== 'undefined' && best > Leaderboard.getBest(GAME_KEY)) {
+  Leaderboard.saveScore(GAME_KEY, best);
+}
 let gameOver = false;
 let won = false;
 let keepGoing = false;
@@ -316,10 +325,7 @@ function render(newTiles, mergedPositions) {
   });
 
   scoreEl.textContent = score;
-  if (score > best) {
-    best = score;
-    localStorage.setItem('2048_best', best);
-  }
+  if (score > best) best = score;
   bestEl.textContent = best;
 }
 
@@ -473,6 +479,11 @@ function applyMove(direction) {
     gameOver = true;
     overScoreEl.textContent = `Final score: ${score}`;
     overOverlay.classList.add('visible');
+    if (score > best) best = score;
+    if (typeof Leaderboard !== 'undefined' && score > 0) {
+      Leaderboard.saveScore(GAME_KEY, score);
+      localStorage.setItem('2048_best', String(score));
+    }
   }
 }
 
