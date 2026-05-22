@@ -66,15 +66,6 @@ const GAMES = [
     href: 'tower-defense.html'
   },
   {
-    key: 'maze',
-    title: 'Maze Muncher',
-    icon: '🟡',
-    description: 'Pac-Man style maze game with 4 ghosts, power pellets, lives system, and full mobile touch controls.',
-    tags: ['Arcade', 'Ghosts', 'Touch'],
-    categories: ['Arcade', 'Classic'],
-    href: 'maze.html'
-  },
-  {
     key: 'pacman',
     title: 'Pac-Man',
     icon: '🍒',

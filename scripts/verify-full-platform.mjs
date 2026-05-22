@@ -18,7 +18,6 @@ const PAGES = [
   'snake.html',
   'neon-snake.html',
   'tower-defense.html',
-  'maze.html',
   'pacman.html',
   'tetris.html',
   'pong.html',
