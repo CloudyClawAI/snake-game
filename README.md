@@ -87,8 +87,10 @@ Contributions are welcome! To add a new game or improve an existing one:
 2. **Build your game** as a single self-contained `<game-name>.html` file (no external dependencies).
 3. Check it against the [game quality gate](GAME_QUALITY_GATE.md) — all items must pass.
 4. **Update the catalog** in `games.js` with your game's metadata.
-5. **Run the verifier** to ensure consistency: `node scripts/verify-catalog.mjs`.
-6. **Reconcile other surfaces** if the verifier fails (README, sitemap, sw.js).
+5. **Run the verifiers** to ensure consistency:
+   - `node scripts/verify-catalog.mjs`
+   - `node scripts/verify-deployment-health.mjs`
+6. **Reconcile other surfaces** if a verifier fails (README, sitemap, sw.js, canonical URLs). See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
 7. Open a **pull request** with a short description and a screenshot or GIF.
 
 ### Quality bar

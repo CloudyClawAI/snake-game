@@ -12,11 +12,19 @@ const MIME = {
   '.wasm': 'application/wasm',
 };
 
-export function startStaticServer(root, port = 0) {
+export function startStaticServer(root, port = 0, basePath = '') {
+  const base = basePath.replace(/\/$/, '') || '';
   return new Promise((resolve) => {
     const server = createServer(async (req, res) => {
       try {
-        const urlPath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
+        let urlPath = req.url.split('?')[0];
+        if (base && !urlPath.startsWith(base)) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+        if (base) urlPath = urlPath.slice(base.length) || '/';
+        urlPath = urlPath === '/' ? '/index.html' : urlPath;
         const filePath = normalize(join(root, decodeURIComponent(urlPath)));
         if (!filePath.startsWith(root)) throw new Error('Path escapes root');
         const data = await readFile(filePath);
@@ -29,7 +37,7 @@ export function startStaticServer(root, port = 0) {
       }
     });
     server.listen(port, '127.0.0.1', () => {
-      resolve({ server, port: server.address().port });
+      resolve({ server, port: server.address().port, basePath: base });
     });
   });
 }
