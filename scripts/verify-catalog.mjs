@@ -72,10 +72,28 @@ async function verify() {
   // 6. Check sw.js PRECACHE
   const swContent = fs.readFileSync(SW_JS_PATH, 'utf8');
   for (const href of gameHrefs) {
-    if (!swContent.includes(`'/${href}'`)) {
+    if (!swContent.includes(`'./${href}'`)) {
       logError(`Game ${href} is missing from sw.js PRECACHE`);
       hasErrors = true;
     }
+  }
+  if (/['"]\/(?:index\.html|design-system\.css|manifest\.json|[^'"]+\.html)['"]/.test(swContent)) {
+    logError('sw.js PRECACHE contains root-relative paths; use ./ paths so GitHub Pages subpath deploys do not 404');
+    hasErrors = true;
+  }
+  const precacheMatches = [...swContent.matchAll(/['"]\.\/([^'"]+)['"]/g)].map((match) => match[1]);
+  for (const precachePath of precacheMatches) {
+    if (precachePath === '') continue;
+    if (!fs.existsSync(precachePath)) {
+      logError(`sw.js PRECACHE references missing file ${precachePath}`);
+      hasErrors = true;
+    }
+  }
+
+  const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+  if (manifest.start_url !== '.' || manifest.scope !== '.') {
+    logError('manifest.json must use "." for start_url and scope so the PWA works under the GitHub Pages project path');
+    hasErrors = true;
   }
 
   // 7. Check smoke-test page lists (verify-shared-shell-pages.mjs)
