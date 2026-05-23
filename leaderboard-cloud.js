@@ -30,7 +30,8 @@ const CloudLeaderboard = (() => {
     'apikey':        SUPABASE_KEY,
     'Authorization': 'Bearer ' + SUPABASE_KEY,
   };
-  const ENGAGEMENT_CONFIGURED = window.CC_ENABLE_GAME_ENGAGEMENT_CLOUD === true;
+  let reactionsAvailable = CONFIGURED;
+  let playsAvailable = CONFIGURED;
 
   // ── Anonymous player identity ────────────────────────────────
   const PLAYER_KEY    = 'cc_player_id';
@@ -150,9 +151,9 @@ const CloudLeaderboard = (() => {
   }
 
   async function submitReaction(game, reaction) {
-    if (!CONFIGURED || !ENGAGEMENT_CONFIGURED) return;
+    if (!CONFIGURED || !reactionsAvailable) return;
     try {
-      await fetch(REACTIONS_ENDPOINT, {
+      const res = await fetch(`${REACTIONS_ENDPOINT}?on_conflict=game,player_id`, {
         method: 'POST',
         headers: { ...HEADERS, Prefer: 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify({
@@ -162,15 +163,16 @@ const CloudLeaderboard = (() => {
           updated_at: new Date().toISOString(),
         }),
       });
+      if (!res.ok) noteMissingEngagementTable(res, 'reactions');
     } catch (_) {
-      // Optional table may not exist yet; localStorage remains authoritative for this player.
+      reactionsAvailable = false;
     }
   }
 
   async function submitPlay(game) {
-    if (!CONFIGURED || !ENGAGEMENT_CONFIGURED) return;
+    if (!CONFIGURED || !playsAvailable) return;
     try {
-      await fetch(PLAYS_ENDPOINT, {
+      const res = await fetch(PLAYS_ENDPOINT, {
         method: 'POST',
         headers: HEADERS,
         body: JSON.stringify({
@@ -179,17 +181,18 @@ const CloudLeaderboard = (() => {
           nickname: getNickname(),
         }),
       });
+      if (!res.ok) noteMissingEngagementTable(res, 'plays');
     } catch (_) {
-      // Optional table may not exist yet; local play count already advanced.
+      playsAvailable = false;
     }
   }
 
   async function getEngagementSummary(gameKeys = []) {
-    if (!CONFIGURED || !ENGAGEMENT_CONFIGURED) return {};
+    if (!CONFIGURED) return {};
     const result = {};
     gameKeys.forEach((game) => { result[game] = { likes: 0, dislikes: 0, plays: 0 }; });
 
-    try {
+    if (reactionsAvailable) try {
       const gameFilter = gameKeys.length
         ? `&game=in.(${gameKeys.map(encodeURIComponent).join(',')})`
         : '';
@@ -202,10 +205,14 @@ const CloudLeaderboard = (() => {
           if (row.reaction === 'like') result[row.game].likes += 1;
           if (row.reaction === 'dislike') result[row.game].dislikes += 1;
         }
+      } else {
+        noteMissingEngagementTable(reactionsRes, 'reactions');
       }
-    } catch (_) {}
+    } catch (_) {
+      reactionsAvailable = false;
+    }
 
-    try {
+    if (playsAvailable) try {
       const gameFilter = gameKeys.length
         ? `&game=in.(${gameKeys.map(encodeURIComponent).join(',')})`
         : '';
@@ -217,10 +224,20 @@ const CloudLeaderboard = (() => {
           if (!result[row.game]) result[row.game] = { likes: 0, dislikes: 0, plays: 0 };
           result[row.game].plays += 1;
         }
+      } else {
+        noteMissingEngagementTable(playsRes, 'plays');
       }
-    } catch (_) {}
+    } catch (_) {
+      playsAvailable = false;
+    }
 
     return result;
+  }
+
+  function noteMissingEngagementTable(res, type) {
+    if (res.status !== 404) return;
+    if (type === 'reactions') reactionsAvailable = false;
+    if (type === 'plays') playsAvailable = false;
   }
 
   // ── Render global leaderboard widget ─────────────────────────
