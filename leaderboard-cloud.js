@@ -18,6 +18,8 @@ const CloudLeaderboard = (() => {
 
   const CONFIGURED = !SUPABASE_URL.includes('YOUR_PROJECT');
   const ENDPOINT   = SUPABASE_URL + '/rest/v1/scores';
+  const REACTIONS_ENDPOINT = SUPABASE_URL + '/rest/v1/game_reactions';
+  const PLAYS_ENDPOINT = SUPABASE_URL + '/rest/v1/game_plays';
   const HEADERS    = {
     'Content-Type':  'application/json',
     'apikey':         SUPABASE_KEY,
@@ -28,6 +30,7 @@ const CloudLeaderboard = (() => {
     'apikey':        SUPABASE_KEY,
     'Authorization': 'Bearer ' + SUPABASE_KEY,
   };
+  const ENGAGEMENT_CONFIGURED = window.CC_ENABLE_GAME_ENGAGEMENT_CLOUD === true;
 
   // ── Anonymous player identity ────────────────────────────────
   const PLAYER_KEY    = 'cc_player_id';
@@ -121,6 +124,105 @@ const CloudLeaderboard = (() => {
     }
   }
 
+  async function getGlobalBestDetails(gameKeys = []) {
+    if (!CONFIGURED) return {};
+    try {
+      const gameFilter = gameKeys.length
+        ? `&game=in.(${gameKeys.map(encodeURIComponent).join(',')})`
+        : '';
+      const url = `${ENDPOINT}?select=game,score,nickname,player_id&order=game.asc,score.desc${gameFilter}`;
+      const res = await fetch(url, { headers: READ_HEADERS });
+      if (!res.ok) return {};
+      const rows = await res.json();
+      const best = {};
+      for (const row of rows) {
+        if (!best[row.game] || row.score > best[row.game].score) {
+          best[row.game] = {
+            score: Number(row.score) || 0,
+            nickname: row.nickname || ('Player ' + String(row.player_id || '').slice(0, 6)),
+          };
+        }
+      }
+      return best;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  async function submitReaction(game, reaction) {
+    if (!CONFIGURED || !ENGAGEMENT_CONFIGURED) return;
+    try {
+      await fetch(REACTIONS_ENDPOINT, {
+        method: 'POST',
+        headers: { ...HEADERS, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          game,
+          player_id: getPlayerId(),
+          reaction: reaction || null,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+    } catch (_) {
+      // Optional table may not exist yet; localStorage remains authoritative for this player.
+    }
+  }
+
+  async function submitPlay(game) {
+    if (!CONFIGURED || !ENGAGEMENT_CONFIGURED) return;
+    try {
+      await fetch(PLAYS_ENDPOINT, {
+        method: 'POST',
+        headers: HEADERS,
+        body: JSON.stringify({
+          game,
+          player_id: getPlayerId(),
+          nickname: getNickname(),
+        }),
+      });
+    } catch (_) {
+      // Optional table may not exist yet; local play count already advanced.
+    }
+  }
+
+  async function getEngagementSummary(gameKeys = []) {
+    if (!CONFIGURED || !ENGAGEMENT_CONFIGURED) return {};
+    const result = {};
+    gameKeys.forEach((game) => { result[game] = { likes: 0, dislikes: 0, plays: 0 }; });
+
+    try {
+      const gameFilter = gameKeys.length
+        ? `&game=in.(${gameKeys.map(encodeURIComponent).join(',')})`
+        : '';
+      const reactionsUrl = `${REACTIONS_ENDPOINT}?select=game,reaction${gameFilter}`;
+      const reactionsRes = await fetch(reactionsUrl, { headers: READ_HEADERS });
+      if (reactionsRes.ok) {
+        const rows = await reactionsRes.json();
+        for (const row of rows) {
+          if (!result[row.game]) result[row.game] = { likes: 0, dislikes: 0, plays: 0 };
+          if (row.reaction === 'like') result[row.game].likes += 1;
+          if (row.reaction === 'dislike') result[row.game].dislikes += 1;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      const gameFilter = gameKeys.length
+        ? `&game=in.(${gameKeys.map(encodeURIComponent).join(',')})`
+        : '';
+      const playsUrl = `${PLAYS_ENDPOINT}?select=game${gameFilter}`;
+      const playsRes = await fetch(playsUrl, { headers: READ_HEADERS });
+      if (playsRes.ok) {
+        const rows = await playsRes.json();
+        for (const row of rows) {
+          if (!result[row.game]) result[row.game] = { likes: 0, dislikes: 0, plays: 0 };
+          result[row.game].plays += 1;
+        }
+      }
+    } catch (_) {}
+
+    return result;
+  }
+
   // ── Render global leaderboard widget ─────────────────────────
   // Populates `containerId` with a ranked list of global top scores.
   // Shows a "loading…" state while fetching.
@@ -204,6 +306,10 @@ const CloudLeaderboard = (() => {
     submit,
     getGlobalTop,
     getGlobalHubSummary,
+    getGlobalBestDetails,
+    getEngagementSummary,
+    submitReaction,
+    submitPlay,
     renderGlobalWidget,
     renderNicknameForm,
     getPlayerId,
