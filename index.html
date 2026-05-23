@@ -223,8 +223,8 @@
         document.addEventListener('click', (event) => {
           const vote = event.target.closest('.vote-btn');
           if (vote) {
-            GameEngagement.setReaction(vote.dataset.game, vote.dataset.reaction);
-            state.engagement = GameEngagement.mergeSummaries(state.engagement);
+            const updated = GameEngagement.setReaction(vote.dataset.game, vote.dataset.reaction);
+            state.engagement = { ...state.engagement, [vote.dataset.game]: updated };
             render();
             return;
           }
