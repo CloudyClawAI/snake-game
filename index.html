@@ -36,7 +36,6 @@
       </div>
       <div class="category-filters">
         <button class="category-chip active" data-category="All">All</button>
-        <button class="category-chip" data-category="Featured">Featured</button>
         <button class="category-chip" data-category="Arcade">Arcade</button>
         <button class="category-chip" data-category="Puzzle">Puzzle</button>
         <button class="category-chip" data-category="Classic">Classic</button>
@@ -95,15 +94,17 @@
       const state = {
         search: '',
         category: 'All',
-        games: GAMES
+        games: GAMES,
+        engagement: {},
+        globalBest: {}
       };
 
       function render() {
         const main = document.querySelector('.hub-grid');
         if (!main) return;
 
-        // Filter games
-        const filtered = state.games.filter(g => {
+        const sorted = sortGames(state.games);
+        const filtered = sorted.filter(g => {
           const matchesSearch = g.title.toLowerCase().includes(state.search.toLowerCase()) || 
                                g.description.toLowerCase().includes(state.search.toLowerCase()) ||
                                g.tags.some(t => t.toLowerCase().includes(state.search.toLowerCase()));
@@ -112,31 +113,21 @@
         });
 
         if (state.category === 'All' && state.search === '') {
-          // Render featured row + categorized shelves
           renderFullHub(main);
         } else {
-          // Render search/filter results
           renderSearchResults(main, filtered);
         }
       }
 
       function renderFullHub(container) {
-        const featured = state.games.filter(g => g.categories.includes('Featured'));
-        const remaining = state.games.filter(g => !g.categories.includes('Featured'));
+        const games = sortGames(state.games);
 
         container.style.display = 'block';
         container.innerHTML = `
           <section class="hub-section">
-            <h2 class="section-title">✨ Featured Games</h2>
-            <div class="shelf featured-shelf">
-              ${featured.map(renderCard).join('')}
-            </div>
-          </section>
-
-          <section class="hub-section mt-8">
-            <h2 class="section-title">All Games</h2>
+            <h2 class="section-title">Most Liked Games</h2>
             <div class="shelf">
-              ${remaining.map(renderCard).join('')}
+              ${games.map(renderCard).join('')}
             </div>
           </section>
         `;
@@ -153,18 +144,62 @@
 
       function renderCard(g) {
         const best = Leaderboard.getBest(g.key);
+        const engagement = state.engagement[g.key] || GameEngagement.getSummary(g.key);
+        const global = state.globalBest[g.key];
+        const globalScore = global?.score || 0;
+        const globalName = global?.nickname || 'No leader yet';
+        const reaction = GameEngagement.getReaction(g.key);
         return `
-          <div class="card">
+          <div class="card" data-game-key="${g.key}">
             <div class="card-icon">${g.icon}</div>
             <h3 class="card-title">${g.title}</h3>
             <p class="card-desc">${g.description}</p>
-            ${best ? `<div class="card-score">Best: <span>${best.toLocaleString()}</span></div>` : ''}
+            <div class="card-score-grid">
+              <div class="card-score">Your best <span>${best ? best.toLocaleString() : '—'}</span></div>
+              <div class="card-score">Global best <span>${globalScore ? globalScore.toLocaleString() : '—'}</span></div>
+              <div class="card-leader">Leader <span>${escapeHtml(globalName)}</span></div>
+            </div>
+            <div class="card-engagement" aria-label="${g.title} community stats">
+              <button class="vote-btn${reaction === 'like' ? ' active' : ''}" type="button" data-reaction="like" data-game="${g.key}" aria-label="Like ${g.title}">👍 <span>${engagement.likes}</span></button>
+              <button class="vote-btn${reaction === 'dislike' ? ' active' : ''}" type="button" data-reaction="dislike" data-game="${g.key}" aria-label="Dislike ${g.title}">👎 <span>${engagement.dislikes}</span></button>
+              <span class="play-count">${engagement.plays.toLocaleString()} plays</span>
+            </div>
             <div class="card-meta">
               ${g.tags.map(t => `<span class="chip">${t}</span>`).join('')}
             </div>
-            <a class="btn btn-primary mt-4" href="${g.href}">▶ Play</a>
+            <a class="btn btn-primary mt-4 play-link" data-game="${g.key}" href="${g.href}">▶ Play</a>
           </div>
         `;
+      }
+
+      function sortGames(games) {
+        return [...games].sort((a, b) => {
+          const aStats = state.engagement[a.key] || GameEngagement.getSummary(a.key);
+          const bStats = state.engagement[b.key] || GameEngagement.getSummary(b.key);
+          const aScore = aStats.likes - aStats.dislikes;
+          const bScore = bStats.likes - bStats.dislikes;
+          return bScore - aScore || bStats.plays - aStats.plays || a.title.localeCompare(b.title);
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      async function refreshCloudStats() {
+        if (typeof CloudLeaderboard === 'undefined' || !CloudLeaderboard.configured) return;
+        const keys = state.games.map(g => g.key);
+        const [engagement, globalBest] = await Promise.all([
+          CloudLeaderboard.getEngagementSummary(keys),
+          CloudLeaderboard.getGlobalBestDetails(keys)
+        ]);
+        state.engagement = GameEngagement.mergeSummaries(engagement);
+        state.globalBest = globalBest;
+        render();
       }
 
       function init() {
@@ -185,7 +220,23 @@
           });
         });
 
+        document.addEventListener('click', (event) => {
+          const vote = event.target.closest('.vote-btn');
+          if (vote) {
+            GameEngagement.setReaction(vote.dataset.game, vote.dataset.reaction);
+            state.engagement = GameEngagement.mergeSummaries(state.engagement);
+            render();
+            return;
+          }
+
+          const playLink = event.target.closest('.play-link');
+          if (playLink) {
+            GameEngagement.recordPlay(playLink.dataset.game);
+          }
+        });
+
         render();
+        refreshCloudStats();
       }
 
       return { init };

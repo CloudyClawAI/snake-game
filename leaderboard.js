@@ -142,3 +142,110 @@ const Leaderboard = (() => {
 
   return { saveScore, getScores, getBest, getAllBest, getActiveGames, render, renderWidget, renderHubSummary, ALL_GAMES };
 })();
+
+const GameEngagement = (() => {
+  const REACTION_PREFIX = 'engage_v1_reaction_';
+  const LOCAL_PREFIX = 'engage_v1_counts_';
+  const EMPTY = { likes: 0, dislikes: 0, plays: 0 };
+
+  function localKey(gameKey) {
+    return LOCAL_PREFIX + gameKey;
+  }
+
+  function reactionKey(gameKey) {
+    return REACTION_PREFIX + gameKey;
+  }
+
+  function readCounts(gameKey) {
+    try {
+      const raw = localStorage.getItem(localKey(gameKey));
+      const parsed = raw ? JSON.parse(raw) : {};
+      return normalize(parsed);
+    } catch {
+      return { ...EMPTY };
+    }
+  }
+
+  function writeCounts(gameKey, counts) {
+    try {
+      localStorage.setItem(localKey(gameKey), JSON.stringify(normalize(counts)));
+    } catch { /* quota exceeded - keep the session moving */ }
+  }
+
+  function normalize(counts) {
+    return {
+      likes: Math.max(0, Number(counts?.likes) || 0),
+      dislikes: Math.max(0, Number(counts?.dislikes) || 0),
+      plays: Math.max(0, Number(counts?.plays) || 0),
+    };
+  }
+
+  function getReaction(gameKey) {
+    const value = localStorage.getItem(reactionKey(gameKey));
+    return value === 'like' || value === 'dislike' ? value : '';
+  }
+
+  function setReaction(gameKey, reaction) {
+    if (!gameKey || (reaction !== 'like' && reaction !== 'dislike')) return readCounts(gameKey);
+    const previous = getReaction(gameKey);
+    const counts = readCounts(gameKey);
+
+    if (previous === reaction) {
+      counts[reaction === 'like' ? 'likes' : 'dislikes'] = Math.max(0, counts[reaction === 'like' ? 'likes' : 'dislikes'] - 1);
+      localStorage.removeItem(reactionKey(gameKey));
+      writeCounts(gameKey, counts);
+      syncReaction(gameKey, '');
+      return counts;
+    }
+
+    if (previous) {
+      counts[previous === 'like' ? 'likes' : 'dislikes'] = Math.max(0, counts[previous === 'like' ? 'likes' : 'dislikes'] - 1);
+    }
+    counts[reaction === 'like' ? 'likes' : 'dislikes'] += 1;
+    localStorage.setItem(reactionKey(gameKey), reaction);
+    writeCounts(gameKey, counts);
+    syncReaction(gameKey, reaction);
+    return counts;
+  }
+
+  function recordPlay(gameKey) {
+    if (!gameKey) return { ...EMPTY };
+    const counts = readCounts(gameKey);
+    counts.plays += 1;
+    writeCounts(gameKey, counts);
+    if (typeof CloudLeaderboard !== 'undefined' && CloudLeaderboard.submitPlay) {
+      CloudLeaderboard.submitPlay(gameKey);
+    }
+    return counts;
+  }
+
+  function syncReaction(gameKey, reaction) {
+    if (typeof CloudLeaderboard !== 'undefined' && CloudLeaderboard.submitReaction) {
+      CloudLeaderboard.submitReaction(gameKey, reaction);
+    }
+  }
+
+  function getSummary(gameKey) {
+    return readCounts(gameKey);
+  }
+
+  function mergeSummaries(remote = {}) {
+    const result = {};
+    const keys = new Set([
+      ...Leaderboard.getActiveGames().map(g => g.key),
+      ...Object.keys(remote || {})
+    ]);
+    keys.forEach((key) => {
+      const local = readCounts(key);
+      const cloud = normalize(remote[key] || {});
+      result[key] = {
+        likes: Math.max(local.likes, cloud.likes),
+        dislikes: Math.max(local.dislikes, cloud.dislikes),
+        plays: Math.max(local.plays, cloud.plays),
+      };
+    });
+    return result;
+  }
+
+  return { getReaction, setReaction, recordPlay, getSummary, mergeSummaries };
+})();
