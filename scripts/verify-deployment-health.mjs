@@ -113,8 +113,8 @@ function checkManifest(errors) {
     }
   }
 
-  if (manifest.start_url !== '/' && manifest.start_url !== './') {
-    logError(`manifest start_url should be "/" for GitHub Pages (got ${manifest.start_url})`);
+  if (manifest.start_url !== '/' && manifest.start_url !== './' && manifest.start_url !== '.') {
+    logError(`manifest start_url should be "/" or "." for GitHub Pages (got ${manifest.start_url})`);
     errors.push('manifest');
   }
 
@@ -125,7 +125,7 @@ function checkServiceWorkerPrecache(errors) {
   const swContent = fs.readFileSync(join(ROOT, 'sw.js'), 'utf8');
   const precache = parsePrecache(swContent);
 
-  const recommended = ['/manifest.json', '/icon-192.png', '/icon-512.png'];
+  const recommended = ['./manifest.json', './icon-192.png', './icon-512.png'];
   for (const asset of recommended) {
     if (!precache.includes(asset)) {
       logError(`sw.js PRECACHE missing recommended PWA asset: ${asset}`);
